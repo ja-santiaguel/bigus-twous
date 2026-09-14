@@ -62,11 +62,15 @@ async function main() {
   if (mode === 'medium') {
     for (const threatUrgency of [3, 4, 5, 6, 8]) {
       for (const passThreshold of [0.6, 1.0]) {
-        await evaluateWeights(`medium threat=${threatUrgency} pass=${passThreshold}`, {
-          ...MEDIUM_WEIGHTS,
-          threatUrgency,
-          passThreshold,
-        }, games);
+        await evaluateWeights(
+          `medium threat=${threatUrgency} pass=${passThreshold}`,
+          {
+            ...MEDIUM_WEIGHTS,
+            threatUrgency,
+            passThreshold,
+          },
+          games,
+        );
       }
     }
     return;
@@ -119,7 +123,13 @@ async function main() {
   }
 
   if (mode === 'variants') {
-    const v1: HeuristicWeights = { ...HARD_WEIGHTS, tempoBonus: 1, strengthPenalty: 3, cardsShedBonus: 1.5, leadStrengthMultiplier: 2 };
+    const v1: HeuristicWeights = {
+      ...HARD_WEIGHTS,
+      tempoBonus: 1,
+      strengthPenalty: 3,
+      cardsShedBonus: 1.5,
+      leadStrengthMultiplier: 2,
+    };
     await evaluateWeights('hard+combined', v1, games);
     await evaluateWeights('hard+combined tempo0', { ...v1, tempoBonus: 0 }, games);
     await evaluateWeights('hard+combined sp4', { ...v1, strengthPenalty: 4 }, games);
@@ -129,7 +139,11 @@ async function main() {
     await evaluateWeights('hard+combined bomb2', { ...v1, bombHoldPenalty: 2 }, games);
     await evaluateWeights('hard+combined threat8', { ...v1, threatUrgency: 8 }, games);
     await evaluateWeights('hard+combined unbeat6', { ...v1, unbeatableBonus: 6 }, games);
-    await evaluateWeights('-- NO TRACKING (medium candidate)', { ...v1, useCardTracking: false, unbeatableBonus: 0 }, games);
+    await evaluateWeights(
+      '-- NO TRACKING (medium candidate)',
+      { ...v1, useCardTracking: false, unbeatableBonus: 0 },
+      games,
+    );
     return;
   }
 

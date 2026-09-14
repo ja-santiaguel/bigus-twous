@@ -146,7 +146,10 @@ describe('losing the connection', () => {
   it('reports itself as reconnecting and stops offering a turn', () => {
     const h = harness();
     h.socket.open();
-    h.socket.deliver({ ...SYNC, prompt: { playerId: 'seat-1', legalMoves: [], canPass: true, constraint: { kind: 'NONE' } } } as ServerMessage);
+    h.socket.deliver({
+      ...SYNC,
+      prompt: { playerId: 'seat-1', legalMoves: [], canPass: true, constraint: { kind: 'NONE' } },
+    } as ServerMessage);
     expect(h.client.snapshot().prompt).not.toBeNull();
 
     h.socket.drop();
@@ -266,8 +269,17 @@ describe('a fair table', () => {
     h.socket.deliver({
       type: 'ROUND_AUDIT',
       audit: {
-        roundNumber: 1, commit: 'x', hostSecret: 'y', shares: {}, dealSeed: 'z', seats: [],
-        previousWinner: null, roundsWon: {}, points: null, claims: [], history: [],
+        roundNumber: 1,
+        commit: 'x',
+        hostSecret: 'y',
+        shares: {},
+        dealSeed: 'z',
+        seats: [],
+        previousWinner: null,
+        roundsWon: {},
+        points: null,
+        claims: [],
+        history: [],
       },
     });
     expect(h.client.snapshot().fairness).toEqual({ round: 1, status: 'unchecked' });

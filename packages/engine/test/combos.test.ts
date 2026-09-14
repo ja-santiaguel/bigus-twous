@@ -95,14 +95,7 @@ describe('enumerateCombos', () => {
   });
 
   it('finds a pair chain spanning a full hand', () => {
-    const hand = [
-      c('3', 'SPADE'),
-      c('3', 'CLUB'),
-      c('4', 'SPADE'),
-      c('4', 'CLUB'),
-      c('5', 'SPADE'),
-      c('5', 'CLUB'),
-    ];
+    const hand = [c('3', 'SPADE'), c('3', 'CLUB'), c('4', 'SPADE'), c('4', 'CLUB'), c('5', 'SPADE'), c('5', 'CLUB')];
     const combos = enumerateCombos(hand);
     expect(combos.some((combo) => combo.type === 'PAIR_CHAIN' && combo.length === 3)).toBe(true);
   });

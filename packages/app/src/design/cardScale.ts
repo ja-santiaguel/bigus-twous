@@ -36,4 +36,3 @@ export const CARD_SCALE = {
   /** A card you are touching — hovered, or picked up. */
   raised: 5 / 3,
 } as const;
-

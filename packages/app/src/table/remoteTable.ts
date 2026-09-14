@@ -195,7 +195,9 @@ export function createRemoteTable(options: RemoteTableOptions): TableClient {
                   : { round: audit.roundNumber, status: 'failed', reason: verdict.reason },
               }),
             )
-            .catch(() => emit({ fairness: { round: audit.roundNumber, status: 'failed', reason: 'the check could not run' } }));
+            .catch(() =>
+              emit({ fairness: { round: audit.roundNumber, status: 'failed', reason: 'the check could not run' } }),
+            );
           return;
         }
         case 'REJECTED':

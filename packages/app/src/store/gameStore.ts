@@ -3,7 +3,6 @@ import {
   cardId,
   type Card,
   type Combo,
-  type Move,
   type PileClaim,
   type PlayerId,
   type PlayerView,
@@ -11,7 +10,16 @@ import {
 } from '@big-two/engine';
 import type { Difficulty } from '@big-two/ai';
 import { randomName } from '../lib/names.js';
-import { DEFAULT_MATCH, makePacer, makeSeed, normalizeSeed, SEAT_IDS, type Pacer, type MatchRule, type SeatConfig as SessionSeat, type SessionSave } from '@big-two/session';
+import {
+  DEFAULT_MATCH,
+  makePacer,
+  makeSeed,
+  normalizeSeed,
+  SEAT_IDS,
+  type MatchRule,
+  type SeatConfig as SessionSeat,
+  type SessionSave,
+} from '@big-two/session';
 import type { WireCeremony, WireClock, WireCountdown, WireMatch, WireMatchRule, WireSeat } from '@big-two/protocol';
 import { createLocalTable } from '../table/localTable.js';
 import { createRemoteTable } from '../table/remoteTable.js';
@@ -462,8 +470,6 @@ export const useGameStore = create<GameStore>((set, get) => {
       set((s) => ({ seats: s.seats.map((x) => (x.seat === seat ? { ...x, difficulty } : x)) }));
     },
 
-
-
     // One seed, one format, alone or together. At a shared table the seed
     // belongs to the table, so a change goes there and returns to everybody in
     // the next snapshot.
@@ -499,13 +505,11 @@ export const useGameStore = create<GameStore>((set, get) => {
 
       const { seats, seed, humanSeat, playerName } = get();
       const you = SEAT_IDS[humanSeat]!;
-      const sessionSeats = seats.map(
-        (seat): SessionSeat => ({
-          id: seat.id,
-          seat: seat.seat,
-          occupant: seat.occupant === 'human' ? { kind: 'human' } : { kind: 'cpu', difficulty: seat.difficulty },
-        }),
-      );
+      const sessionSeats = seats.map((seat): SessionSeat => ({
+        id: seat.id,
+        seat: seat.seat,
+        occupant: seat.occupant === 'human' ? { kind: 'human' } : { kind: 'cpu', difficulty: seat.difficulty },
+      }));
       attach(
         createLocalTable({
           you,
@@ -816,8 +820,6 @@ function seatIndexOf(snapshot: TableSnapshot): { humanSeat?: number } {
   return seat ? { humanSeat: seat.seat } : {};
 }
 
-
-
 interface SoloSave {
   version: 1;
   you: PlayerId;
@@ -864,4 +866,3 @@ function readName(): string {
     return randomName();
   }
 }
-

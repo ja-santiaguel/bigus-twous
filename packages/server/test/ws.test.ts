@@ -64,7 +64,10 @@ class Client {
     return undefined;
   }
 
-  async next<T extends ServerMessage['type']>(type: T, timeoutMs = 4_000): Promise<Extract<ServerMessage, { type: T }>> {
+  async next<T extends ServerMessage['type']>(
+    type: T,
+    timeoutMs = 4_000,
+  ): Promise<Extract<ServerMessage, { type: T }>> {
     const deadline = Date.now() + timeoutMs;
     for (;;) {
       const found = this.last(type);
@@ -161,7 +164,9 @@ describe('over a real socket', () => {
 describe('socket limits', () => {
   it('refuses a socket from a site it was not told about', async () => {
     server.registry.create({ code: 'ORIGIN', seed: 'origin' });
-    const socket = new WebSocket(`ws://127.0.0.1:${server.port}/table/ORIGIN`, { origin: 'http://somewhere-else.example' });
+    const socket = new WebSocket(`ws://127.0.0.1:${server.port}/table/ORIGIN`, {
+      origin: 'http://somewhere-else.example',
+    });
     const outcome = await new Promise<string>((resolve) => {
       socket.once('open', () => resolve('open'));
       socket.once('unexpected-response', () => resolve('refused'));

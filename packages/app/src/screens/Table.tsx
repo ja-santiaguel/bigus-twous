@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { cardId, PLACEMENT_POINTS, type Card, type Combo, type GameEvent, type TurnConstraint } from '@big-two/engine';
 import { useGameStore, SEAT_IDS } from '../store/gameStore.js';
@@ -10,13 +10,12 @@ import { OpponentSeat } from '../components/board/OpponentSeat.js';
 import { PlaceBadge } from '../components/board/PlaceBadge.js';
 import { TableCentre } from '../components/board/TableCentre.js';
 import { Hand } from '../components/hand/Hand.js';
-import { CardFace } from '../components/card/PixelCard.js';
 import { EventLog } from '../components/EventLog.js';
 import { SortControl } from '../components/hand/SortControl.js';
 import { PileCeremony } from '../components/board/PileCeremony.js';
 import { applyOrder } from '../lib/handOrder.js';
 import { buildScene } from '../lib/cardScene.js';
-import { DRAG_Z, HOVER_Z, transformFor, type SceneMetrics } from '../lib/zoneGeometry.js';
+import { DRAG_Z, HOVER_Z, type SceneMetrics } from '../lib/zoneGeometry.js';
 import { useZoneRects } from '../lib/useZoneRects.js';
 import { CardLayer, type CardVisual } from '../components/table/CardLayer.js';
 import { TurnDot } from '../components/board/TurnDot.js';
@@ -105,14 +104,15 @@ export function Table() {
     return seat.ready ? 'Ready' : 'Waiting';
   };
   const seatNames = useSeatNames();
-  const labelFor = (id: string | null) =>
-    id ? personName(SEAT_IDS.indexOf(id), humanSeat, seatNames) : 'Nobody';
+  const labelFor = (id: string | null) => (id ? personName(SEAT_IDS.indexOf(id), humanSeat, seatNames) : 'Nobody');
   const bomb = useBombMoment(playerView?.history ?? NO_HISTORY, HUMAN_ID, labelFor);
   // A pass changes nothing in the middle of the table, so the announcement of
   // plays there never mentioned it. Said separately, for screen readers.
   const lastEvent = (playerView?.history ?? NO_HISTORY).at(-1);
   const passAnnouncement =
-    lastEvent?.type === 'PLAYER_PASSED' && lastEvent.playerId !== HUMAN_ID ? `${labelFor(lastEvent.playerId)} passed.` : '';
+    lastEvent?.type === 'PLAYER_PASSED' && lastEvent.playerId !== HUMAN_ID
+      ? `${labelFor(lastEvent.playerId)} passed.`
+      : '';
   // Derived before any hook reads it, so the hook order never depends on
   // whether a round happens to exist yet.
   const view = playerView ? buildTableView(playerView) : null;
@@ -328,32 +328,34 @@ export function Table() {
    * naming cards you cannot see the faces of anyway. Open the trick and every
    * combo gets its name back, which is what opening it is for.
    */
-  const labels = view.trickPlays.map((play, group) => {
-    const inGroup = entities.filter((e) => e.placement.zone === 'trick' && e.placement.group === group);
-    const first = inGroup[0]?.placement;
-    const size = inGroup.length;
-    /*
-     * The exact middle of the combo, which for an even number of cards falls
-     * *between* two of them. This used to pick the nearest real card, and
-     * `Math.floor((n - 1) / 2)` on a pair is index 0 — so a pair's caption sat
-     * under its left-hand card rather than under the pair. A fractional slot
-     * resolves through the same geometry as a real one and lands dead centre
-     * for any size.
-     */
-    const middle = first
-      ? {
-          ...first,
-          slot: (size - 1) / 2,
-          ...(first.trickIndex !== undefined ? { trickIndex: first.trickIndex + (size - 1) / 2 } : {}),
-        }
-      : undefined;
-    return {
-      id: `trick-${group}`,
-      text: labelFor(play.playerId),
-      placement: middle ?? { zone: 'trick' as const, slot: 0, count: 1, faceUp: true },
-      standing: group === view.trickPlays.length - 1,
-    };
-  }).filter((label) => trickOpen || label.standing);
+  const labels = view.trickPlays
+    .map((play, group) => {
+      const inGroup = entities.filter((e) => e.placement.zone === 'trick' && e.placement.group === group);
+      const first = inGroup[0]?.placement;
+      const size = inGroup.length;
+      /*
+       * The exact middle of the combo, which for an even number of cards falls
+       * *between* two of them. This used to pick the nearest real card, and
+       * `Math.floor((n - 1) / 2)` on a pair is index 0 — so a pair's caption sat
+       * under its left-hand card rather than under the pair. A fractional slot
+       * resolves through the same geometry as a real one and lands dead centre
+       * for any size.
+       */
+      const middle = first
+        ? {
+            ...first,
+            slot: (size - 1) / 2,
+            ...(first.trickIndex !== undefined ? { trickIndex: first.trickIndex + (size - 1) / 2 } : {}),
+          }
+        : undefined;
+      return {
+        id: `trick-${group}`,
+        text: labelFor(play.playerId),
+        placement: middle ?? { zone: 'trick' as const, slot: 0, count: 1, faceUp: true },
+        standing: group === view.trickPlays.length - 1,
+      };
+    })
+    .filter((label) => trickOpen || label.standing);
 
   /**
    * The one line of feedback above the fan, and the colour it carries.
@@ -494,7 +496,6 @@ export function Table() {
             </div>
           </div>
 
-
           {/* The fan is an anchor and a sweep surface. Its cards belong to the
               card layer, which is what lets one of them travel to the tray or
               the table as a single object. */}
@@ -580,10 +581,6 @@ export function Table() {
             onClick={(event) => {
               if (event.target === event.currentTarget) setConfirmLeave(false);
             }}
-            // Escape backs out of a dialog, as it does everywhere else.
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') setConfirmLeave(false);
-            }}
           >
             <div
               className="overlay__box overlay__box--confirm"
@@ -630,82 +627,86 @@ export function Table() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ ...SETTLE, delay: 0.12 }}
             >
-            <h2>
-              {match.winner
-                ? match.winner === HUMAN_ID
-                  ? 'You win the match'
-                  : `${labelFor(match.winner)} wins the match`
-                : view.winner === HUMAN_ID
-                  ? 'You win the round'
-                  : `${labelFor(view.winner)} wins the round`}
-            </h2>
-            {/* Standings are ordered by match points, not by seat — the whole
+              <h2>
+                {match.winner
+                  ? match.winner === HUMAN_ID
+                    ? 'You win the match'
+                    : `${labelFor(match.winner)} wins the match`
+                  : view.winner === HUMAN_ID
+                    ? 'You win the round'
+                    : `${labelFor(view.winner)} wins the round`}
+              </h2>
+              {/* Standings are ordered by match points, not by seat — the whole
                 point of a points table is to answer "who is winning" at a
                 glance, and a fixed seat order buries that. */}
-            <ul className="overlay__scores">
-              {standings(SEAT_IDS, points, self.finishOrder).map((row) => (
-                <li key={row.id} className={row.id === HUMAN_ID ? 'is-you' : ''}>
-                  <span className="overlay__place">{PLACE_LABELS[row.place] ?? '—'}</span>
-                  <span>
-                    {personName(SEAT_IDS.indexOf(row.id), humanSeat, seatNames)}
-                    {online && readiness(row.id) && (
-                      <span className={`overlay__ready ${readiness(row.id) === 'Ready' ? 'is-ready' : ''}`}>
-                        {` · ${readiness(row.id)}`}
-                      </span>
-                    )}
-                  </span>
-                  <span className="overlay__gain">+{row.gained}</span>
-                  <strong>{row.total}</strong>
-                </li>
-              ))}
-            </ul>
-            {/* Where the match stands, or how it was decided. */}
-            <p className="overlay__match">
-              {match.winner
-                ? `${matchSummary(match.rule)} Play again for a new match.`
-                : match.rule.kind === 'rounds'
-                  ? `Round ${roundNumber} of ${match.rule.count}. ${matchSummary(match.rule)}`
-                  : matchSummary(match.rule)}
-            </p>
-            {!match.winner && (
-              <p className="overlay__note">
-                {view.winner === HUMAN_ID
-                  ? 'You pick your pile first and lead the next round.'
-                  : `${labelFor(view.winner)} picks first and leads the next round.`}
+              <ul className="overlay__scores">
+                {standings(SEAT_IDS, points, self.finishOrder).map((row) => (
+                  <li key={row.id} className={row.id === HUMAN_ID ? 'is-you' : ''}>
+                    <span className="overlay__place">{PLACE_LABELS[row.place] ?? '—'}</span>
+                    <span>
+                      {personName(SEAT_IDS.indexOf(row.id), humanSeat, seatNames)}
+                      {online && readiness(row.id) && (
+                        <span className={`overlay__ready ${readiness(row.id) === 'Ready' ? 'is-ready' : ''}`}>
+                          {` · ${readiness(row.id)}`}
+                        </span>
+                      )}
+                    </span>
+                    <span className="overlay__gain">+{row.gained}</span>
+                    <strong>{row.total}</strong>
+                  </li>
+                ))}
+              </ul>
+              {/* Where the match stands, or how it was decided. */}
+              <p className="overlay__match">
+                {match.winner
+                  ? `${matchSummary(match.rule)} Play again for a new match.`
+                  : match.rule.kind === 'rounds'
+                    ? `Round ${roundNumber} of ${match.rule.count}. ${matchSummary(match.rule)}`
+                    : matchSummary(match.rule)}
               </p>
-            )}
-            {online && hosting === 'browser' && fairness && fairness.round === roundNumber && fairness.status !== 'unchecked' && (
-              <p className={`overlay__fair is-${fairness.status}`} role="status">
-                {fairness.status === 'verified'
-                  ? 'Deal and every move checked.'
-                  : fairness.status === 'checking'
-                    ? 'Checking the deal and every move…'
-                    : `This round failed its check: ${fairness.status === 'failed' ? fairness.reason : ''}.`}
-              </p>
-            )}
-            {online && nextRoundIn !== null && (
-              <p className="overlay__countdown" aria-live="polite">
-                {iAmReady ? 'You are ready. ' : ''}
-                {match.winner ? 'Next match' : 'Next round'} deals in {nextRoundIn}s
-              </p>
-            )}
-            <div className="overlay__actions">
-              {/* The label is always the action. Once you are ready the button
+              {!match.winner && (
+                <p className="overlay__note">
+                  {view.winner === HUMAN_ID
+                    ? 'You pick your pile first and lead the next round.'
+                    : `${labelFor(view.winner)} picks first and leads the next round.`}
+                </p>
+              )}
+              {online &&
+                hosting === 'browser' &&
+                fairness &&
+                fairness.round === roundNumber &&
+                fairness.status !== 'unchecked' && (
+                  <p className={`overlay__fair is-${fairness.status}`} role="status">
+                    {fairness.status === 'verified'
+                      ? 'Deal and every move checked.'
+                      : fairness.status === 'checking'
+                        ? 'Checking the deal and every move…'
+                        : `This round failed its check: ${fairness.status === 'failed' ? fairness.reason : ''}.`}
+                  </p>
+                )}
+              {online && nextRoundIn !== null && (
+                <p className="overlay__countdown" aria-live="polite">
+                  {iAmReady ? 'You are ready. ' : ''}
+                  {match.winner ? 'Next match' : 'Next round'} deals in {nextRoundIn}s
+                </p>
+              )}
+              <div className="overlay__actions">
+                {/* The label is always the action. Once you are ready the button
                   offers the way back, and the line above says you are ready.
                   Both labels share one cell, so swapping them moves nothing. */}
-              <button className={iAmReady ? 'btn' : 'btn btn--primary'} onClick={iAmReady ? unready : startNextRound}>
-                <span className="btn__labels">
-                  <span className={iAmReady ? 'is-hidden' : ''} aria-hidden={iAmReady}>
-                    {match.winner ? 'Play again' : 'Play another round'}
+                <button className={iAmReady ? 'btn' : 'btn btn--primary'} onClick={iAmReady ? unready : startNextRound}>
+                  <span className="btn__labels">
+                    <span className={iAmReady ? 'is-hidden' : ''} aria-hidden={iAmReady}>
+                      {match.winner ? 'Play again' : 'Play another round'}
+                    </span>
+                    <span className={iAmReady ? '' : 'is-hidden'} aria-hidden={!iAmReady}>
+                      Cancel ready
+                    </span>
                   </span>
-                  <span className={iAmReady ? '' : 'is-hidden'} aria-hidden={!iAmReady}>
-                    Cancel ready
-                  </span>
-                </span>
-              </button>
-              <button className="btn btn--quiet" onClick={() => setConfirmLeave(true)}>
-                Leave table
-              </button>
+                </button>
+                <button className="btn btn--quiet" onClick={() => setConfirmLeave(true)}>
+                  Leave table
+                </button>
               </div>
             </m.div>
           </m.div>

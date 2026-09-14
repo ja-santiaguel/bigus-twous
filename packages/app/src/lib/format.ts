@@ -102,11 +102,7 @@ export function seatName(seat: number): string {
  * describing from a particular point of view, and dropping it because a person
  * has a name would lose the only thing that orients them.
  */
-export function personName(
-  seat: number,
-  viewerSeat: number,
-  names: ReadonlyMap<number, string>,
-): string {
+export function personName(seat: number, viewerSeat: number, names: ReadonlyMap<number, string>): string {
   const given = names.get(seat)?.trim();
   const base = given && given.length > 0 ? given : seatName(seat);
   return seat === viewerSeat ? `${base} (you)` : base;

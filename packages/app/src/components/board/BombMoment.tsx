@@ -103,7 +103,12 @@ export function readMoment(
   const verb = (plain: string, third: string) => (you ? plain : third);
 
   if (event.combo.type === 'FOUR_OF_A_KIND' && event.combo.cards[0]?.rank === '2') {
-    return { key: index, tone: 'ceiling', title: 'Four 2s!', detail: `${who} ${verb('play', 'plays')} the hand nothing beats` };
+    return {
+      key: index,
+      tone: 'ceiling',
+      title: 'Four 2s!',
+      detail: `${who} ${verb('play', 'plays')} the hand nothing beats`,
+    };
   }
   const two = beaten ? twoName(beaten) : null;
   if (two) {

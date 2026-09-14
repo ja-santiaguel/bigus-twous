@@ -207,8 +207,7 @@ export interface WireClock {
 
 /** The pile ceremony, as a seat sees it. Blind: claims carry no card data. */
 export type WireCeremony =
-  | { kind: 'idle' }
-  | { kind: 'picking'; claims: PileClaim[]; remaining: number[]; picker: PlayerId | null };
+  { kind: 'idle' } | { kind: 'picking'; claims: PileClaim[]; remaining: number[]; picker: PlayerId | null };
 
 /**
  * What this seat may do, sent only to the seat on turn.

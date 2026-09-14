@@ -229,8 +229,7 @@ describe('transformFor', () => {
       for (let slot = 0; slot < count; slot++) {
         const t = transformFor({ zone: 'hand', seat: 1, slot, count, faceUp: false }, m);
         const radians = (Math.abs(t.rotate) * Math.PI) / 180;
-        const half =
-          (m.cardHeight * t.scale * Math.cos(radians) + m.cardWidth * t.scale * Math.sin(radians)) / 2;
+        const half = (m.cardHeight * t.scale * Math.cos(radians) + m.cardWidth * t.scale * Math.sin(radians)) / 2;
         top = Math.min(top, t.y - half);
         bottom = Math.max(bottom, t.y + half);
       }

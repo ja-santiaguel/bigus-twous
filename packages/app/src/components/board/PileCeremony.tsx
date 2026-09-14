@@ -98,11 +98,7 @@ export function PileCeremony({
                 className="cpile__hit"
                 disabled={!pickable}
                 onClick={() => onChoose(pileIndex)}
-                aria-label={
-                  owner
-                    ? `Pile ${pileIndex + 1}, taken by ${who(owner)}`
-                    : `Take pile ${pileIndex + 1}`
-                }
+                aria-label={owner ? `Pile ${pileIndex + 1}, taken by ${who(owner)}` : `Take pile ${pileIndex + 1}`}
               >
                 <span className="cpile__stack">
                   {/* Thirteen backs, fanned just enough to read as a pile of cards
@@ -130,9 +126,7 @@ export function PileCeremony({
                   ))}
                 </span>
               </button>
-              <span className="cpile__label">
-                {owner ? who(owner) : `Pile ${pileIndex + 1}`}
-              </span>
+              <span className="cpile__label">{owner ? who(owner) : `Pile ${pileIndex + 1}`}</span>
             </m.div>
           );
         })}

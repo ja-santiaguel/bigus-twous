@@ -79,7 +79,14 @@ export function useTableDrag({
   actions: TableDragActions;
   /** Viewport centre of a card, by id — used to find the drop index. */
   cardCentre: (id: string) => { x: number; y: number } | null;
-}): [TableDragState, { onPointerDown(e: React.PointerEvent, id: string): void; onPointerMove(e: React.PointerEvent): void; onPointerUp(e: React.PointerEvent, id: string): void }] {
+}): [
+  TableDragState,
+  {
+    onPointerDown(e: React.PointerEvent, id: string): void;
+    onPointerMove(e: React.PointerEvent): void;
+    onPointerUp(e: React.PointerEvent, id: string): void;
+  },
+] {
   const [state, setState] = useState<TableDragState>(IDLE);
 
   /**

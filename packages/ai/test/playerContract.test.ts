@@ -89,9 +89,7 @@ describe.each(DIFFICULTIES)('Player contract — %s', (difficulty: Difficulty) =
     expect(move.kind).toBe('PLAY');
     const chosen = (move as { combo: Combo }).combo;
     expect(legalMoves.map(comboKey)).toContain(comboKey(chosen));
-    expect(
-      chosen.cards.some((c) => c.rank === state.openingCard.rank && c.suit === state.openingCard.suit),
-    ).toBe(true);
+    expect(chosen.cards.some((c) => c.rank === state.openingCard.rank && c.suit === state.openingCard.suit)).toBe(true);
   });
 
   it('plays a forced two-bust bomb rather than passing when the engine compels it', async () => {

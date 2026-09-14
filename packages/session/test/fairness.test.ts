@@ -20,7 +20,8 @@ import {
  */
 
 const IDS: PlayerId[] = ['seat-1', 'seat-2', 'seat-3', 'seat-4'];
-const seats = (): SeatConfig[] => IDS.map((id, seat) => ({ id, seat, occupant: { kind: 'cpu', difficulty: 'medium' } }));
+const seats = (): SeatConfig[] =>
+  IDS.map((id, seat) => ({ id, seat, occupant: { kind: 'cpu', difficulty: 'medium' } }));
 
 async function honestRound(): Promise<{ audit: RoundAudit; witness: RoundWitness }> {
   const secret = randomSecret();
@@ -63,7 +64,9 @@ describe('checking a round', () => {
   it('passes a round played honestly, even after a trip through JSON', async () => {
     const { audit, witness } = await honestRound();
     expect(await verifyRound(audit, witness)).toEqual({ ok: true });
-    expect(await verifyRound(JSON.parse(JSON.stringify(audit)), JSON.parse(JSON.stringify(witness)))).toEqual({ ok: true });
+    expect(await verifyRound(JSON.parse(JSON.stringify(audit)), JSON.parse(JSON.stringify(witness)))).toEqual({
+      ok: true,
+    });
   });
 
   it('deals from the shares, not from the table seed', async () => {
@@ -79,7 +82,10 @@ describe('checking a round', () => {
   it('fails a deal that left your share out', async () => {
     const { audit, witness } = await honestRound();
     const { ['seat-1']: _dropped, ...others } = audit.shares;
-    expect(await verifyRound({ ...audit, shares: others }, witness)).toMatchObject({ ok: false, reason: 'your part of the shuffle was left out' });
+    expect(await verifyRound({ ...audit, shares: others }, witness)).toMatchObject({
+      ok: false,
+      reason: 'your part of the shuffle was left out',
+    });
   });
 
   it('fails when the pile you picked is not the pile you were given', async () => {

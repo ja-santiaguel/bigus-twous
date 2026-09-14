@@ -36,7 +36,10 @@ export function makeSeed(random: () => number = Math.random): string {
  * space still deals what it was copied from.
  */
 export function normalizeSeed(input: string): string {
-  return input.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 32);
+  return input
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, '')
+    .slice(0, 32);
 }
 
 export function isSeed(value: unknown): value is string {

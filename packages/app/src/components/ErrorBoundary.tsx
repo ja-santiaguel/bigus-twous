@@ -30,8 +30,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { failed: 
         <div className="panel" role="alert">
           <h2>Something went wrong</h2>
           <p className="field__hint field__hint--lead">
-            The game hit an error it could not recover from. Reloading brings you back — a game played alone is
-            saved, and a shared table holds your seat.
+            The game hit an error it could not recover from. Reloading brings you back — a game played alone is saved,
+            and a shared table holds your seat.
           </p>
           <button className="btn btn--primary btn--wide" onClick={() => window.location.reload()}>
             Reload

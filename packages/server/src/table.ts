@@ -238,9 +238,11 @@ export class Table {
     // and keeps existing after they leave, so a seat's *default* state is
     // playable rather than empty — which is also exactly what a dropout needs.
     this.session = createGameSession({
-      seats: this.occupancy.map(
-        (o): SeatConfig => ({ id: o.id, seat: o.seat, occupant: { kind: 'cpu', difficulty: o.difficulty } }),
-      ),
+      seats: this.occupancy.map((o): SeatConfig => ({
+        id: o.id,
+        seat: o.seat,
+        occupant: { kind: 'cpu', difficulty: o.difficulty },
+      })),
       seed: options.seed,
       // Paced here rather than left to each client. A computer that answers
       // the instant it is asked makes a trick go round before anybody saw it
@@ -306,14 +308,16 @@ export class Table {
 
     switch (message.type) {
       case 'CLAIM_PILE': {
-        if (seat.standIn) return this.reject(connection, envelope.id, 'A computer is playing your seat. Take it back first.');
+        if (seat.standIn)
+          return this.reject(connection, envelope.id, 'A computer is playing your seat. Take it back first.');
         const result = this.session.claimPile(seat.id, message.pileIndex);
         if (!result.ok) this.reject(connection, envelope.id, result.reason);
         else this.clearTurnTimer();
         return;
       }
       case 'PLAY': {
-        if (seat.standIn) return this.reject(connection, envelope.id, 'A computer is playing your seat. Take it back first.');
+        if (seat.standIn)
+          return this.reject(connection, envelope.id, 'A computer is playing your seat. Take it back first.');
         const result =
           message.move.kind === 'PASS'
             ? this.session.submitMove(seat.id, { kind: 'PASS' })
@@ -409,7 +413,8 @@ export class Table {
         // The host's call, unlike the seed: the length of the evening is a
         // decision somebody has to own, and a setting anyone can flip is one
         // two people end up fighting over in the lobby.
-        if (this.hostSeat() !== seat) return this.reject(connection, envelope.id, 'Only the host can change the match length.');
+        if (this.hostSeat() !== seat)
+          return this.reject(connection, envelope.id, 'Only the host can change the match length.');
         const result = this.session.setMatch(message.rule);
         if (!result.ok) return this.reject(connection, envelope.id, result.reason);
         this.clearReadiness();

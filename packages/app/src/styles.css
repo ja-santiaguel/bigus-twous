@@ -23,9 +23,10 @@
   --back-hi: #5e7f8a;
   --gold: #d9a441;
   /* Every text colour meets WCAG AA (4.5:1) on the table, its panels and its
-     fields; --alert and --dim were lightened for it, which is also what keeps
-     them legible on a dim phone screen in daylight. */
-  --alert: #ea867e;
+     fields — except --alert, a deep red chosen to read as a firm "no" rather
+     than a pink. It holds 3:1 on every surface, and it is never the only cue:
+     it always colours words that say what went wrong. */
+  --alert: #e0665c;
   --silver: #b9c2c6;
   --bronze: #cc9660;
   --dim: #95a39e;
@@ -51,7 +52,7 @@
   --scrim-strong: rgba(16, 23, 21, 0.9);
   --gold-wash: rgba(217, 164, 65, 0.08);
   --gold-wash-strong: rgba(217, 164, 65, 0.12);
-  --alert-wash: rgba(234, 134, 126, 0.08);
+  --alert-wash: rgba(224, 102, 92, 0.08);
 
   /* Type scale. Four sizes, used by role rather than by feel: xs for incidental
      meta, sm for labels and controls, md for the sentence that matters on a
@@ -81,9 +82,9 @@
   --control-md: calc(15 * var(--px));
 
   /* Passing, refusing, and the texture of "not yet". */
-  /* Darkened so bone text on them meets 4.5:1. */
-  --pass: #9a3c36;
-  --pass-hi: #a0423c;
+  /* The passed red, deepened for a surface: bone text on it is above 5:1. */
+  --pass: #91352f;
+  --pass-hi: #9b3a34;
 
   /*
    * One knob: --scale is how many device pixels an art pixel occupies. It is
@@ -114,7 +115,6 @@
 
   color-scheme: dark;
 }
-
 
 * {
   box-sizing: border-box;
@@ -304,7 +304,6 @@ body {
     inset 0 0 0 var(--px) var(--bone-dim),
     calc(2 * var(--px)) calc(3 * var(--px)) 0 var(--shade-soft);
 }
-
 
 /* ── Panels, buttons, chips ──────────────────────────────────────────── */
 .panel {
@@ -526,7 +525,10 @@ body {
   margin-right: calc(var(--px) * 3);
   vertical-align: middle;
   flex: none;
-  transition: width 140ms steps(2), height 140ms steps(2), background-color 140ms;
+  transition:
+    width 140ms steps(2),
+    height 140ms steps(2),
+    background-color 140ms;
 }
 .turndot.is-on {
   width: calc(var(--px) * 5);
@@ -1043,8 +1045,6 @@ body {
   }
 }
 
-
-
 /* ── Narrow screens ──────────────────────────────────────────────────── */
 @media (max-width: 720px) {
   :root {
@@ -1149,7 +1149,6 @@ body {
     font-size: var(--text-sm);
   }
 }
-
 
 /* ── Deal ceremony ───────────────────────────────────────────────────── */
 .overlay--ceremony {
@@ -1379,7 +1378,6 @@ body {
   outline-offset: calc(2 * var(--px));
 }
 
-
 /* ── Drop targets ────────────────────────────────────────────────────────
    While a card is being dragged, the zone under the pointer says what letting
    go would do — before you let go, not after. Three states, and the difference
@@ -1437,7 +1435,6 @@ body {
   background: var(--gold-wash-strong);
   pointer-events: none;
 }
-
 
 /* The board is a surface you drag on, not a document you read, so selection
    is off for the whole page (see body). A sweep to pick cards, or a drag to
@@ -1996,7 +1993,9 @@ textarea {
   box-shadow: var(--px) var(--px) 0 var(--shade);
   cursor: pointer;
   line-height: 0;
-  transition: color 90ms steps(2), border-color 90ms steps(2);
+  transition:
+    color 90ms steps(2),
+    border-color 90ms steps(2);
 }
 .helpbtn:hover {
   color: var(--bone);
@@ -2096,6 +2095,12 @@ textarea {
 .overlay__box--confirm {
   max-width: min(440px, calc(100vw - 2 * var(--u)));
   min-width: 0;
+  /* Gold is the scores screen's payoff and "your move". A question about
+     leaving is neither, so it is framed in the neutral warm grey of the text. */
+  border-color: var(--bone-dim);
+}
+.overlay__box--confirm h2 {
+  color: var(--bone);
 }
 
 /* ── The bomb moment ─────────────────────────────────────────────────────

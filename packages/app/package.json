@@ -2,7 +2,7 @@
   "name": "@big-two/app",
   "version": "0.0.0",
   "private": true,
-  "description": "React + Vite UI. Presentational only \u2014 dispatches intents into the engine's orchestrator and renders the resulting state and event log.",
+  "description": "React + Vite UI. Presentational only — dispatches intents into the engine's orchestrator and renders the resulting state and event log.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,6 +17,7 @@
     "@big-two/protocol": "*",
     "@big-two/server": "*",
     "@big-two/session": "*",
+    "@fontsource/silkscreen": "^5.3.0",
     "framer-motion": "^13.2.0",
     "peerjs": "^1.5.5",
     "react": "^18.3.1",

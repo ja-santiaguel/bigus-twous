@@ -49,9 +49,7 @@ const PLACES = ['1st', '2nd', '3rd', '4th'];
 function describe(event: GameEvent, who: (id: string) => string): string | null {
   switch (event.type) {
     case 'PILE_CLAIMED':
-      return event.pickIndex === 0
-        ? `${who(event.playerId)} picked first`
-        : `${who(event.playerId)} picked a pile`;
+      return event.pickIndex === 0 ? `${who(event.playerId)} picked first` : `${who(event.playerId)} picked a pile`;
     case 'HAND_DEALT':
       // Every seat gets thirteen, every round. The pile claims above already
       // say who ended up with what, so these four lines are pure noise.

@@ -18,7 +18,9 @@ function seats(humans: PlayerId[] = []): SeatConfig[] {
   return SEAT_IDS.map((id, seat) => ({
     id,
     seat,
-    occupant: humans.includes(id) ? { kind: 'human' as const } : { kind: 'cpu' as const, difficulty: 'medium' as const },
+    occupant: humans.includes(id)
+      ? { kind: 'human' as const }
+      : { kind: 'cpu' as const, difficulty: 'medium' as const },
   }));
 }
 
@@ -549,7 +551,9 @@ describe('matches', () => {
 
   it('ends a points match when someone reaches the target, highest total first', () => {
     const points = { 'seat-1': 31, 'seat-2': 33, 'seat-3': 10, 'seat-4': 4 };
-    expect(decideMatch({ kind: 'points', target: 30 }, { points, roundsWon: none, roundNumber: 8 }, ids)).toBe('seat-2');
+    expect(decideMatch({ kind: 'points', target: 30 }, { points, roundsWon: none, roundNumber: 8 }, ids)).toBe(
+      'seat-2',
+    );
     expect(decideMatch({ kind: 'points', target: 50 }, { points, roundsWon: none, roundNumber: 8 }, ids)).toBeNull();
   });
 
@@ -562,8 +566,12 @@ describe('matches', () => {
   it('breaks a points tie on rounds won, and plays on when that is level too', () => {
     const points = { 'seat-1': 30, 'seat-2': 30, 'seat-3': 1, 'seat-4': 0 };
     const rule = { kind: 'points' as const, target: 30 };
-    expect(decideMatch(rule, { points, roundsWon: { ...none, 'seat-2': 3, 'seat-1': 2 }, roundNumber: 8 }, ids)).toBe('seat-2');
-    expect(decideMatch(rule, { points, roundsWon: { ...none, 'seat-2': 2, 'seat-1': 2 }, roundNumber: 8 }, ids)).toBeNull();
+    expect(decideMatch(rule, { points, roundsWon: { ...none, 'seat-2': 3, 'seat-1': 2 }, roundNumber: 8 }, ids)).toBe(
+      'seat-2',
+    );
+    expect(
+      decideMatch(rule, { points, roundsWon: { ...none, 'seat-2': 2, 'seat-1': 2 }, roundNumber: 8 }, ids),
+    ).toBeNull();
   });
 
   it('accepts only the lengths on the menu, and only before the deal', () => {

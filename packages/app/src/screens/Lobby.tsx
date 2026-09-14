@@ -50,21 +50,19 @@ export function Lobby() {
             seat={seat.seat}
             role={mine ? 'you' : 'cpu'}
             detail={
-              mine ? (
-                playerName.trim() && <span className="seats__player">{playerName.trim()}</span>
-              ) : (
-                DIFFICULTIES.map((d) => (
-                  <button
-                    key={d}
-                    className="chip"
-                    aria-pressed={seat.difficulty === d}
-                    aria-label={`${seatName(seat.seat)} difficulty: ${DIFFICULTY_LABELS[d]}`}
-                    onClick={() => setSeatDifficulty(seat.seat, d)}
-                  >
-                    {DIFFICULTY_LABELS[d]}
-                  </button>
-                ))
-              )
+              mine
+                ? playerName.trim() && <span className="seats__player">{playerName.trim()}</span>
+                : DIFFICULTIES.map((d) => (
+                    <button
+                      key={d}
+                      className="chip"
+                      aria-pressed={seat.difficulty === d}
+                      aria-label={`${seatName(seat.seat)} difficulty: ${DIFFICULTY_LABELS[d]}`}
+                      onClick={() => setSeatDifficulty(seat.seat, d)}
+                    >
+                      {DIFFICULTY_LABELS[d]}
+                    </button>
+                  ))
             }
           />
         );

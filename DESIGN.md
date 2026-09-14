@@ -47,14 +47,19 @@ Tokens live in `packages/app/src/styles.css` (`:root`). Card sizes live in
 | `--gold` | `#d9a441` | **Your move**, the primary action, the standing combo, selection. |
 | `--gold-hi` | `#e6b457` | Primary button hover. |
 | `--on-gold` | `#241905` | Text on a gold surface. |
-| `--alert` | `#ea867e` | Every "no": a selection that cannot play, a refused play, a seat that has **passed** (yours included), urgent time. |
-| `--pass` / `--pass-hi` | `#9a3c36` / `#a0423c` | The Pass button — the passed colour, deep enough for bone text. |
+| `--alert` | `#e0665c` | Every "no": a selection that cannot play, a refused play, a seat that has **passed** (yours included), urgent time. |
+| `--pass` / `--pass-hi` | `#91352f` / `#9b3a34` | The Pass button — the passed colour, deep enough for bone text. |
 | `--silver` / `--bronze` | `#b9c2c6` / `#cc9660` | Second and third place. |
 
 **Contrast is a rule, not a check at the end.** Every text colour meets WCAG AA
 — 4.5:1 — on `--table`, `--table-lo` and `--field`; the outline of anything
 you type into meets 3:1. A new colour, or an existing one on a new surface, is
 measured before it ships.
+
+One deliberate exception: `--alert` is a deep red, because a pale one read as
+pink rather than as "no". It holds **3:1** on every surface, and it only ever
+colours words that already say what is wrong ("passed", "can't play that"), so
+the colour is never the only cue.
 | `--suit-red` | `#b3322b` | Hearts and diamonds. |
 | `--back` / `--back-hi` | | Card backs. |
 
@@ -253,6 +258,9 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   Alone it says the match ends; at a shared table, that a computer plays the
   seat and it is held for 2 minutes — or, for the host of a browser-hosted
   table, that leaving closes it for everyone. Leaving a lobby does not ask.
+  The box is framed in `--bone-dim` with a `--bone` title, not gold: gold is
+  the scores screen's payoff and "your move", and a question about leaving is
+  neither.
 - **Continue game.** A match played alone is saved after every turn. While a
   save exists, "Continue game" takes the menu's primary slot and "Play on your
   own" steps down to a default button.

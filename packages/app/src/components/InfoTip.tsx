@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 
 /**
  * A small "[?]" beside a label that explains it on the spot.
@@ -16,13 +16,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
  * sits beside a small label without standing taller than it. The brackets are
  * what say it can be pressed; a bare "?" reads as punctuation.
  */
-const GLYPH = [
-  '##..###..##',
-  '#......#..#',
-  '#....##...#',
-  '#.........#',
-  '##...#...##',
-];
+const GLYPH = ['##..###..##', '#......#..#', '#....##...#', '#.........#', '##...#...##'];
 
 /** A short grace before hiding, so the pointer can cross onto the note. */
 const HIDE_AFTER_MS = 120;
@@ -36,18 +30,20 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
   const root = useRef<HTMLSpanElement>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const cancelHide = () => {
+  // Stable, so the listeners below are added once per opening rather than on
+  // every render while the note is open.
+  const cancelHide = useCallback(() => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = null;
-  };
-  const close = () => {
+  }, []);
+  const close = useCallback(() => {
     cancelHide();
     setHovered(false);
     setFocused(false);
     setPinned(false);
-  };
+  }, [cancelHide]);
 
-  useEffect(() => cancelHide, []);
+  useEffect(() => cancelHide, [cancelHide]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -63,7 +59,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('pointerdown', onPointer);
     };
-  }, [open]);
+  }, [open, close]);
 
   return (
     <span

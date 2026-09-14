@@ -89,7 +89,11 @@ export function canForceBust(pile: Combo, candidate: Combo, rules: RuleConfig = 
  * rule. If this returns a non-empty array, the player MUST choose from it
  * (9.5) — they may not pass or play a normal counter instead.
  */
-export function getForcedBustOptions(pile: Combo, available: Combo[], rules: RuleConfig = DEFAULT_RULE_CONFIG): Combo[] {
+export function getForcedBustOptions(
+  pile: Combo,
+  available: Combo[],
+  rules: RuleConfig = DEFAULT_RULE_CONFIG,
+): Combo[] {
   if (!isRankTwoCombo(pile)) return [];
   return available.filter((c) => canForceBust(pile, c, rules));
 }

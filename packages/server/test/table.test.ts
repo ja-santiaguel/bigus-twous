@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardId, type Card } from '@big-two/engine';
+import type { Card } from '@big-two/engine';
 import { randomSecret, verifyRound } from '@big-two/session';
 import { decodeServer, encodeClient, decodeClient, type ClientMessage, type ServerMessage } from '@big-two/protocol';
 import { Table, TableRegistry, type Connection } from '../src/index.js';
@@ -52,7 +52,11 @@ interface Clock {
 }
 
 /** A timer that fires when a test says so, rather than when time passes. */
-function fakeClock(): { clock: Clock; setTimer: (fn: () => void, ms: number) => unknown; clearTimer: (h: unknown) => void } {
+function fakeClock(): {
+  clock: Clock;
+  setTimer: (fn: () => void, ms: number) => unknown;
+  clearTimer: (h: unknown) => void;
+} {
   const timers = new Map<number, () => void>();
   let next = 1;
   return {
@@ -150,7 +154,11 @@ describe('sitting down', () => {
     expect(welcome.token).toBeTruthy();
 
     const sync = a.last('SYNC')!;
-    expect(sync.seats.find((s) => s.id === 'seat-1')).toMatchObject({ name: 'Jas', occupant: 'human', connected: true });
+    expect(sync.seats.find((s) => s.id === 'seat-1')).toMatchObject({
+      name: 'Jas',
+      occupant: 'human',
+      connected: true,
+    });
     // The other three are chairs nobody has sat in, not chairs somebody left.
     expect(sync.seats.filter((s) => s.occupant === 'cpu')).toHaveLength(3);
   });
@@ -339,6 +347,7 @@ describe('the turn clock', () => {
     // Nobody has joined, so every seat is a computer and none of them can
     // possibly be late.
     expect(clock.pending).toBe(0);
+    t.close();
   });
 });
 
@@ -643,10 +652,20 @@ describe('the host', () => {
     const t = table();
     const a = join(t, 'a');
     const b = join(t, 'b');
-    expect(b.last('SYNC')!.seats.filter((s) => s.host).map((s) => s.id)).toEqual(['seat-1']);
+    expect(
+      b
+        .last('SYNC')!
+        .seats.filter((s) => s.host)
+        .map((s) => s.id),
+    ).toEqual(['seat-1']);
 
     t.disconnect(a);
-    expect(b.last('SYNC')!.seats.filter((s) => s.host).map((s) => s.id)).toEqual(['seat-2']);
+    expect(
+      b
+        .last('SYNC')!
+        .seats.filter((s) => s.host)
+        .map((s) => s.id),
+    ).toEqual(['seat-2']);
   });
 
   it('can remove somebody before the deal, freeing the seat and voiding their token', () => {
@@ -685,7 +704,10 @@ describe('the host', () => {
 
     say(t, a, { type: 'KICK', seat: 1 }, 'req-late');
 
-    expect(a.last('REJECTED')).toMatchObject({ id: 'req-late', reason: 'People can only be removed before the first deal.' });
+    expect(a.last('REJECTED')).toMatchObject({
+      id: 'req-late',
+      reason: 'People can only be removed before the first deal.',
+    });
     expect(b.closed).toBeNull();
   });
 });
@@ -847,18 +869,24 @@ describe('match length', () => {
 
     say(t, a, { type: 'SET_MATCH', rule: { kind: 'points', target: 15 } }, 'req-late');
 
-    expect(a.last('REJECTED')).toMatchObject({ id: 'req-late', reason: 'The match length is fixed once the first round is dealt.' });
+    expect(a.last('REJECTED')).toMatchObject({
+      id: 'req-late',
+      reason: 'The match length is fixed once the first round is dealt.',
+    });
   });
 });
 
 describe('computer difficulty', () => {
-  it('is the host\'s to set', () => {
+  it("is the host's to set", () => {
     const t = table();
     const a = join(t, 'a');
     const b = join(t, 'b');
 
     say(t, b, { type: 'SET_DIFFICULTY', seat: 2, difficulty: 'hard' }, 'req-diff-guest');
-    expect(b.last('REJECTED')).toMatchObject({ id: 'req-diff-guest', reason: 'Only the host can change computer difficulty.' });
+    expect(b.last('REJECTED')).toMatchObject({
+      id: 'req-diff-guest',
+      reason: 'Only the host can change computer difficulty.',
+    });
     expect(a.last('SYNC')!.seats[2]).toMatchObject({ difficulty: 'medium' });
 
     say(t, a, { type: 'SET_DIFFICULTY', seat: 2, difficulty: 'hard' });
@@ -867,7 +895,7 @@ describe('computer difficulty', () => {
 });
 
 describe('a table hosted in a browser', () => {
-  it('deals from everyone\'s shuffle and hands out a round that checks out', async () => {
+  it("deals from everyone's shuffle and hands out a round that checks out", async () => {
     const t = table({ fairDeal: true });
     const people = [join(t, 'a'), join(t, 'b')];
     const sealed = new Map<FakeConnection, { commit: string; share: string }>();

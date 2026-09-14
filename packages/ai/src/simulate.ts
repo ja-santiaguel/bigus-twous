@@ -54,9 +54,7 @@ async function main() {
       seatDifficulty.set(id, lineup[(seat + rotation) % lineup.length]!);
     });
 
-    const players = new Map<string, Player>(
-      SEAT_IDS.map((id) => [id, createCpuPlayer(id, seatDifficulty.get(id)!)]),
-    );
+    const players = new Map<string, Player>(SEAT_IDS.map((id) => [id, createCpuPlayer(id, seatDifficulty.get(id)!)]));
 
     const seed = `sim-${i}`;
     const state = createNewRound(SEAT_IDS, createRng(seed), seed, i + 1, previousWinner, roundsWon);

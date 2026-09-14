@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { Difficulty } from '@big-two/ai';
-import { MATCH_POINT_TARGETS, MATCH_ROUND_COUNTS, makeSeed, normalizeSeed, SEED_PATTERN,
-  type RoundAudit, type CeremonyState, type TurnPrompt } from '@big-two/session';
+import {
+  MATCH_POINT_TARGETS,
+  MATCH_ROUND_COUNTS,
+  makeSeed,
+  normalizeSeed,
+  SEED_PATTERN,
+  type RoundAudit,
+  type CeremonyState,
+  type TurnPrompt,
+} from '@big-two/session';
 import {
   decodeClient,
   decodeServer,
@@ -113,7 +121,10 @@ describe('messages that should not', () => {
   it('refuses an empty or oversized play', () => {
     expect(decodeClient(send({ type: 'PLAY', move: { kind: 'PLAY', cards: [] } })).ok).toBe(false);
 
-    const tooMany = Array.from({ length: 14 }, (_, i) => ({ rank: '3', suit: ['SPADE', 'CLUB', 'DIAMOND', 'HEART'][i % 4] }));
+    const tooMany = Array.from({ length: 14 }, (_, i) => ({
+      rank: '3',
+      suit: ['SPADE', 'CLUB', 'DIAMOND', 'HEART'][i % 4],
+    }));
     expect(decodeClient(send({ type: 'PLAY', move: { kind: 'PLAY', cards: tooMany } })).ok).toBe(false);
   });
 

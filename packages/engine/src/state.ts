@@ -172,8 +172,7 @@ export function createNewRound(
   options: NewRoundOptions = {},
 ): GameState {
   const piles = options.piles ?? dealPiles(playerIds.length, rng);
-  const firstPickerId =
-    options.firstPicker ?? previousWinner ?? playerIds[Math.floor(rng() * playerIds.length)]!;
+  const firstPickerId = options.firstPicker ?? previousWinner ?? playerIds[Math.floor(rng() * playerIds.length)]!;
   const { hands, claims } = options.claims
     ? handsFromClaims(playerIds, piles, options.claims)
     : claimPiles(playerIds, piles, firstPickerId, rng);
@@ -191,21 +190,17 @@ export function createNewRound(
 
   // Ceremony first, then hands — the UI animates the log in order.
   const history: GameEvent[] = [
-    ...claims.map(
-      (claim): GameEvent => ({
-        type: 'PILE_CLAIMED',
-        playerId: claim.playerId,
-        pileIndex: claim.pileIndex,
-        pickIndex: claim.pickIndex,
-      }),
-    ),
-    ...players.map(
-      (p): GameEvent => ({
-        type: 'HAND_DEALT',
-        playerId: p.id,
-        cardCount: p.hand.length,
-      }),
-    ),
+    ...claims.map((claim): GameEvent => ({
+      type: 'PILE_CLAIMED',
+      playerId: claim.playerId,
+      pileIndex: claim.pileIndex,
+      pickIndex: claim.pickIndex,
+    })),
+    ...players.map((p): GameEvent => ({
+      type: 'HAND_DEALT',
+      playerId: p.id,
+      cardCount: p.hand.length,
+    })),
   ];
 
   return {
@@ -243,9 +238,7 @@ function seatAfter(
  * not already own the pile, and they have not passed out of this trick.
  */
 function contenders(players: readonly PlayerState[], trick: TrickState): PlayerState[] {
-  return players.filter(
-    (p) => p.hand.length > 0 && p.id !== trick.lastPlayedBy && !trick.passed.includes(p.id),
-  );
+  return players.filter((p) => p.hand.length > 0 && p.id !== trick.lastPlayedBy && !trick.passed.includes(p.id));
 }
 
 /**
@@ -267,9 +260,7 @@ function settle(
     // The trick's winner leads the next one — unless taking it emptied their
     // hand, in which case the lead passes clockwise to whoever still has cards.
     const leaderIndex =
-      players[winnerIndex]!.hand.length > 0
-        ? winnerIndex
-        : seatAfter(players, winnerIndex, (p) => p.hand.length > 0);
+      players[winnerIndex]!.hand.length > 0 ? winnerIndex : seatAfter(players, winnerIndex, (p) => p.hand.length > 0);
     return {
       trick: { pile: null, lastPlayedBy: null, passed: [], passCount: 0 },
       turnIndex: leaderIndex,
@@ -279,11 +270,7 @@ function settle(
 
   return {
     trick,
-    turnIndex: seatAfter(
-      players,
-      actorIndex,
-      (p) => p.hand.length > 0 && !trick.passed.includes(p.id),
-    ),
+    turnIndex: seatAfter(players, actorIndex, (p) => p.hand.length > 0 && !trick.passed.includes(p.id)),
     events: [],
   };
 }
@@ -352,11 +339,7 @@ export function applyPass(state: GameState, playerId: PlayerId): GameState {
   if (actorIndex === -1) throw new Error(`Unknown player id: ${playerId}`);
 
   const passed = [...state.trick.passed, playerId];
-  const settled = settle(
-    state.players,
-    { ...state.trick, passed, passCount: passed.length },
-    actorIndex,
-  );
+  const settled = settle(state.players, { ...state.trick, passed, passCount: passed.length }, actorIndex);
 
   return {
     ...state,
@@ -376,9 +359,5 @@ export function applyPass(state: GameState, playerId: PlayerId): GameState {
  * want to ask the question directly.
  */
 export function nextTurnIndex(state: GameState): number {
-  return seatAfter(
-    state.players,
-    state.turnIndex,
-    (p) => p.hand.length > 0 && !state.trick.passed.includes(p.id),
-  );
+  return seatAfter(state.players, state.turnIndex, (p) => p.hand.length > 0 && !state.trick.passed.includes(p.id));
 }

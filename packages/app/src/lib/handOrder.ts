@@ -1,4 +1,4 @@
-import { RANK_ORDER, SUIT_ORDER, cardId, cardValue, type Card } from '@big-two/engine';
+import { cardId, cardValue, type Card } from '@big-two/engine';
 import { planHand } from '@big-two/ai';
 
 /**
@@ -55,9 +55,7 @@ function sortByGroups(cards: Card[]): Card[] {
   multi.sort((a, b) => b.cards.length - a.cards.length || a.strength - b.strength);
   singles.sort((a, b) => a.strength - b.strength);
 
-  return [...multi, ...singles].flatMap((combo) =>
-    [...combo.cards].sort((a, b) => cardValue(a) - cardValue(b)),
-  );
+  return [...multi, ...singles].flatMap((combo) => [...combo.cards].sort((a, b) => cardValue(a) - cardValue(b)));
 }
 
 /**

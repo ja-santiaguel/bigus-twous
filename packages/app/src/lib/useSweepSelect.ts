@@ -47,12 +47,15 @@ export function useSweepSelect({
   selectedIds: string[];
   /** The new selection: the baseline plus whatever the box covers right now. */
   onSelect: (ids: string[]) => void;
-}): [SweepBox | null, {
-  onPointerDown(e: React.PointerEvent<HTMLElement>): void;
-  onPointerMove(e: React.PointerEvent<HTMLElement>): void;
-  onPointerUp(e: React.PointerEvent<HTMLElement>): void;
-  onPointerCancel(e: React.PointerEvent<HTMLElement>): void;
-}] {
+}): [
+  SweepBox | null,
+  {
+    onPointerDown(e: React.PointerEvent<HTMLElement>): void;
+    onPointerMove(e: React.PointerEvent<HTMLElement>): void;
+    onPointerUp(e: React.PointerEvent<HTMLElement>): void;
+    onPointerCancel(e: React.PointerEvent<HTMLElement>): void;
+  },
+] {
   const [sweep, setSweep] = useState<SweepBox | null>(null);
   /** Read synchronously during a move: a flick can land before a re-render. */
   const live = useRef<SweepBox | null>(null);
@@ -124,8 +127,7 @@ export function useSweepSelect({
         // A sweep dragged dead straight has no height, so the vertical test
         // gets a pixel of slack — otherwise a perfectly horizontal drag
         // selects nothing at all.
-        const overlaps =
-          r.left < box.right && r.right > box.left && r.top < box.bottom + 1 && r.bottom > box.top - 1;
+        const overlaps = r.left < box.right && r.right > box.left && r.top < box.bottom + 1 && r.bottom > box.top - 1;
         const id = element.dataset.id;
         if (overlaps && id && !have.has(id)) {
           have.add(id);

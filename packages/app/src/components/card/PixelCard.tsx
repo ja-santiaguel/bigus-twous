@@ -37,10 +37,7 @@ export function CardFace({ card, dimmed = false }: { card: Card; dimmed?: boolea
           on the table, and what stays visible is the left edge — so a "10"
           whose second glyph falls under the next card reads as a bare "1".
           It gets its own class to tighten up into the strip that shows. */}
-      <span
-        className={`pcard__rank ${card.rank === '10' ? 'is-wide' : ''}`}
-        aria-hidden="true"
-      >
+      <span className={`pcard__rank ${card.rank === '10' ? 'is-wide' : ''}`} aria-hidden="true">
         {card.rank}
       </span>
       <span className="pcard__centre" aria-hidden="true">

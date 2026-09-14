@@ -55,16 +55,36 @@ describe('playTurn', () => {
   it('rejects a pass attempt when passing is not legal', async () => {
     const state = createNewRound(PLAYER_IDS, createRng('seed-1'), 'seed-1', 1, null, {});
     const players = new Map<string, Player>([
-      [state.players[state.turnIndex]!.id, { id: 'x', async getMove() { return { kind: 'PASS' }; } }],
+      [
+        state.players[state.turnIndex]!.id,
+        {
+          id: 'x',
+          async getMove() {
+            return { kind: 'PASS' };
+          },
+        },
+      ],
     ]);
     await expect(playTurn(state, players)).rejects.toThrow(/not legal/);
   });
 
   it('rejects an illegal combo that was not in the legal moves list', async () => {
     const state = createNewRound(PLAYER_IDS, createRng('seed-1'), 'seed-1', 1, null, {});
-    const bogusCombo = { type: 'SINGLE' as const, cards: [{ rank: 'K' as const, suit: 'HEART' as const }], strength: 999 };
+    const bogusCombo = {
+      type: 'SINGLE' as const,
+      cards: [{ rank: 'K' as const, suit: 'HEART' as const }],
+      strength: 999,
+    };
     const players = new Map<string, Player>([
-      [state.players[state.turnIndex]!.id, { id: 'x', async getMove() { return { kind: 'PLAY', combo: bogusCombo }; } }],
+      [
+        state.players[state.turnIndex]!.id,
+        {
+          id: 'x',
+          async getMove() {
+            return { kind: 'PLAY', combo: bogusCombo };
+          },
+        },
+      ],
     ]);
     await expect(playTurn(state, players)).rejects.toThrow(/illegal move/);
   });
@@ -110,14 +130,7 @@ describe('session continuity (9.1, 9.8)', () => {
     const round1Final = await runRoundToCompletion(round1, buildPlayers());
     const winnerId = round1Final.winnerOfRound!;
 
-    const round2 = createNewRound(
-      PLAYER_IDS,
-      createRng('seed-8'),
-      'seed-8',
-      2,
-      winnerId,
-      round1Final.roundsWon,
-    );
+    const round2 = createNewRound(PLAYER_IDS, createRng('seed-8'), 'seed-8', 2, winnerId, round1Final.roundsWon);
 
     expect(round2.players[round2.turnIndex]!.id).toBe(winnerId);
     // In a later round the opening card is the winner's *own* lowest card —

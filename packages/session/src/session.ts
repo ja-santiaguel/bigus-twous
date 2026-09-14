@@ -217,15 +217,11 @@ export function createGameSession(options: SessionOptions): GameSession {
       claims: [...claims],
       dealSeed,
     };
-    state = createNewRound(
-      ids,
-      rng,
-      stream + ':' + roundNumber,
-      roundNumber,
-      previousWinner,
-      record.roundsWon,
-      { piles, claims, ...(state ? { points: state.points } : {}) },
-    );
+    state = createNewRound(ids, rng, stream + ':' + roundNumber, roundNumber, previousWinner, record.roundsWon, {
+      piles,
+      claims,
+      ...(state ? { points: state.points } : {}),
+    });
     ceremony = { kind: 'idle' };
     emit({ type: 'CEREMONY', ceremony });
     emit({ type: 'ROUND_STARTED', roundNumber });
@@ -267,7 +263,11 @@ export function createGameSession(options: SessionOptions): GameSession {
         previousWinner = next.winnerOfRound;
         // Decided before the round's end is announced, so the snapshot that
         // shows the scores already knows whether they finished the match.
-        const matchWinner = decideMatch(match.rule, next, seats.map((s) => s.config.id));
+        const matchWinner = decideMatch(
+          match.rule,
+          next,
+          seats.map((s) => s.config.id),
+        );
         if (matchWinner) match = { ...match, winner: matchWinner };
         emit({
           type: 'ROUND_ENDED',
@@ -515,5 +515,8 @@ function moveKind(before: GameState, after: GameState): 'play' | 'pass' {
 
 /** Order-independent identity for a set of cards. */
 function key(cards: { rank: string; suit: string }[]): string {
-  return cards.map((c) => cardId(c as never)).sort().join('|');
+  return cards
+    .map((c) => cardId(c as never))
+    .sort()
+    .join('|');
 }

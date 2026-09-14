@@ -149,11 +149,11 @@ export function CardLayer({
                 : { 'aria-hidden': true })}
               className={`cardlayer__card ${faceUp ? '' : 'is-down'} ${beaten ? 'is-beaten' : ''} ${
                 v?.marked ? 'is-marked' : ''
-              } ${v?.interactive ? 'is-live' : ''} ${dragging ? 'is-dragging' : ''} ${
-                standing ? 'is-standing' : ''
-              }`}
+              } ${v?.interactive ? 'is-live' : ''} ${dragging ? 'is-dragging' : ''} ${standing ? 'is-standing' : ''}`}
               style={{ zIndex: v?.z ?? to.z }}
-              onPointerDown={v?.interactive ? (e: React.PointerEvent) => handlers?.onPointerDown(e, entity.id) : undefined}
+              onPointerDown={
+                v?.interactive ? (e: React.PointerEvent) => handlers?.onPointerDown(e, entity.id) : undefined
+              }
               onPointerMove={v?.interactive ? handlers?.onPointerMove : undefined}
               onPointerUp={v?.interactive ? (e: React.PointerEvent) => handlers?.onPointerUp(e, entity.id) : undefined}
               // Selection is driven entirely by pointer events, so a card was
@@ -183,11 +183,7 @@ export function CardLayer({
               // reaching the discard pile, or a round ending. Everything else
               // is a move, not an exit.
               exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.14 } }}
-              transition={
-                dragging
-                  ? { x: NONE, y: NONE, rotate: SETTLE, scale: SETTLE }
-                  : transition(reduced, SETTLE)
-              }
+              transition={dragging ? { x: NONE, y: NONE, rotate: SETTLE, scale: SETTLE } : transition(reduced, SETTLE)}
             >
               {faceUp && entity.card ? <CardFace card={entity.card} /> : <CardBack />}
             </m.div>
@@ -197,31 +193,31 @@ export function CardLayer({
 
       <AnimatePresence>
         {labels?.map((label) => {
-        const at = transformFor(label.placement, metrics);
-        return (
-          <m.span
-            key={label.id}
-            className={`cardlayer__label ${label.standing ? 'is-standing' : ''}`}
-            /*
-             * Rounded, because `z-index` takes an integer and silently drops
-             * the whole declaration otherwise. A caption is positioned at the
-             * middle of its combo, and for an even-sized one that middle is a
-             * *fractional* slot — which fed a fractional z straight through to
-             * here. The browser threw the value away, the label fell back to
-             * `auto`, and the read-out plate's explicit z painted over it.
-             */
-            style={{ zIndex: Math.round(at.z) }}
-            initial={{ x: at.x, y: labelY(at, metrics), opacity: 0 }}
-            animate={{ x: at.x, y: labelY(at, metrics), opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={transition(reduced, SETTLE)}
-          >
-            {/* The caption is positioned by its card's centre, so it has to
+          const at = transformFor(label.placement, metrics);
+          return (
+            <m.span
+              key={label.id}
+              className={`cardlayer__label ${label.standing ? 'is-standing' : ''}`}
+              /*
+               * Rounded, because `z-index` takes an integer and silently drops
+               * the whole declaration otherwise. A caption is positioned at the
+               * middle of its combo, and for an even-sized one that middle is a
+               * *fractional* slot — which fed a fractional z straight through to
+               * here. The browser threw the value away, the label fell back to
+               * `auto`, and the read-out plate's explicit z painted over it.
+               */
+              style={{ zIndex: Math.round(at.z) }}
+              initial={{ x: at.x, y: labelY(at, metrics), opacity: 0 }}
+              animate={{ x: at.x, y: labelY(at, metrics), opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={transition(reduced, SETTLE)}
+            >
+              {/* The caption is positioned by its card's centre, so it has to
                 *be* centred on that point. A fixed-width box only centres text
                 that fits inside it; an absolutely centred inner span centres
                 whatever length the seat name happens to be. */}
-            <span className="cardlayer__labeltext">{label.text}</span>
-          </m.span>
+              <span className="cardlayer__labeltext">{label.text}</span>
+            </m.span>
           );
         })}
       </AnimatePresence>

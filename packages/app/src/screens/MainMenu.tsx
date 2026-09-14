@@ -28,8 +28,8 @@ export function MainMenu() {
         <div>
           <h1 className="menu__title">BIG TWO</h1>
           <p className="menu__blurb">
-            Four seats, thirteen cards each. Beat what is on the table or
-            pass. First to empty their hand wins the round.
+            Four seats, thirteen cards each. Beat what is on the table or pass. First to empty their hand wins the
+            round.
           </p>
 
           <div className="menu__actions">

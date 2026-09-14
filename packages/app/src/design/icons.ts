@@ -14,48 +14,16 @@ import { toRuns, type Bitmap } from './pixel.js';
  */
 
 /** Two overlapping sheets — the near-universal "copy". */
-const COPY: Bitmap = [
-  '..#####',
-  '..#...#',
-  '#####.#',
-  '#...#.#',
-  '#...###',
-  '#...#..',
-  '#####..',
-];
+const COPY: Bitmap = ['..#####', '..#...#', '#####.#', '#...#.#', '#...###', '#...#..', '#####..'];
 
 /** An open circle with an arrowhead — "deal me another". */
-const REFRESH: Bitmap = [
-  '..###.#',
-  '.#...##',
-  '#...###',
-  '#......',
-  '#.....#',
-  '.#...#.',
-  '..###..',
-];
+const REFRESH: Bitmap = ['..###.#', '.#...##', '#...###', '#......', '#.....#', '.#...#.', '..###..'];
 
 /** The tick in the copy toast. */
-const CHECK: Bitmap = [
-  '.......',
-  '......#',
-  '.....##',
-  '#...##.',
-  '##.##..',
-  '.###...',
-  '..#....',
-];
+const CHECK: Bitmap = ['.......', '......#', '.....##', '#...##.', '##.##..', '.###...', '..#....'];
 
 /** A question mark — how to play. */
-const HELP: Bitmap = [
-  '.#####.',
-  '##...##',
-  '.....##',
-  '...###.',
-  '...#...',
-  '.......',
-  '...#...',
-];
+const HELP: Bitmap = ['.#####.', '##...##', '.....##', '...###.', '...#...', '.......', '...#...'];
 
 export const ICON_RUNS = {
   copy: toRuns(COPY),

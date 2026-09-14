@@ -61,10 +61,7 @@ export function scoreRound(
 }
 
 /** Adds a round's points onto a running match total. Pure — neither input is mutated. */
-export function addScores(
-  total: Record<PlayerId, number>,
-  round: Record<PlayerId, number>,
-): Record<PlayerId, number> {
+export function addScores(total: Record<PlayerId, number>, round: Record<PlayerId, number>): Record<PlayerId, number> {
   const next: Record<PlayerId, number> = { ...total };
   for (const [id, points] of Object.entries(round)) {
     next[id] = (next[id] ?? 0) + points;

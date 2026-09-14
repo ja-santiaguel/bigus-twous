@@ -68,7 +68,10 @@ export function RulesSheet({
         <div className="rules__body" ref={bodyRef}>
           <section className="rules__section">
             <h3>The goal</h3>
-            <p>Get rid of every card in your hand. A round keeps going until three players are out, and where you finish decides your points.</p>
+            <p>
+              Get rid of every card in your hand. A round keeps going until three players are out, and where you finish
+              decides your points.
+            </p>
           </section>
 
           <section className="rules__section">
@@ -111,7 +114,10 @@ export function RulesSheet({
 
           <section className="rules__section">
             <h3>Beating the table</h3>
-            <p>Play the same kind of hand with the same number of cards, and higher. Hands compare by their highest card, with suit breaking a tie.</p>
+            <p>
+              Play the same kind of hand with the same number of cards, and higher. Hands compare by their highest card,
+              with suit breaking a tie.
+            </p>
             <p>When everybody else has passed, whoever played last clears the table and leads anything they like.</p>
           </section>
 
@@ -150,7 +156,10 @@ export function RulesSheet({
                 </tr>
               </tbody>
             </table>
-            <p>A four of a kind and a pair chain never beat each other. Each only beats a higher one of its own kind — a pair chain only one of the same length.</p>
+            <p>
+              A four of a kind and a pair chain never beat each other. Each only beats a higher one of its own kind — a
+              pair chain only one of the same length.
+            </p>
             <p>If a 2 is on the table and you hold a bomb that beats it, you must play it.</p>
           </section>
 
@@ -158,23 +167,49 @@ export function RulesSheet({
             <h3>Scoring</h3>
             <p>1st place scores 5, 2nd scores 3, 3rd scores 1, and 4th scores nothing. Points add up across rounds.</p>
             <p>The round’s winner picks their pile first and leads the next round.</p>
-            <p>A match is first to 15, 30 or 50 points — 30 unless the table chooses otherwise — or the most points after 5 or 10 rounds. If the leaders are level, whoever won more rounds takes it; if that is level too, one more round is played.</p>
+            <p>
+              A match is first to 15, 30 or 50 points — 30 unless the table chooses otherwise — or the most points after
+              5 or 10 rounds. If the leaders are level, whoever won more rounds takes it; if that is level too, one more
+              round is played.
+            </p>
           </section>
 
           <section className="rules__section">
             <h3>The deal</h3>
-            <p>Cards are dealt into four face-down piles, and each player takes one. The piles are random, so no pick is better than another.</p>
+            <p>
+              Cards are dealt into four face-down piles, and each player takes one. The piles are random, so no pick is
+              better than another.
+            </p>
           </section>
 
           <section className="rules__section">
             <h3>Playing with friends</h3>
             <p>In the lobby, everybody readies up and the host starts the game.</p>
-            <p>You have 15 seconds to pick a pile. If time runs out, one is picked for you — the piles are face down, so nothing is lost.</p>
-            <p>You have 60 seconds for each turn. If time runs out, you pass — or, when you cannot pass, a play is made for you.</p>
-            <p>Between rounds, once somebody is ready, the next round deals in 30 seconds. You can cancel ready until it deals. A computer plays for anybody who is not ready until they take their seat back.</p>
-            <p>If you leave or lose your connection mid-game, a computer plays your seat and it is held for 2 minutes. Rejoin from the same browser tab to take it back.</p>
-            <p>A shared table runs in the host’s browser. Every device adds its own part to each shuffle and replays each round when it ends, so the host cannot stack the deal or fake a move — the scores screen says when a round checks out. The host’s browser does hold every hand, so play with people you trust.</p>
-            <p>If the host’s page reloads before the game starts, the table waits 60 seconds for them to come back. Once the game has started, the host leaving ends it.</p>
+            <p>
+              You have 15 seconds to pick a pile. If time runs out, one is picked for you — the piles are face down, so
+              nothing is lost.
+            </p>
+            <p>
+              You have 60 seconds for each turn. If time runs out, you pass — or, when you cannot pass, a play is made
+              for you.
+            </p>
+            <p>
+              Between rounds, once somebody is ready, the next round deals in 30 seconds. You can cancel ready until it
+              deals. A computer plays for anybody who is not ready until they take their seat back.
+            </p>
+            <p>
+              If you leave or lose your connection mid-game, a computer plays your seat and it is held for 2 minutes.
+              Rejoin from the same browser tab to take it back.
+            </p>
+            <p>
+              A shared table runs in the host’s browser. Every device adds its own part to each shuffle and replays each
+              round when it ends, so the host cannot stack the deal or fake a move — the scores screen says when a round
+              checks out. The host’s browser does hold every hand, so play with people you trust.
+            </p>
+            <p>
+              If the host’s page reloads before the game starts, the table waits 60 seconds for them to come back. Once
+              the game has started, the host leaving ends it.
+            </p>
           </section>
         </div>
       </div>

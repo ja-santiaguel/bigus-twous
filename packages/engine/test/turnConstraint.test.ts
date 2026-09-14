@@ -59,9 +59,12 @@ describe('TurnOptions.constraint', () => {
 
   it('reports FORCED_TWO_BUST with the offending pile when a bomb must be played (9.5)', () => {
     const hand = [
-      c('7', 'SPADE'), c('7', 'CLUB'),
-      c('8', 'SPADE'), c('8', 'CLUB'),
-      c('9', 'SPADE'), c('9', 'CLUB'),
+      c('7', 'SPADE'),
+      c('7', 'CLUB'),
+      c('8', 'SPADE'),
+      c('8', 'CLUB'),
+      c('9', 'SPADE'),
+      c('9', 'CLUB'),
       c('4', 'DIAMOND'),
     ];
     const pile = combo([c('2', 'SPADE')]);

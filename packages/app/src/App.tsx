@@ -1,12 +1,43 @@
-import { useEffect, useRef } from 'react';
-import { LazyMotion, domAnimation } from 'framer-motion';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { LazyMotion } from 'framer-motion';
 import { useGameStore } from './store/gameStore.js';
 import { readJoinLink } from './lib/joinLink.js';
 import { MainMenu } from './screens/MainMenu.js';
-import { Lobby } from './screens/Lobby.js';
-import { Table } from './screens/Table.js';
-import { WaitingRoom } from './screens/WaitingRoom.js';
 import { CopyToast } from './components/CopyToast.js';
+
+/*
+ * Only the menu is in the first download. The lobbies, the table and the
+ * animation features are separate files — roughly half the script a visitor
+ * would otherwise wait for before seeing anything — fetched as soon as the menu
+ * is on screen, so starting a game does not wait on them either.
+ */
+const loadLobby = () => import('./screens/Lobby.js');
+const loadWaitingRoom = () => import('./screens/WaitingRoom.js');
+const loadTable = () => import('./screens/Table.js');
+const loadMotion = () => import('./design/motionFeatures.js').then((module) => module.default);
+
+const Lobby = lazy(() => loadLobby().then((module) => ({ default: module.Lobby })));
+const WaitingRoom = lazy(() => loadWaitingRoom().then((module) => ({ default: module.WaitingRoom })));
+const Table = lazy(() => loadTable().then((module) => ({ default: module.Table })));
+
+/** Fetch the rest of the game once the browser has a moment, rather than on the first click. */
+function usePreloadScreens() {
+  useEffect(() => {
+    const preload = () => {
+      void loadLobby();
+      void loadWaitingRoom();
+      void loadTable();
+      void loadMotion();
+    };
+    // Safari has no idle callback; a short delay does the same job there.
+    if (typeof window.requestIdleCallback === 'function') {
+      const handle = window.requestIdleCallback(preload, { timeout: 2_000 });
+      return () => window.cancelIdleCallback(handle);
+    }
+    const timer = setTimeout(preload, 500);
+    return () => clearTimeout(timer);
+  }, []);
+}
 
 function Screen() {
   const screen = useGameStore((s) => s.screen);
@@ -51,15 +82,22 @@ function useJoinOnLoad() {
 
 export function App() {
   useJoinOnLoad();
+  usePreloadScreens();
 
   // Only the DOM animation feature set is loaded: this app animates transforms
   // and opacity, and hand-rolls its own drag against the fan geometry. Pulling
   // in Framer's layout and gesture engines as well would roughly double the
   // animation bundle for features nothing uses. `strict` makes that a build
   // error rather than a silent regression if someone reaches for `motion.*`.
+  // The features load asynchronously; anything that renders first simply
+  // starts at its resting state.
   return (
-    <LazyMotion features={domAnimation} strict>
-      <Screen />
+    <LazyMotion features={loadMotion} strict>
+      {/* Nothing to draw for the moment a screen's file is still arriving —
+          preloading makes that moment all but invisible. */}
+      <Suspense fallback={null}>
+        <Screen />
+      </Suspense>
       <CopyToast />
     </LazyMotion>
   );

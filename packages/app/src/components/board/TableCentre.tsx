@@ -83,9 +83,7 @@ export function TableCentre({
         role="group"
         aria-label={trickAria(trickPlays, labelFor)}
       >
-        {trickPlays.length === 0 && (
-          <span className="inplay__empty">Table is clear — the lead plays anything.</span>
-        )}
+        {trickPlays.length === 0 && <span className="inplay__empty">Table is clear — the lead plays anything.</span>}
       </div>
 
       {/* The combo type is stated once here rather than repeated under every

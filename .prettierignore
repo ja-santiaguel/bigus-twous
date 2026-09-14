@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+package-lock.json
+skills-lock.json
+*.tsbuildinfo
+
+# Prose is hand-wrapped and its tables hand-aligned; formatting it would rewrite
+# the ruleset's history for no gain.
+*.md
+.claude

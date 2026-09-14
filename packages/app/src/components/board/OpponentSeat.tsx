@@ -64,12 +64,8 @@ export function OpponentSeat({
             round ends. "Out" was the wrong word for it — it reads as
             eliminated, when it is the opposite: they finished, and finishing
             first is how you win. So say where they came. */}
-        {place !== null ? (
-          <PlaceBadge place={place} />
-        ) : (
-          `${cardCount} ${cardCount === 1 ? 'card' : 'cards'}`
-        )}{' '}
-        · {points} {points === 1 ? 'pt' : 'pts'}
+        {place !== null ? <PlaceBadge place={place} /> : `${cardCount} ${cardCount === 1 ? 'card' : 'cards'}`} ·{' '}
+        {points} {points === 1 ? 'pt' : 'pts'}
       </span>
 
       {/* A fixed slot, not a row that appears.

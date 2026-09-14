@@ -62,9 +62,7 @@ describe('difficulty ladder', () => {
       const seatDifficulty = new Map<string, Difficulty>(
         SEATS.map((id, seat) => [id, lineup[(seat + rotation) % lineup.length]!]),
       );
-      const players = new Map<string, Player>(
-        SEATS.map((id) => [id, createCpuPlayer(id, seatDifficulty.get(id)!)]),
-      );
+      const players = new Map<string, Player>(SEATS.map((id) => [id, createCpuPlayer(id, seatDifficulty.get(id)!)]));
       const seed = `h2h-${i}`;
       const state = createNewRound(SEATS, createRng(seed), seed, 1, null, {});
       const final = await runRoundToCompletion(state, players);

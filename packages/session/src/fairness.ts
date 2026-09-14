@@ -116,8 +116,10 @@ export async function verifyRound(audit: RoundAudit, witness: RoundWitness): Pro
   const fail = (reason: string): Verdict => ({ ok: false, reason });
 
   if (audit.commit !== witness.commit) return fail('the host changed its sealed shuffle after the deal');
-  if ((await sha256Hex(audit.hostSecret)) !== witness.commit) return fail("the host's shuffle does not match what it sealed");
-  if (witness.share !== null && audit.shares[witness.you] !== witness.share) return fail('your part of the shuffle was left out');
+  if ((await sha256Hex(audit.hostSecret)) !== witness.commit)
+    return fail("the host's shuffle does not match what it sealed");
+  if (witness.share !== null && audit.shares[witness.you] !== witness.share)
+    return fail('your part of the shuffle was left out');
   if ((await combineDealSeed(audit.hostSecret, audit.shares)) !== audit.dealSeed) {
     return fail("the deal was not made from everyone's shuffle");
   }
@@ -185,7 +187,8 @@ export async function verifyRound(audit: RoundAudit, witness: RoundWitness): Pro
 
   if (next !== moves.length) return fail('the record has moves after the round ended');
   if (canonical(state.history) !== canonical(audit.history)) return fail('the round did not play out as recorded');
-  if (canonical(witness.history) !== canonical(audit.history)) return fail('what you were shown differs from the record');
+  if (canonical(witness.history) !== canonical(audit.history))
+    return fail('what you were shown differs from the record');
   if (canonical(witness.points) !== canonical(state.points)) return fail('the scores do not match the round');
   return { ok: true };
 }

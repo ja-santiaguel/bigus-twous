@@ -8,7 +8,10 @@ const c = (rank: Card['rank'], suit: Card['suit']): Card => ({ rank, suit });
 
 /** Every card in the hand must appear in exactly one planned combo. */
 function assertPartitions(hand: Card[], combos: { cards: Card[] }[]) {
-  const planned = combos.flatMap((k) => k.cards).map(cardId).sort();
+  const planned = combos
+    .flatMap((k) => k.cards)
+    .map(cardId)
+    .sort();
   expect(planned).toEqual(hand.map(cardId).sort());
 }
 
@@ -28,11 +31,7 @@ describe('planHand — decomposition', () => {
   });
 
   it('finds a pair chain across three consecutive ranks', () => {
-    const hand = [
-      c('5', 'SPADE'), c('5', 'CLUB'),
-      c('6', 'SPADE'), c('6', 'CLUB'),
-      c('7', 'SPADE'), c('7', 'CLUB'),
-    ];
+    const hand = [c('5', 'SPADE'), c('5', 'CLUB'), c('6', 'SPADE'), c('6', 'CLUB'), c('7', 'SPADE'), c('7', 'CLUB')];
     const plan = planHand(hand);
     expect(plan.playCount).toBe(1);
     expect(plan.combos[0]!.type).toBe('PAIR_CHAIN');
@@ -41,10 +40,14 @@ describe('planHand — decomposition', () => {
 
   it('always partitions the hand exactly — no card lost or duplicated', () => {
     const hand = [
-      c('3', 'SPADE'), c('4', 'CLUB'), c('5', 'DIAMOND'),
-      c('9', 'SPADE'), c('9', 'CLUB'),
+      c('3', 'SPADE'),
+      c('4', 'CLUB'),
+      c('5', 'DIAMOND'),
+      c('9', 'SPADE'),
+      c('9', 'CLUB'),
       c('K', 'HEART'),
-      c('2', 'SPADE'), c('2', 'HEART'),
+      c('2', 'SPADE'),
+      c('2', 'HEART'),
     ];
     const plan = planHand(hand);
     assertPartitions(hand, plan.combos);
@@ -61,9 +64,18 @@ describe('planHand — decomposition', () => {
 
   it('handles a full 13-card hand without stranding cards', () => {
     const hand = [
-      c('3', 'SPADE'), c('3', 'CLUB'), c('4', 'SPADE'), c('4', 'CLUB'),
-      c('5', 'SPADE'), c('5', 'CLUB'), c('8', 'DIAMOND'), c('9', 'DIAMOND'),
-      c('10', 'DIAMOND'), c('J', 'HEART'), c('Q', 'HEART'), c('A', 'SPADE'),
+      c('3', 'SPADE'),
+      c('3', 'CLUB'),
+      c('4', 'SPADE'),
+      c('4', 'CLUB'),
+      c('5', 'SPADE'),
+      c('5', 'CLUB'),
+      c('8', 'DIAMOND'),
+      c('9', 'DIAMOND'),
+      c('10', 'DIAMOND'),
+      c('J', 'HEART'),
+      c('Q', 'HEART'),
+      c('A', 'SPADE'),
       c('2', 'HEART'),
     ];
     const plan = planHand(hand);

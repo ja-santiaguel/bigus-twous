@@ -222,7 +222,10 @@ describe('the opening lead (9.1)', () => {
     // A hand whose lowest card is the 3 of Spades, with a pair and a straight
     // available around it.
     const hand = [c('3', 'SPADE'), c('3', 'HEART'), c('4', 'SPADE'), c('5', 'SPADE'), c('K', 'HEART')];
-    const state = { ...stateWith([hand, [c('9', 'CLUB')], [c('9', 'HEART')], [c('9', 'DIAMOND')]]), firstPlayPending: true };
+    const state = {
+      ...stateWith([hand, [c('9', 'CLUB')], [c('9', 'HEART')], [c('9', 'DIAMOND')]]),
+      firstPlayPending: true,
+    };
 
     const { legalMoves, canPass } = getTurnOptions(state);
     expect(canPass).toBe(false);
@@ -242,7 +245,11 @@ describe('the opening lead (9.1)', () => {
 
   it('uses the starter’s own lowest card once round one is over', () => {
     const hand = [c('7', 'CLUB'), c('7', 'HEART'), c('K', 'SPADE')];
-    const state = { ...stateWith([hand, [c('9', 'CLUB')], [c('9', 'HEART')], [c('9', 'DIAMOND')]]), firstPlayPending: true, openingCard: c('7', 'CLUB') };
+    const state = {
+      ...stateWith([hand, [c('9', 'CLUB')], [c('9', 'HEART')], [c('9', 'DIAMOND')]]),
+      firstPlayPending: true,
+      openingCard: c('7', 'CLUB'),
+    };
     const { legalMoves } = getTurnOptions(state);
     for (const move of legalMoves) {
       expect(move.cards.some((x) => x.rank === '7' && x.suit === 'CLUB')).toBe(true);

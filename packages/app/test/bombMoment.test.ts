@@ -16,7 +16,11 @@ const combo = (cards: Card[]): Combo => {
   if (!found) throw new Error('not a combo: ' + JSON.stringify(cards));
   return found;
 };
-const played = (playerId: string, cards: Card[]): GameEvent => ({ type: 'CARDS_PLAYED', playerId, combo: combo(cards) });
+const played = (playerId: string, cards: Card[]): GameEvent => ({
+  type: 'CARDS_PLAYED',
+  playerId,
+  combo: combo(cards),
+});
 const label = (id: string) => (id === 'seat-2' ? 'Mia' : id);
 
 const QUAD_SEVENS = [c('7', 'SPADE'), c('7', 'CLUB'), c('7', 'DIAMOND'), c('7', 'HEART')];
@@ -24,7 +28,11 @@ const QUAD_SEVENS = [c('7', 'SPADE'), c('7', 'CLUB'), c('7', 'DIAMOND'), c('7', 
 describe('the bomb moment', () => {
   it('calls a bomb on a 2 a chop, and says who did it', () => {
     const history = [played('seat-1', [c('2', 'HEART')]), played('seat-2', QUAD_SEVENS)];
-    expect(readMoment(history, 1, 'seat-1', label)).toMatchObject({ tone: 'chop', title: 'Chopped!', detail: 'Mia bombs a 2' });
+    expect(readMoment(history, 1, 'seat-1', label)).toMatchObject({
+      tone: 'chop',
+      title: 'Chopped!',
+      detail: 'Mia bombs a 2',
+    });
   });
 
   it('speaks to you when the bomb is yours', () => {
@@ -40,7 +48,10 @@ describe('the bomb moment', () => {
 
   it('gives four 2s its own moment', () => {
     const twos = [c('2', 'SPADE'), c('2', 'CLUB'), c('2', 'DIAMOND'), c('2', 'HEART')];
-    expect(readMoment([played('seat-2', twos)], 0, 'seat-1', label)).toMatchObject({ tone: 'ceiling', title: 'Four 2s!' });
+    expect(readMoment([played('seat-2', twos)], 0, 'seat-1', label)).toMatchObject({
+      tone: 'ceiling',
+      title: 'Four 2s!',
+    });
   });
 
   it('leaves a bomb led onto a clear table, and ordinary plays, alone', () => {

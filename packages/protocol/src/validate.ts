@@ -46,8 +46,12 @@ function isCard(value: unknown): value is Card {
   // this game deals, and quietly accepting it invites a shape nobody designed.
   const keys = Object.keys(value);
   if (keys.length !== 2) return false;
-  return typeof value['rank'] === 'string' && RANKS.has(value['rank'])
-    && typeof value['suit'] === 'string' && SUITS.has(value['suit']);
+  return (
+    typeof value['rank'] === 'string' &&
+    RANKS.has(value['rank']) &&
+    typeof value['suit'] === 'string' &&
+    SUITS.has(value['suit'])
+  );
 }
 
 function isCardArray(value: unknown): value is Card[] {
@@ -135,7 +139,10 @@ function validateMessage(value: unknown): { ok: true; message: ClientMessage } |
       const rule = value['rule'];
       if (isObject(rule) && Object.keys(rule).length === 2) {
         if (rule['kind'] === 'points' && (WIRE_MATCH_POINT_TARGETS as readonly unknown[]).includes(rule['target'])) {
-          return { ok: true, message: { type: 'SET_MATCH', rule: { kind: 'points', target: rule['target'] as number } } };
+          return {
+            ok: true,
+            message: { type: 'SET_MATCH', rule: { kind: 'points', target: rule['target'] as number } },
+          };
         }
         if (rule['kind'] === 'rounds' && (WIRE_MATCH_ROUND_COUNTS as readonly unknown[]).includes(rule['count'])) {
           return { ok: true, message: { type: 'SET_MATCH', rule: { kind: 'rounds', count: rule['count'] as number } } };
@@ -227,9 +234,9 @@ export function encodeServer(message: import('./messages.js').ServerMessage): st
  * version and the shape of the envelope, so a deployed client meeting a newer
  * server says so rather than crashing on a field it has never heard of.
  */
-export function decodeServer(raw: string):
-  | { ok: true; message: import('./messages.js').ServerMessage }
-  | { ok: false; reason: string } {
+export function decodeServer(
+  raw: string,
+): { ok: true; message: import('./messages.js').ServerMessage } | { ok: false; reason: string } {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);

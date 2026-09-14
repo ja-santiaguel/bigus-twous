@@ -56,7 +56,11 @@ describe('serving a built client', () => {
 
   it('will not serve a file outside the client directory', async () => {
     // A request path is a string somebody else chose, and `../` is a string.
-    for (const path of ['/../outside-the-root.txt', '/..%2Foutside-the-root.txt', '/assets/../../outside-the-root.txt']) {
+    for (const path of [
+      '/../outside-the-root.txt',
+      '/..%2Foutside-the-root.txt',
+      '/assets/../../outside-the-root.txt',
+    ]) {
       const response = await get(path);
       const body = await response.text();
       expect(body, path).not.toContain('secret');

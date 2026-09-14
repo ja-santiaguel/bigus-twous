@@ -15,7 +15,13 @@ const LOCK = ['.###.', '.#.#.', '#####', '##.##', '#####'];
 export function HostOnly({ label = 'Host only' }: { label?: string }) {
   return (
     <span className="hostonly">
-      <svg viewBox="0 0 5 5" shapeRendering="crispEdges" className="hostonly__lock" aria-hidden="true" focusable="false">
+      <svg
+        viewBox="0 0 5 5"
+        shapeRendering="crispEdges"
+        className="hostonly__lock"
+        aria-hidden="true"
+        focusable="false"
+      >
         {LOCK.flatMap((row, y) =>
           [...row].map((cell, x) =>
             cell === '#' ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill="currentColor" /> : null,
