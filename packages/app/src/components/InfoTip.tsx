@@ -21,6 +21,9 @@ const GLYPH = ['##..###..##', '#......#..#', '#....##...#', '#.........#', '##..
 /** A short grace before hiding, so the pointer can cross onto the note. */
 const HIDE_AFTER_MS = 120;
 
+/** The shared fade-out's length — `--fade-out` in styles.css. */
+const FADE_OUT_MS = 200;
+
 export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -44,6 +47,27 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
   }, [cancelHide]);
 
   useEffect(() => cancelHide, [cancelHide]);
+
+  /*
+   * Closing fades the note out with the copy toast's fade rather than cutting
+   * it: it stays on screen, marked as leaving, until its animation ends.
+   * Pointing back at it mid-fade simply opens it again.
+   */
+  const wasOpen = useRef(false);
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    if (open) setLeaving(false);
+    else if (wasOpen.current) setLeaving(true);
+    wasOpen.current = open;
+  }, [open]);
+  // The fade ending normally removes the note. A browser that never runs the
+  // animation — a tab in the background, animations switched off — would leave
+  // it standing on the page, so a timer removes it as well.
+  useEffect(() => {
+    if (!leaving) return undefined;
+    const done = setTimeout(() => setLeaving(false), FADE_OUT_MS + 100);
+    return () => clearTimeout(done);
+  }, [leaving]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -102,8 +126,13 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
           )}
         </svg>
       </button>
-      {open && (
-        <div className="infotip__panel" id={panelId} role="note">
+      {(open || leaving) && (
+        <div
+          className={`infotip__panel ${open ? '' : 'is-leaving'}`}
+          id={panelId}
+          role="note"
+          onAnimationEnd={() => setLeaving(false)}
+        >
           {children}
         </div>
       )}

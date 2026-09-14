@@ -33,7 +33,12 @@ export interface TableView {
    * discard pile.
    */
   trickPlays: TrickPlay[];
-  /** Cards from *completed* tricks. Face down, and they stay that way. */
+  /**
+   * Cards from *completed* tricks, in the order they were played. Face down,
+   * and they stay that way: the pile is drawn from these so it is made of the
+   * cards that went into it, but a face-down card renders no identity.
+   */
+  moundCards: TrickPlay['combo']['cards'];
   moundCount: number;
   /**
    * Identity of the trick in progress — how many tricks have closed before it.
@@ -63,13 +68,13 @@ export function buildTableView(self: PlayerView): TableView {
   }
 
   const trickPlays: TrickPlay[] = [];
-  let moundCount = 0;
+  const moundCards: TrickPlay['combo']['cards'] = [];
   let trickId = 0;
   history.forEach((event, i) => {
     if (event.type === 'TRICK_RESET') trickId += 1;
     if (event.type !== 'CARDS_PLAYED') return;
     if (i > resetAt) trickPlays.push({ playerId: event.playerId, combo: event.combo, isActive: false });
-    else moundCount += event.combo.cards.length;
+    else moundCards.push(...event.combo.cards);
   });
   const active = trickPlays[trickPlays.length - 1];
   if (active) active.isActive = true;
@@ -103,7 +108,8 @@ export function buildTableView(self: PlayerView): TableView {
   return {
     self,
     trickPlays,
-    moundCount,
+    moundCards,
+    moundCount: moundCards.length,
     trickId,
     passedThisTrick,
     lastPlayedBy: trickPlays[trickPlays.length - 1]?.playerId ?? null,

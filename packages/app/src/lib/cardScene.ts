@@ -88,8 +88,12 @@ export interface SceneInput {
   opponentCounts: Map<number, number>;
   /** Combos on the table, oldest first. */
   trickPlays: TrickPlay[];
-  /** Cards on their way to the discard pile, if a trick has just closed. */
-  settling: Card[];
+  /**
+   * Cards from tricks already swept off the table, oldest first. The same
+   * cards that were in the trick, so a closing trick travels to the pile
+   * instead of vanishing from one place and appearing in another.
+   */
+  mound: Card[];
 }
 
 /**
@@ -172,14 +176,15 @@ export function buildScene(input: SceneInput): CardEntity[] {
     });
   });
 
-  // Cards mid-flight into the discard pile. They exist only for the length of
-  // that flight — see `settling` in the table screen — because the pile itself
-  // is anonymous and must stay that way.
-  input.settling.forEach((card, slot) => {
+  // The discard pile: the real cards, face down, stacked in the order they
+  // arrived. There is one pile and it is these cards — a separately drawn pile
+  // beside them trailed behind as a second one whenever the window resized.
+  // Face down renders no identity (see CardLayer), so the pile stays anonymous.
+  input.mound.forEach((card, slot) => {
     entities.push({
       id: cardId(card),
       card,
-      placement: { zone: 'discard', slot, count: input.settling.length, faceUp: false },
+      placement: { zone: 'discard', slot, count: input.mound.length, faceUp: false },
     });
   });
 

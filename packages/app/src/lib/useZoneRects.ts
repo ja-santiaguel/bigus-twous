@@ -32,9 +32,16 @@ export function useZoneRects(): {
   rects: Record<string, Rect | null>;
   /** Re-measure now — for changes no observer can see, like a new round. */
   remeasure: () => void;
+  /**
+   * True while the window is being resized, and for a moment after. Cards
+   * follow a resize instantly: gliding to catch up with a table that has
+   * already moved drew them trailing behind their own zones.
+   */
+  resizing: boolean;
 } {
   const nodes = useRef(new Map<string, HTMLElement>());
   const [rects, setRects] = useState<Record<string, Rect | null>>({});
+  const [resizing, setResizing] = useState(false);
 
   const measure = useCallback(() => {
     const next: Record<string, Rect | null> = {};
@@ -54,7 +61,16 @@ export function useZoneRects(): {
     for (const el of nodes.current.values()) observer.current.observe(el);
     measure();
 
-    window.addEventListener('resize', measure);
+    // The window's resize event fires before the observer's notifications in
+    // the same frame, so the flag is already set when the new boxes arrive.
+    let settle: ReturnType<typeof setTimeout> | undefined;
+    const onResize = () => {
+      setResizing(true);
+      clearTimeout(settle);
+      settle = setTimeout(() => setResizing(false), 150);
+      measure();
+    };
+    window.addEventListener('resize', onResize);
     window.addEventListener('scroll', measure, true);
     /*
      * Re-measure when the tab comes back to the front.
@@ -69,7 +85,8 @@ export function useZoneRects(): {
      */
     document.addEventListener('visibilitychange', measure);
     return () => {
-      window.removeEventListener('resize', measure);
+      clearTimeout(settle);
+      window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', measure, true);
       document.removeEventListener('visibilitychange', measure);
       observer.current?.disconnect();
@@ -111,7 +128,7 @@ export function useZoneRects(): {
     [measure],
   );
 
-  return { anchor, rects, remeasure: measure };
+  return { anchor, rects, remeasure: measure, resizing };
 }
 
 function sameRects(a: Record<string, Rect | null>, b: Record<string, Rect | null>): boolean {

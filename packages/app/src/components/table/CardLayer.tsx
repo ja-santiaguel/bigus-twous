@@ -49,6 +49,7 @@ export function CardLayer({
   labels,
   visuals,
   handlers,
+  instant = false,
 }: {
   entities: CardEntity[];
   metrics: SceneMetrics;
@@ -65,6 +66,8 @@ export function CardLayer({
     /** Keyboard activation — Enter or Space on a focused card. */
     onActivate(id: string): void;
   };
+  /** Follow layout changes without animating — while the window is being resized. */
+  instant?: boolean;
 }) {
   const reduced = useReducedMotion() ?? false;
 
@@ -92,7 +95,7 @@ export function CardLayer({
             initial={{ opacity: 0, scale: 0.94, x: backdrop.x, y: backdrop.y }}
             animate={{ opacity: 1, scale: 1, x: backdrop.x, y: backdrop.y }}
             exit={{ opacity: 0, scale: 0.97 }}
-            transition={transition(reduced, SETTLE)}
+            transition={instant ? NONE : transition(reduced, SETTLE)}
           />
         )}
       </AnimatePresence>
@@ -142,14 +145,22 @@ export function CardLayer({
              */
             <m.div
               key={entity.id}
-              data-id={entity.id}
+              // Only a face-up card names itself in the page. A face-down one — an
+              // opponent's, or one in the discard pile — carries no identity at all.
+              data-id={faceUp ? entity.id : undefined}
               {...(v?.interactive
                 ? // Pressed is picked: without it a screen reader could not tell which cards are selected.
                   { role: 'button' as const, tabIndex: 0, 'aria-label': v.label, 'aria-pressed': v.marked ?? false }
                 : { 'aria-hidden': true })}
               className={`cardlayer__card ${faceUp ? '' : 'is-down'} ${beaten ? 'is-beaten' : ''} ${
                 v?.marked ? 'is-marked' : ''
-              } ${v?.interactive ? 'is-live' : ''} ${dragging ? 'is-dragging' : ''} ${standing ? 'is-standing' : ''}`}
+              } ${v?.interactive ? 'is-live' : ''} ${dragging ? 'is-dragging' : ''} ${standing ? 'is-standing' : ''} ${
+                entity.placement.zone === 'discard'
+                  ? entity.placement.slot === 0
+                    ? 'is-piled is-pile-base'
+                    : 'is-piled'
+                  : ''
+              }`}
               style={{ zIndex: v?.z ?? to.z }}
               onPointerDown={
                 v?.interactive ? (e: React.PointerEvent) => handlers?.onPointerDown(e, entity.id) : undefined
@@ -183,7 +194,13 @@ export function CardLayer({
               // reaching the discard pile, or a round ending. Everything else
               // is a move, not an exit.
               exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.14 } }}
-              transition={dragging ? { x: NONE, y: NONE, rotate: SETTLE, scale: SETTLE } : transition(reduced, SETTLE)}
+              transition={
+                instant
+                  ? NONE
+                  : dragging
+                    ? { x: NONE, y: NONE, rotate: SETTLE, scale: SETTLE }
+                    : transition(reduced, SETTLE)
+              }
             >
               {faceUp && entity.card ? <CardFace card={entity.card} /> : <CardBack />}
             </m.div>
@@ -210,7 +227,7 @@ export function CardLayer({
               initial={{ x: at.x, y: labelY(at, metrics), opacity: 0 }}
               animate={{ x: at.x, y: labelY(at, metrics), opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={transition(reduced, SETTLE)}
+              transition={instant ? NONE : transition(reduced, SETTLE)}
             >
               {/* The caption is positioned by its card's centre, so it has to
                 *be* centred on that point. A fixed-width box only centres text

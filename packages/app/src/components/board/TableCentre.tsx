@@ -2,9 +2,8 @@ import type React from 'react';
 import { useCallback } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import type { PlayerId } from '@big-two/engine';
-import { CardBack } from '../card/PixelCard.js';
 import { cardsSpoken, comboLabel } from '../../lib/format.js';
-import { SETTLE, SNAP, transition } from '../../design/motion.js';
+import { SNAP, transition } from '../../design/motion.js';
 import type { TrickPlay } from '../../lib/tableView.js';
 
 /**
@@ -17,9 +16,10 @@ import type { TrickPlay } from '../../lib/tableView.js';
  * a moment ago rather than a new one faded in to look like it.
  *
  * What stays here is everything that is *not* a card: the drop target, the
- * caption naming the combo, and the discard pile, which is deliberately
- * anonymous — remembering what has gone is a player skill, and card counting
- * is the one thing the hard CPU does that the other tiers do not.
+ * caption naming the combo, and the place the discard pile lands with its
+ * count. The pile's cards are face down and carry no identity — remembering
+ * what has gone is a player skill, and card counting is the one thing the hard
+ * CPU does that the other tiers do not.
  */
 export function TableCentre({
   trickPlays,
@@ -94,10 +94,13 @@ export function TableCentre({
         {standing ? (
           <>
             <span className="centre__type">{comboLabel(standing.combo)}</span>
-            <span className="centre__by">{labelFor(standing.playerId)} leads the trick</span>
-            {/* The cards are drawn, not written, so without this the
-                announcement said who played and never what. */}
-            <span className="sr-only">: {cardsSpoken(standing.combo.cards)}</span>
+            {/* Who played is already on the table, in the name under their
+                cards, so it is not printed again here. The cards are drawn,
+                not written, so a screen reader is told both. */}
+            <span className="sr-only">
+              {' '}
+              {labelFor(standing.playerId)} played {cardsSpoken(standing.combo.cards)}
+            </span>
           </>
         ) : (
           // Nothing to say, but the line keeps its height, so the trick
@@ -123,32 +126,13 @@ function trickAria(plays: TrickPlay[], labelFor: (id: PlayerId) => string): stri
     .join('. ');
 }
 
-/** A stack reads as "a lot" long before it reads as "31", so cap the layers drawn. */
-const MAX_LAYERS = 13;
-
 /**
- * How far each card in the discard pile sits above the one below it, and how
- * far it drifts sideways — the same tight stagger the ceremony piles use. A
- * deck is a block with a textured edge, not a staircase.
- */
-const LAYER_RISE = 0.5;
-const LAYER_DRIFT = 0.5;
-
-/**
- * Deterministic wobble — a stack of cards is never perfectly square, but it
- * should look the same every render rather than twitching on each paint.
- */
-function jitter(i: number): number {
-  return ((i * 37) % 7) - 3;
-}
-
-/**
- * The discard pile: cards from tricks that are already settled.
+ * Where the discard pile lands, and how many cards are in it.
  *
- * Anonymous by design, and the one place a card stops being an individual.
- * Cards fly here as themselves and are handed over to this stack on arrival,
- * which is what keeps the guarantee that a played card carries no rank data in
- * the DOM at all.
+ * The pile itself is drawn by the card layer from the cards that went into it,
+ * face down, so there is one pile and it is made of those cards. This box used
+ * to draw a pile of its own too, and on a resize the card layer's cards trailed
+ * behind it as a second one.
  */
 function MoundStack({
   count,
@@ -159,33 +143,9 @@ function MoundStack({
   reduced: boolean;
   stackRef: (el: HTMLElement | null) => void;
 }) {
-  const layers = Math.min(MAX_LAYERS, count);
-
   return (
     <div className={`mound ${count === 0 ? 'is-empty' : ''}`} aria-label={`${count} cards played, face down`}>
-      <div className="mound__stack" ref={stackRef}>
-        {Array.from({ length: layers }, (_, i) => (
-          <m.span
-            key={i}
-            className="mound__layer"
-            style={{ zIndex: i }}
-            // Each new batch lands with a short shuffle, so the pile is seen
-            // receiving the trick rather than quietly incrementing a number.
-            animate={
-              reduced
-                ? { x: i * LAYER_DRIFT, y: i * -LAYER_RISE }
-                : {
-                    x: [i * LAYER_DRIFT + jitter(i), i * LAYER_DRIFT],
-                    y: [i * -LAYER_RISE - 5, i * -LAYER_RISE],
-                    rotate: [jitter(i), 0],
-                  }
-            }
-            transition={transition(reduced, { ...SETTLE, delay: reduced ? 0 : i * 0.02 })}
-          >
-            <CardBack />
-          </m.span>
-        ))}
-      </div>
+      <div className="mound__stack" ref={stackRef} />
       <m.span
         className="mound__count"
         key={count}

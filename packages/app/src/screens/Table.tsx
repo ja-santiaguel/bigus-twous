@@ -31,9 +31,6 @@ import { useSweepSelect, sweepStyle } from '../lib/useSweepSelect.js';
 import { CARD_SCALE } from '../design/cardScale.js';
 import { SETTLE } from '../design/motion.js';
 
-/** How long a settled trick takes to reach the discard pile, in ms. */
-const SWEEP_MS = 420;
-
 const NO_HISTORY: GameEvent[] = [];
 
 export function Table() {
@@ -133,16 +130,7 @@ export function Table() {
   // Zones report their boxes; the card layer positions every card from them.
   const zones = useZoneRects();
   const [trickOpen, setTrickOpen] = useState(false);
-  /**
-   * Cards in flight to the discard pile.
-   *
-   * They exist only for the length of that flight. The pile itself is
-   * anonymous and has to stay that way, so a card is handed over to it on
-   * arrival rather than living there as itself.
-   */
-  const [settling, setSettling] = useState<Card[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const lastTrick = useRef<{ id: number; cards: Card[] }>({ id: -1, cards: [] });
 
   /**
    * The authored card size in device pixels. Media queries change `--scale`
@@ -158,28 +146,6 @@ export function Table() {
     window.addEventListener('resize', read);
     return () => window.removeEventListener('resize', read);
   }, []);
-
-  /**
-   * Hand the closing trick over to the discard pile.
-   *
-   * When a trick settles, its cards fly to the pile as themselves and are then
-   * dropped — the pile is anonymous, so nothing may live there carrying a
-   * rank. Keyed on the trick id rather than on a count, because a trick can
-   * close and a new one open between two renders.
-   */
-  useEffect(() => {
-    const id = view?.trickId ?? -1;
-    const cards = view?.trickPlays.flatMap((p) => p.combo.cards) ?? [];
-    const previous = lastTrick.current;
-    if (previous.id !== -1 && id !== previous.id && previous.cards.length > 0) {
-      setSettling(previous.cards);
-      const clear = setTimeout(() => setSettling([]), SWEEP_MS);
-      lastTrick.current = { id, cards };
-      return () => clearTimeout(clear);
-    }
-    lastTrick.current = { id, cards };
-    return undefined;
-  }, [view?.trickId, view?.trickPlays]);
 
   const cardCentre = (id: string) => {
     const el = document.querySelector<HTMLElement>(`.cardlayer__card[data-id="${CSS.escape(id)}"]`);
@@ -262,7 +228,7 @@ export function Table() {
     handCards,
     opponentCounts,
     trickPlays: view.trickPlays,
-    settling,
+    mound: view.moundCards,
   });
 
   const metrics: SceneMetrics = {
@@ -426,6 +392,7 @@ export function Table() {
         {/* Every card on the table, in one layer. Zones say where they are;
             this draws what is in them. */}
         <CardLayer
+          instant={zones.resizing}
           entities={entities}
           metrics={metrics}
           labels={labels}

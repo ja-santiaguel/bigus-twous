@@ -74,10 +74,10 @@ are the only translucent colours. Do not write new `rgba()` values.
 | This seat has passed | `--alert` name, "passed" tag |
 | This seat has finished | `--dim` name, place medal |
 | Your selection will play | gold read-out |
-| Your selection cannot play | `--alert` read-out |
+| Your selection cannot play | `--alert` read-out, and the turn marker beside it |
 | You have passed | `--alert` read-out: "Passed — out until the table clears" |
 | Your hand is empty | place medal + `--bone-dim` read-out: "Your hand is empty" |
-| The table refused an action | `--alert` read-out |
+| The table refused an action | `--alert` read-out, and the turn marker beside it |
 | Not your move | `--dim` read-out |
 
 ## 3. Type
@@ -216,6 +216,16 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 - Stepped (`steps(2)`) for anything that is simply on or off: controls, markers,
   clock segments.
 - Short ease-out for anything that travels: cards, the trick opening.
+- **Transient things leave with one fade:** `--fade-out` (200ms) over two steps,
+  `@keyframes fade-out`. The copy toast and the inline help note both use it;
+  anything new that shows for a moment and goes away uses it too, rather than a
+  timing of its own.
+- **A resize is not a move.** Cards follow the window instantly while it is being
+  resized; only game events animate them.
+- **The discard pile is the real cards**, face down, stacked in the order they
+  arrived — half an art pixel up and right per card for the first 13, then level
+  — with a fixed wobble per card and a shadow under the bottom card only. A
+  closing trick travels there as itself. There is no separately drawn pile.
 - Clocks change tone at a third and a sixth of their allowance — 20 and 10
   seconds of a turn, 5 and 2½ of a pile pick.
 - One pulse per urgent state (turn marker, a clock's last sixth), stepped, and off
@@ -308,7 +318,8 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   brackets mark it as pressable, where a bare "?" reads as punctuation. `--dim`,
   brightening to bone while its note shows, with the shared gold focus ring.
   Hovering or keyboard focus shows a floating note below the label; a click or
-  tap pins it; a second click, Escape or a click elsewhere closes it. The note —
+  tap pins it; a second click, Escape or a click elsewhere closes it. It leaves
+  with the shared `--fade-out`, exactly as the copy toast does. The note —
   `--ink` surface, `--table-hi` outline, `--px` shade, `--text-sm` `--bone-dim`
   text, terms picked out in bone rather than bold — moves nothing on the page
   and stays to two or three short sentences: what the setting's options mean
@@ -359,8 +370,8 @@ seed first.
   The seed *field* is somewhere you type and select, so it copies with a flat
   copy icon button beside it instead of on click.
 - **The toast** is just a check and the words, in gold with an ink drop shadow —
-  no box. It appears instantly at the pointer, follows it for 1.4s, and fades
-  over two steps. Keyboard
+  no box. It appears instantly at the pointer, follows it for 1.4s, and leaves
+  with the shared `--fade-out`. Keyboard
   copies place it over the element. It is also announced politely to screen
   readers. Messages: "Seed copied", "Code copied", "Link copied".
 - A copyable value shown as a field says so in its hint: "Click to copy."

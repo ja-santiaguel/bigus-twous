@@ -1,0 +1,9 @@
+# LF line endings everywhere, including Windows checkouts. Prettier writes LF,
+# so a checkout that converted files to CRLF made every file look unformatted.
+* text=auto eol=lf
+
+# Binary assets are never touched.
+*.png binary
+*.ico binary
+*.woff binary
+*.woff2 binary

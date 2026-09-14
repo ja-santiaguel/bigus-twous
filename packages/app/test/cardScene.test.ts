@@ -25,7 +25,7 @@ function scene(overrides: Partial<SceneInput> = {}) {
     handCards: [],
     opponentCounts: new Map(),
     trickPlays: [],
-    settling: [],
+    mound: [],
     ...overrides,
   });
 }
@@ -117,9 +117,25 @@ describe('buildScene', () => {
     expect(mine!.enterFrom).toBeUndefined();
   });
 
-  it('sends settling cards to the discard face down', () => {
-    const entities = scene({ settling: [c('2', 'HEART')] });
-    expect(entities[0]!.placement).toMatchObject({ zone: 'discard', faceUp: false });
+  it('builds the discard pile from the real cards, face down, in the order they arrived', () => {
+    const played = [c('2', 'HEART'), c('5', 'CLUB'), c('9', 'SPADE')];
+    const entities = scene({ mound: played });
+
+    expect(entities.map((e) => e.id)).toEqual(played.map(cardId));
+    entities.forEach((e, slot) => {
+      expect(e.placement).toMatchObject({ zone: 'discard', slot, count: 3, faceUp: false });
+    });
+  });
+
+  it('a card keeps one id as its trick is swept into the pile', () => {
+    // One pile, made of the cards that went into it — not cards that vanish
+    // on arrival while a separately drawn pile stands in for them.
+    const card = c('Q', 'HEART');
+    const inTrick = scene({ trickPlays: [{ playerId: 'seat-2', combo: combo(card), isActive: true }] })[0]!;
+    const piled = scene({ mound: [card] })[0]!;
+
+    expect(piled.id).toBe(inTrick.id);
+    expect(piled.placement.zone).toBe('discard');
   });
 });
 
@@ -197,6 +213,17 @@ describe('transformFor', () => {
 
     expect(discardZ).toBeLessThan(handZ);
     expect(handZ).toBeLessThan(trickZ);
+  });
+
+  it('stacks the discard pile upward to a cap, and keeps all of it under the hands', () => {
+    const m = metrics();
+    const handZ = transformFor({ zone: 'hand', seat: 0, slot: 0, count: 1, faceUp: true }, m).z;
+    const at = (slot: number) => transformFor({ zone: 'discard', slot, count: 40, faceUp: false }, m);
+
+    expect(at(1).y).toBeLessThan(at(0).y);
+    // Past the cap, cards land on the same height rather than climbing forever.
+    expect(at(30).y).toBe(at(20).y);
+    expect(at(39).z).toBeLessThan(handZ);
   });
 
   it('lifts the opened trick above every other zone', () => {

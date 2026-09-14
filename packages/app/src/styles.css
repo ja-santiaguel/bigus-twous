@@ -75,6 +75,10 @@
   --layer-banner: 500;
   --layer-toast: 600;
 
+  /* How anything transient leaves: the copy toast and the inline help note
+     fade out over the same two steps, so dismissing feels the same everywhere. */
+  --fade-out: 200ms;
+
   /* Control sizes: two heights, and nothing else. Buttons, inputs and icon
      buttons beside inputs are md; chips, seat buttons, the sort control and
      small controls in tight rows are sm. See DESIGN.md. */
@@ -673,10 +677,6 @@ body {
   font-size: var(--text-sm);
   color: var(--gold);
 }
-.centre__by {
-  font-size: var(--text-xs);
-  color: var(--dim);
-}
 .inplay {
   /* Fixed size, and the drop target for dragging cards onto the table. Both
      properties matter: a target that resizes as you drag toward it is a target
@@ -732,23 +732,6 @@ body {
      under its own label rather than floating in a box of empty space. */
   width: calc(var(--card-w) + 2 * var(--px));
   height: calc(var(--card-h) + 2 * var(--px));
-}
-.mound__layer {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  transform-origin: 50% 100%;
-}
-/* Card backs here look like card backs anywhere else on the board — the same
-   dark outline. Muting the border to blend the stack into the felt made the
-   pile read as a different kind of object from every other card on the table. */
-.mound__layer .pcard {
-  box-shadow: none;
-}
-/* Only the card actually touching the table casts, and it casts straight down
-   like every other resting card on the board. */
-.mound__layer:first-child .pcard {
-  box-shadow: 0 var(--px) 0 var(--shade);
 }
 .mound__count {
   position: absolute;
@@ -866,6 +849,13 @@ body {
 /* The table actually refused a play. */
 .controls.is-error .controls__read {
   color: var(--alert);
+}
+/* The marker beside the line takes the line's colour: a gold "your move"
+   blinking next to a red "you can't play that" said two things at once. */
+.controls.is-blocked .turndot.is-on,
+.controls.is-passed .turndot.is-on,
+.controls.is-error .turndot.is-on {
+  background: var(--alert);
 }
 
 /* ── Utility bar ─────────────────────────────────────────────────────── */
@@ -1278,6 +1268,11 @@ body {
 }
 .cardlayer__card .pcard {
   box-shadow: 0 var(--px) 0 var(--shade);
+}
+/* The discard pile is a stack of real cards: only the one touching the table
+   casts, or thirty-odd shadows darken the pile into a smudge. */
+.cardlayer__card.is-piled:not(.is-pile-base) .pcard {
+  box-shadow: none;
 }
 /* A caption is positioned by its combo's centre, so it has to *be* centred on
    that point. The old fixed 80px box only centred text that fitted inside it:
@@ -1917,9 +1912,10 @@ textarea {
   font-size: var(--text-sm);
   color: var(--gold);
   filter: drop-shadow(var(--px) var(--px) 0 var(--ink));
-  animation: toast-out 200ms steps(2) 1200ms forwards;
+  animation: fade-out var(--fade-out) steps(2) 1200ms forwards;
 }
-@keyframes toast-out {
+/* The one way transient things leave (see --fade-out). */
+@keyframes fade-out {
   to {
     opacity: 0;
   }
@@ -2418,6 +2414,11 @@ textarea {
 }
 .infotip__panel p:last-child {
   margin-bottom: 0;
+}
+/* Leaving: the copy toast's fade, and no longer something to point at. */
+.infotip__panel.is-leaving {
+  animation: fade-out var(--fade-out) steps(2) forwards;
+  pointer-events: none;
 }
 /* A term is picked out in the brighter text, not in bold: only card ranks are bold. */
 .infotip__term {

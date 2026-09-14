@@ -248,19 +248,29 @@ function trickTransform(placement: Placement, metrics: SceneMetrics): CardTransf
   };
 }
 
+/** How many cards the pile visibly grows by; later cards land on top of the same height. */
+const PILE_STEPS = 13;
+
 function discardTransform(placement: Placement, metrics: SceneMetrics): CardTransform {
   const scale = ZONE_SCALE.discard;
   const rect = metrics.discard;
   if (!rect) return { x: 0, y: 0, rotate: 0, scale, z: ZONE_Z.discard };
 
   const centre = centreOf(rect);
-  // Cards land on the pile with a slight spread, then the pile itself takes
-  // over — these entities only exist for the length of the flight.
+  // One art pixel of the card, in layout pixels: cards are authored 22 wide.
+  const px = metrics.cardWidth / 22;
+  const step = Math.min(placement.slot, PILE_STEPS);
+  // A real pile: each card half a pixel higher and further right than the one
+  // beneath it, and never quite square. The wobble is fixed per card, so the
+  // pile looks the same on every render rather than twitching.
+  const wobble = (((placement.slot * 37) % 7) - 3) * 0.8;
   return {
-    x: centre.x - metrics.layer.x,
-    y: centre.y - metrics.layer.y,
-    rotate: (placement.slot % 2 === 0 ? 1 : -1) * (2 + placement.slot),
+    x: centre.x - metrics.layer.x + step * 0.5 * px,
+    y: centre.y - metrics.layer.y - step * 0.5 * px,
+    rotate: wobble,
     scale,
-    z: ZONE_Z.discard + placement.slot,
+    // Kept below the hands' layer however tall the pile grows; cards sharing
+    // the top layer stack in the order they arrived.
+    z: ZONE_Z.discard + Math.min(placement.slot, 9),
   };
 }
