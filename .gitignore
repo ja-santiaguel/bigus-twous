@@ -14,5 +14,6 @@ coverage/
 Thumbs.db
 *.log
 
-# Per-machine Claude Code settings
-.claude/settings.local.json
+# Claude Code's own files: kept on the machine that uses them, not published.
+.claude/
+skills-lock.json

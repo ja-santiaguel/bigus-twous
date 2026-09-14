@@ -20,6 +20,12 @@
     "serve": "npm run start --workspace=@big-two/server",
     "start": "npm run start --workspace=@big-two/server -- --client-dir ../app/dist"
   },
+  "prettier": {
+    "singleQuote": true,
+    "printWidth": 120,
+    "trailingComma": "all",
+    "arrowParens": "always"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "eslint": "^9.39.5",

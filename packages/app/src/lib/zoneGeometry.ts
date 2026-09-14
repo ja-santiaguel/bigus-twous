@@ -213,17 +213,26 @@ function trickTransform(placement: Placement, metrics: SceneMetrics): CardTransf
 
   let x: number;
   if (metrics.trickOpen) {
-    // Opened for reading: each combo is a group of its own, laid out on one
-    // line at the raised size, and the groups are centred as a set.
+    // Opened for reading: every card in the trick on one line at the raised
+    // size, a little air between combos, and the whole line centred.
     //
-    // Centre to centre, so it must clear a whole card plus a little air. Using
-    // the gap alone stacked every card in a combo on top of its neighbour six
-    // pixels apart, and a spread-out trick showed one card per group.
-    const openStep = cardWidth * CARD_SCALE.large * 1.08;
-    const span = cardWidth * CARD_SCALE.large + (count - 1) * openStep;
-    const gap = cardWidth * 0.5;
-    const groupX = (group - (groups - 1) / 2) * (span + gap);
-    x = centre.x + groupX + (placement.slot - (count - 1) / 2) * openStep;
+    // Laid out from the trick as a whole. Each combo used to be spaced by its
+    // *own* width, so a four of a kind among singles was thrown far off to one
+    // side — away from its caption, stretching the plate behind it.
+    //
+    // Centre to centre, a step clears a whole card plus a little air. Using
+    // the gap alone stacked a combo's cards six pixels apart.
+    const index = placement.trickIndex ?? placement.slot;
+    const total = placement.trickCount ?? count;
+    const naturalStep = cardWidth * CARD_SCALE.large * 1.08;
+    const naturalGap = cardWidth * 0.5;
+    const naturalWidth = (total - 1) * naturalStep + (groups - 1) * naturalGap;
+    // A long trick is squeezed to fit the table rather than running off it.
+    const room = Math.max(0, metrics.layer.width - cardWidth * CARD_SCALE.large - cardWidth);
+    const fit = naturalWidth > room && naturalWidth > 0 ? room / naturalWidth : 1;
+    const step = naturalStep * fit;
+    const gap = naturalGap * fit;
+    x = centre.x + index * step + group * gap - ((total - 1) * step + (groups - 1) * gap) / 2;
   } else {
     // Closed: one layered row, half a card apart. The standing combo is pinned
     // to the middle of the zone and everything it beat trails away to its
@@ -248,8 +257,20 @@ function trickTransform(placement: Placement, metrics: SceneMetrics): CardTransf
   };
 }
 
-/** How many cards the pile visibly grows by; later cards land on top of the same height. */
+/** How many cards the pile visibly thickens by; later cards land on the same height. */
 const PILE_STEPS = 13;
+
+/** The furthest a discarded card turns either way, in degrees. */
+const PILE_TURN = 10;
+
+/**
+ * A fixed scatter in −1..1 for one card: the same card always lands the same
+ * way, so the pile never twitches between renders, but neighbours differ.
+ */
+function scatter(slot: number, salt: number): number {
+  const s = Math.sin((slot + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+  return (s - Math.floor(s)) * 2 - 1;
+}
 
 function discardTransform(placement: Placement, metrics: SceneMetrics): CardTransform {
   const scale = ZONE_SCALE.discard;
@@ -259,15 +280,14 @@ function discardTransform(placement: Placement, metrics: SceneMetrics): CardTran
   const centre = centreOf(rect);
   // One art pixel of the card, in layout pixels: cards are authored 22 wide.
   const px = metrics.cardWidth / 22;
-  const step = Math.min(placement.slot, PILE_STEPS);
-  // A real pile: each card half a pixel higher and further right than the one
-  // beneath it, and never quite square. The wobble is fixed per card, so the
-  // pile looks the same on every render rather than twitching.
-  const wobble = (((placement.slot * 37) % 7) - 3) * 0.8;
+  // A messy pile, not a staircase: each card lands roughly on top of the last,
+  // turned a little one way or the other and nudged a pixel or two off square.
+  // The pile only thickens slightly as it grows, rather than climbing away.
+  const rise = Math.min(placement.slot, PILE_STEPS) * 0.25 * px;
   return {
-    x: centre.x - metrics.layer.x + step * 0.5 * px,
-    y: centre.y - metrics.layer.y - step * 0.5 * px,
-    rotate: wobble,
+    x: centre.x - metrics.layer.x + scatter(placement.slot, 1) * 2 * px,
+    y: centre.y - metrics.layer.y + scatter(placement.slot, 2) * 1.5 * px - rise,
+    rotate: scatter(placement.slot, 3) * PILE_TURN,
     scale,
     // Kept below the hands' layer however tall the pile grows; cards sharing
     // the top layer stack in the order they arrived.

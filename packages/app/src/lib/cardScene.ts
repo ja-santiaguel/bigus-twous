@@ -37,6 +37,8 @@ export interface Placement {
   groups?: number;
   /** Index across the *whole* trick, not just within the combo. */
   trickIndex?: number;
+  /** How many cards the whole trick holds, so an opened trick is laid out as one line. */
+  trickCount?: number;
   /**
    * The index that should sit at the centre of the trick zone — the middle of
    * the standing combo. Carried here so the layout stays a pure function of
@@ -139,6 +141,7 @@ export function buildScene(input: SceneInput): CardEntity[] {
   const standingStart = before.slice(0, -1).reduce((a, b) => a + b, 0);
   const standingCount = before[before.length - 1] ?? 1;
   const anchorIndex = standingStart + (standingCount - 1) / 2;
+  const trickCount = before.reduce((a, b) => a + b, 0);
 
   let trickIndex = 0;
   input.trickPlays.forEach((play, group) => {
@@ -155,6 +158,7 @@ export function buildScene(input: SceneInput): CardEntity[] {
           group,
           groups: input.trickPlays.length,
           trickIndex: trickIndex++,
+          trickCount,
           anchorIndex,
           faceUp: true,
         },

@@ -215,15 +215,63 @@ describe('transformFor', () => {
     expect(handZ).toBeLessThan(trickZ);
   });
 
-  it('stacks the discard pile upward to a cap, and keeps all of it under the hands', () => {
+  it('piles discarded cards messily on top of each other, all under the hands', () => {
     const m = metrics();
     const handZ = transformFor({ zone: 'hand', seat: 0, slot: 0, count: 1, faceUp: true }, m).z;
-    const at = (slot: number) => transformFor({ zone: 'discard', slot, count: 40, faceUp: false }, m);
+    const pile = Array.from({ length: 40 }, (_, slot) =>
+      transformFor({ zone: 'discard', slot, count: 40, faceUp: false }, m),
+    );
 
-    expect(at(1).y).toBeLessThan(at(0).y);
-    // Past the cap, cards land on the same height rather than climbing forever.
-    expect(at(30).y).toBe(at(20).y);
-    expect(at(39).z).toBeLessThan(handZ);
+    // Turned both ways, like a pile tossed together — not all leaning one way.
+    expect(pile.some((t) => t.rotate > 2)).toBe(true);
+    expect(pile.some((t) => t.rotate < -2)).toBe(true);
+    // On top of each other: every card within a small fraction of a card of
+    // the pile's centre, rather than climbing away up and to the right.
+    const centre = { x: 680 + 90 / 2, y: 350 + 130 / 2 };
+    for (const t of pile) {
+      expect(Math.abs(t.x - centre.x)).toBeLessThan(m.cardWidth * 0.2);
+      expect(Math.abs(t.y - centre.y)).toBeLessThan(m.cardWidth * 0.3);
+      expect(t.z).toBeLessThan(handZ);
+    }
+    // Fixed per card, so the pile does not twitch between renders.
+    expect(transformFor({ zone: 'discard', slot: 7, count: 8, faceUp: false }, m)).toEqual(pile[7]);
+  });
+
+  it('lays an opened trick out as one even line, whatever size each combo is', () => {
+    // One four of a kind among singles used to be thrown far off to one side,
+    // because each combo was spaced by its own width.
+    const plays: TrickPlay[] = [
+      { playerId: 'seat-1', combo: combo(c('3', 'SPADE')), isActive: false },
+      { playerId: 'seat-2', combo: combo(c('2', 'SPADE')), isActive: false },
+      {
+        playerId: 'seat-3',
+        combo: combo(c('6', 'SPADE'), c('6', 'CLUB'), c('6', 'DIAMOND'), c('6', 'HEART')),
+        isActive: true,
+      },
+    ];
+    const m = metrics({ trickOpen: true, layer: rect(0, 0, 3000, 900) });
+    const xs = scene({ trickPlays: plays }).map((e) => transformFor(e.placement, m).x);
+
+    const steps = xs.slice(1).map((x, i) => x - xs[i]!);
+    for (const step of steps) expect(step).toBeGreaterThan(0);
+    // Between combos is a little wider than within one, never a chasm.
+    expect(Math.max(...steps)).toBeLessThan(Math.min(...steps) * 2);
+    // And the line is centred on the trick zone (centre 500).
+    expect((xs[0]! + xs[xs.length - 1]!) / 2).toBeCloseTo(500, 6);
+  });
+
+  it('squeezes a long opened trick to fit the table', () => {
+    const suits = ['SPADE', 'CLUB', 'DIAMOND', 'HEART'] as const;
+    const ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'] as const;
+    const plays: TrickPlay[] = ranks.map((rank, i) => ({
+      playerId: SEATS[i % 4]!,
+      combo: combo(c(rank, suits[i % 4]!)),
+      isActive: i === ranks.length - 1,
+    }));
+    const m = metrics({ trickOpen: true });
+    const xs = scene({ trickPlays: plays }).map((e) => transformFor(e.placement, m).x);
+
+    expect(xs[xs.length - 1]! - xs[0]!).toBeLessThanOrEqual(m.layer.width - m.cardWidth * CARD_SCALE.large);
   });
 
   it('lifts the opened trick above every other zone', () => {

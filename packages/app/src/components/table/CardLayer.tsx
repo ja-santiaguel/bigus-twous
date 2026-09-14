@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { CardBack, CardFace } from '../card/PixelCard.js';
 import { NONE, SETTLE, transition } from '../../design/motion.js';
@@ -224,6 +225,7 @@ export function CardLayer({
                * `auto`, and the read-out plate's explicit z painted over it.
                */
               style={{ zIndex: Math.round(at.z) }}
+              transformTemplate={pixelSnap}
               initial={{ x: at.x, y: labelY(at, metrics), opacity: 0 }}
               animate={{ x: at.x, y: labelY(at, metrics), opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -233,12 +235,48 @@ export function CardLayer({
                 *be* centred on that point. A fixed-width box only centres text
                 that fits inside it; an absolutely centred inner span centres
                 whatever length the seat name happens to be. */}
-              <span className="cardlayer__labeltext">{label.text}</span>
+              <LabelText text={label.text} />
             </m.span>
           );
         })}
       </AnimatePresence>
     </div>
+  );
+}
+
+/**
+ * A caption's transform: a flat translate to whole pixels.
+ *
+ * Captions are pixel text, and pixel text goes soft two ways — a position
+ * between pixels (a combo's middle is often a half pixel), or a 3D transform
+ * rendered through the table's perspective. This avoids both, even mid-flight.
+ */
+function pixelSnap({ x, y }: { x?: unknown; y?: unknown }): string {
+  const whole = (value: unknown) => Math.round(typeof value === 'number' ? value : parseFloat(String(value ?? 0)) || 0);
+  return `translate(${whole(x)}px, ${whole(y)}px)`;
+}
+
+/**
+ * A caption's text, centred on its anchor by a whole-pixel offset.
+ *
+ * `translateX(-50%)` centred it too, but half of an odd width is a half pixel,
+ * which blurred the name under the combo that stands. Measured again once the
+ * typeface has loaded, since the fallback font is a different width.
+ */
+function LabelText({ text }: { text: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const centre = () => {
+      const el = ref.current;
+      if (el) el.style.marginLeft = `${-Math.round(el.offsetWidth / 2)}px`;
+    };
+    centre();
+    void document.fonts?.ready.then(centre);
+  }, [text]);
+  return (
+    <span className="cardlayer__labeltext" ref={ref}>
+      {text}
+    </span>
   );
 }
 

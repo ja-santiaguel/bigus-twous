@@ -443,6 +443,15 @@ body {
 /* ── Table ───────────────────────────────────────────────────────────── */
 .table {
   flex: 1;
+  /* Capped both ways and centred in whatever is left over. On a wide screen the
+     side seats otherwise ran off to the far edges with an empty plain between
+     them and the trick; on a tall or portrait screen the top seat and your
+     hand drifted apart the same way. The caps are in card sizes, so they scale
+     with --scale like everything else. */
+  width: 100%;
+  max-width: calc(var(--card-w) * 20);
+  max-height: calc(var(--card-h) * 11);
+  margin: auto;
   /* The card layer's coordinate space. Every card on the board is positioned
      against this one box, which is what lets a card travel from a seat to the
      middle of the table without anything converting between two components'
@@ -1291,7 +1300,8 @@ body {
   position: absolute;
   left: 0;
   top: 0;
-  transform: translateX(-50%);
+  /* Centred by a whole-pixel margin set in CardLayer, not translateX(-50%):
+     half an odd width is half a pixel, and pixel text blurs on it. */
   font-size: var(--text-xs);
   letter-spacing: 0;
   color: var(--dim);

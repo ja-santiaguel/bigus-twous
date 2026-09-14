@@ -222,10 +222,19 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   timing of its own.
 - **A resize is not a move.** Cards follow the window instantly while it is being
   resized; only game events animate them.
-- **The discard pile is the real cards**, face down, stacked in the order they
-  arrived — half an art pixel up and right per card for the first 13, then level
-  — with a fixed wobble per card and a shadow under the bottom card only. A
-  closing trick travels there as itself. There is no separately drawn pile.
+- **The discard pile is the real cards**, face down, in the order they arrived,
+  tossed roughly on top of each other: each turned up to 10° either way and
+  nudged a pixel or two off square, the pile thickening by a quarter pixel per
+  card for the first 13. The scatter is fixed per card, so it never twitches.
+  A shadow under the bottom card only. A closing trick travels there as itself;
+  there is no separately drawn pile.
+- **Captions and other pixel text land on whole pixels.** A caption's transform
+  is a flat, rounded `translate`, and it is centred by a rounded margin rather
+  than `translateX(-50%)` — a half pixel or a 3D transform blurs pixel type.
+- **An opened trick is one line**: every card at the raised size, a step of just
+  over a card, half a card of extra air between combos, the whole line centred
+  and squeezed to fit the table when it is long. Combos of different sizes sit
+  evenly; each caption stays under its own cards.
 - Clocks change tone at a third and a sixth of their allowance — 20 and 10
   seconds of a turn, 5 and 2½ of a pile pick.
 - One pulse per urgent state (turn marker, a clock's last sixth), stepped, and off
@@ -239,6 +248,10 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 
 ## 10. Layout
 
+- **The table is capped both ways and centred**: at most 20 card widths wide and
+  11 card heights tall, in card units so it scales with `--scale`. On a wide
+  screen the side seats stay near the trick instead of running to the edges; on
+  a tall or portrait screen the top seat and your hand stay in proportion.
 - **The title card** is the in-game card sprite at two art pixels per pixel —
   `--px` doubled on the card — so its border and inner edge match the table's
   cards. No caption.
