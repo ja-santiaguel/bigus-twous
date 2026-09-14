@@ -1,0 +1,23 @@
+{
+  "name": "big-two",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Big Two card game \u2014 monorepo root",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspace=@big-two/engine && npm run test --workspace=@big-two/ai && npm run test --workspace=@big-two/session && npm run test --workspace=@big-two/protocol && npm run test --workspace=@big-two/server && npm run test --workspace=@big-two/app",
+    "test:watch": "npm run test:watch --workspace=@big-two/engine",
+    "simulate": "npm run simulate --workspace=@big-two/ai",
+    "build": "npm run build --workspace=@big-two/engine && npm run build --workspace=@big-two/ai && npm run build --workspace=@big-two/session && npm run build --workspace=@big-two/protocol && npm run build --workspace=@big-two/server",
+    "build:client": "npm run build --workspace=@big-two/app",
+    "typecheck": "npm run typecheck --workspace=@big-two/engine && npm run typecheck --workspace=@big-two/ai && npm run typecheck --workspace=@big-two/session && npm run typecheck --workspace=@big-two/protocol && npm run typecheck --workspace=@big-two/server && npm run typecheck --workspace=@big-two/app",
+    "dev": "npm run dev --workspace=@big-two/app",
+    "serve": "npm run start --workspace=@big-two/server",
+    "start": "npm run start --workspace=@big-two/server -- --client-dir ../app/dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

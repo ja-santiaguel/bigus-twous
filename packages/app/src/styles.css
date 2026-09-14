@@ -1,0 +1,2430 @@
+/*
+ * Tien Len — design system.
+ *
+ * Flat table viewed from directly above. The plane never tilts and there is no
+ * horizon; every bit of dimensionality comes from the cards themselves —
+ * lift, shadow, fan rotation — so the board reads as a surface photographed
+ * from overhead rather than a room you are sitting in.
+ *
+ * Pixel discipline: art is authored on an integer grid and rendered with
+ * crisp edges. Cards are transformed quads in a perspective scene, so rotation
+ * and scale are free; what is never allowed is a non-integer *source* scale.
+ */
+
+/* ── Tokens ──────────────────────────────────────────────────────────── */
+:root {
+  --ink: #1b1f24;
+  --table: #2b3a36;
+  --table-lo: #24312e;
+  --table-hi: #35443f;
+  --bone: #e4dccb;
+  --bone-dim: #c9c0ae;
+  --back: #4a6670;
+  --back-hi: #5e7f8a;
+  --gold: #d9a441;
+  /* Every text colour meets WCAG AA (4.5:1) on the table, its panels and its
+     fields; --alert and --dim were lightened for it, which is also what keeps
+     them legible on a dim phone screen in daylight. */
+  --alert: #ea867e;
+  --silver: #b9c2c6;
+  --bronze: #cc9660;
+  --dim: #95a39e;
+  /* The outline of somewhere you can type: 3:1 against the table, the minimum
+     for telling a control's edge apart (WCAG 1.4.11). */
+  --edge: #6a8a80;
+  /* An inset surface, darker than any panel it sits on, so a field reads as
+     somewhere to type on every screen rather than only on some. */
+  --field: #1e2825;
+  --gold-hi: #e6b457;
+  /* Text on a gold surface. */
+  --on-gold: #241905;
+  --suit-red: #b3322b;
+
+  /* Shadows and scrims. Every shadow on the board is cast by the same ink, at
+     one of two strengths: resting and lifted things cast --shade, large
+     surfaces lying flat on the felt cast --shade-soft. There were fifteen
+     hand-written variants on two different inks before, which is how a button
+     and a card came to cast visibly different shadows under the same light. */
+  --shade: rgba(8, 12, 11, 0.55);
+  --shade-soft: rgba(8, 12, 11, 0.4);
+  --scrim: rgba(12, 18, 16, 0.72);
+  --scrim-strong: rgba(16, 23, 21, 0.9);
+  --gold-wash: rgba(217, 164, 65, 0.08);
+  --gold-wash-strong: rgba(217, 164, 65, 0.12);
+  --alert-wash: rgba(234, 134, 126, 0.08);
+
+  /* Type scale. Four sizes, used by role rather than by feel: xs for incidental
+     meta, sm for labels and controls, md for the sentence that matters on a
+     screen, lg for headings. Nine near-identical sizes had grown in their
+     place, and at 12, 13 and 14px side by side the difference read as a
+     mistake rather than as hierarchy. */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 24px;
+
+  /* Page layers. Inside the card layer, cards stack by the constants in
+     lib/zoneGeometry (zones 10–60, opened trick 130–150, hover 800, drag 900);
+     these are the layers the card layer itself sits among. */
+  --layer-raised: 1;
+  --layer-cards: 5;
+  --layer-chrome: 10;
+  --layer-readout: 30;
+  --layer-marquee: 300;
+  --layer-banner: 500;
+  --layer-toast: 600;
+
+  /* Control sizes: two heights, and nothing else. Buttons, inputs and icon
+     buttons beside inputs are md; chips, seat buttons, the sort control and
+     small controls in tight rows are sm. See DESIGN.md. */
+  --control-sm: calc(11 * var(--px));
+  --control-md: calc(15 * var(--px));
+
+  /* Passing, refusing, and the texture of "not yet". */
+  /* Darkened so bone text on them meets 4.5:1. */
+  --pass: #9a3c36;
+  --pass-hi: #a0423c;
+
+  /*
+   * One knob: --scale is how many device pixels an art pixel occupies. It is
+   * always a whole number, and every size below is an integer multiple of it,
+   * so the art never lands on a fractional device pixel. Media queries change
+   * --scale and nothing else; animations are the only thing allowed to move
+   * off the grid, because a card in flight is being projected, not resampled.
+   */
+  --scale: 3;
+  --px: calc(var(--scale) * 1px);
+  --u: calc(4 * var(--px));
+
+  /* Card art is 22x31 pixels; the mini and tray variants are the same drawing
+     at smaller whole-number sizes. */
+  --card-w: calc(22 * var(--px));
+  --card-h: calc(31 * var(--px));
+
+  --lift: calc(6 * var(--px));
+
+  /* The middle of the table is laid out from constants, never from its
+     contents — see .centre. One zone either side of a fixed central gutter,
+     equal so the two piles sit at mirrored offsets from the centre line. */
+  --centre-zone: calc(var(--card-w) * 4);
+  /* Side columns are equal and wide enough for the discard pile plus its
+     clearance; their only other job is to keep the middle column centred. */
+  --centre-side: calc(var(--card-w) * 2);
+  --centre-row: calc(var(--card-h) + 14 * var(--px));
+
+  color-scheme: dark;
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+/* Browsers give form controls their own font. Cards, chips and buttons are all
+   <button>, so without this their text silently falls back to Arial. */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--table);
+  color: var(--bone);
+  /* One family throughout, ranks included. Silkscreen's digits are
+     unambiguous — Pixelify Sans drew '2' as a reversed S, which on a card rank
+     is not a stylistic quirk, it is a misread card. */
+  font-family: 'Silkscreen', ui-monospace, monospace;
+  font-size: var(--text-md);
+  line-height: 1.45;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  /* Nothing on the page selects by dragging — see the input rule further on. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────────── */
+.pcard {
+  /* Cards are flex items in the play area and tray. Without this they shrink
+     below their own width and the art distorts — the card keeps its declared
+     size or it is not a card. */
+  flex: none;
+  /* Art dimensions in art pixels. Every context overrides these as a set, so
+     the pips and rank always scale with the card they sit on. Sizing them
+     once at the root is what made tray cards look crushed: full-size
+     furniture in a third-size frame. */
+  --card-aw: 22;
+  --card-ah: 31;
+  --pip-small: calc(3 * var(--px));
+  /* Whole multiples of the 9x9 pip grid, so every pip pixel is the same
+     size as every other pixel on the card. At 10 units the grid landed on
+     3.33 device pixels each and the pip drew itself in uneven columns. */
+  --pip-large: calc(9 * var(--px));
+  --rank: calc(6 * var(--px));
+  display: block;
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  border: var(--px) solid var(--ink);
+  user-select: none;
+}
+
+.pcard--face {
+  background: var(--bone);
+  box-shadow: inset 0 0 0 var(--px) var(--bone-dim);
+}
+.pcard--face.is-red {
+  color: var(--suit-red);
+}
+.pcard--face.is-black {
+  color: var(--ink);
+}
+.pcard--face.is-dimmed {
+  filter: saturate(0.5) brightness(0.8);
+}
+
+.pcard__rank {
+  position: absolute;
+  top: calc(var(--px));
+  left: calc(2 * var(--px));
+  line-height: 1;
+  font-size: var(--rank);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* "10" is the one rank that needs two glyphs, and overlapping cards only show
+   their left edge. Pulled tight against the corner and condensed, both digits
+   fit inside the strip that stays visible — otherwise a ten in the middle of a
+   trick or a fan is indistinguishable from an ace-high nothing, and reads as a
+   "1" that does not exist in the deck. */
+.pcard__rank.is-wide {
+  left: var(--px);
+  letter-spacing: calc(-1 * var(--px));
+}
+.pip {
+  display: block;
+}
+.pip--small {
+  width: var(--pip-small);
+  height: var(--pip-small);
+}
+.pip--large {
+  width: var(--pip-large);
+  height: var(--pip-large);
+}
+.pcard__centre {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.95;
+}
+
+.pcard--back {
+  background: var(--back);
+  color: var(--back-hi);
+  overflow: hidden;
+}
+.pcard--back svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Layout shell ────────────────────────────────────────────────────── */
+.screen {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Menu ────────────────────────────────────────────────────────────── */
+.menu {
+  flex: 1;
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  align-items: center;
+  gap: calc(var(--u) * 4);
+  max-width: 900px;
+  margin: 0 auto;
+  padding: calc(var(--u) * 3);
+}
+.menu__title {
+  /* Silkscreen draws its capitals one glyph-pixel in from the left of the text
+     box: 8px at 72px, against 1px for the 16px description under it. Pulled
+     back by the difference — in em, so it holds at every clamped size — the
+     title's ink and the description's ink share one left edge. */
+  margin: 0 0 calc(var(--u) * 1.5) calc(1px - 0.111em);
+  font-size: clamp(40px, 8vw, 72px);
+  line-height: 0.95;
+  letter-spacing: var(--px);
+}
+.menu__blurb {
+  margin: 0 0 calc(var(--u) * 2);
+  max-width: 34ch;
+  color: var(--bone-dim);
+}
+.menu__hero {
+  display: grid;
+  justify-items: center;
+  gap: var(--u);
+}
+/* The title card is the in-game sprite drawn at two art pixels per pixel.
+   Doubling --px on the card itself doubles everything declared against it —
+   size, border, inner edge, rank and pips — together. Doubling only the box
+   left the border and inner edge one pixel thick on a card twice the size,
+   which read as a thinner-lined drawing than the cards on the table. */
+.menu__hero .pcard {
+  --px: calc(var(--scale) * 2px);
+  --card-w: calc(22 * var(--px));
+  --card-h: calc(31 * var(--px));
+  transform: rotate(-6deg);
+  box-shadow:
+    inset 0 0 0 var(--px) var(--bone-dim),
+    calc(2 * var(--px)) calc(3 * var(--px)) 0 var(--shade-soft);
+}
+
+
+/* ── Panels, buttons, chips ──────────────────────────────────────────── */
+.panel {
+  width: min(620px, 100%);
+  margin: auto;
+  padding: calc(var(--u) * 2);
+  background: var(--table-lo);
+  border: var(--px) solid var(--table-hi);
+}
+.panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: calc(var(--u) * 1.5);
+}
+.panel h2 {
+  font-size: var(--text-lg);
+  margin: 0 0 var(--u);
+}
+
+.btn {
+  font: inherit;
+  background: var(--table-hi);
+  color: var(--bone);
+  border: var(--px) solid var(--ink);
+  cursor: pointer;
+  box-shadow: var(--px) var(--px) 0 var(--ink);
+}
+.btn:hover:not(:disabled) {
+  /* A whole art pixel, not a device one. At --scale 3 a 1px nudge moved the
+     button by a third of a pixel of its own art, which is the one thing that
+     actually softens pixel work. */
+  transform: translate(calc(-1 * var(--px)), calc(-1 * var(--px)));
+  box-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--ink);
+}
+.btn:active:not(:disabled) {
+  transform: translate(var(--px), var(--px));
+  box-shadow: 0 0 0 var(--ink);
+}
+.btn:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+.btn--primary {
+  background: var(--gold);
+  color: var(--on-gold);
+}
+/* Raised, but subdued: a consequential action that is not the main one —
+   Leave, Clear, Back. It keeps the raised behaviour so it reads as something
+   that does something, and gives up the bright surface so it does not compete
+   with the primary action beside it. */
+.btn--quiet {
+  background: var(--table-lo);
+  color: var(--bone-dim);
+}
+
+.chip {
+  font: inherit;
+  margin-left: var(--px);
+  background: transparent;
+  color: var(--dim);
+  border: var(--px) solid var(--table-hi);
+  cursor: pointer;
+}
+.chip[aria-pressed='true'] {
+  background: var(--gold);
+  color: var(--on-gold);
+  border-color: var(--gold);
+}
+
+/* ── Lobby ───────────────────────────────────────────────────────────── */
+.seats {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 calc(var(--u) * 2);
+}
+.seats__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--u);
+  align-items: center;
+  padding: var(--u) 0;
+  border-bottom: var(--px) solid var(--table-hi);
+}
+.seats__row.is-mine {
+  border-bottom-color: var(--gold);
+}
+.seats__who {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+}
+.seats__name {
+  white-space: nowrap;
+}
+.seats__sit {
+  font: inherit;
+  background: transparent;
+  color: var(--dim);
+  border: var(--px) solid var(--table-hi);
+  cursor: pointer;
+}
+.field__hint--lead {
+  margin: 0 0 var(--u);
+}
+.field {
+  margin-bottom: calc(var(--u) * 1.5);
+}
+.field label,
+.field__label {
+  display: block;
+  margin-bottom: calc(var(--u) / 2);
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+.field input {
+  font: inherit;
+  width: 100%;
+  background: var(--field);
+  color: var(--bone);
+  border: var(--px) solid var(--edge);
+}
+.field input:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+.field__hint {
+  margin: calc(var(--u) / 2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+
+/* ── Table ───────────────────────────────────────────────────────────── */
+.table {
+  flex: 1;
+  /* The card layer's coordinate space. Every card on the board is positioned
+     against this one box, which is what lets a card travel from a seat to the
+     middle of the table without anything converting between two components'
+     idea of where the origin is. */
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    '.    top    .'
+    'left centre right'
+    'hand hand   hand';
+  gap: var(--u);
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 2.5);
+  /* Perspective without tilt: cards gain depth when they lift, the plane does not. */
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+}
+
+.opp {
+  display: grid;
+  justify-items: center;
+  /* The count and the points belong to the seat but are not part of the fan.
+     At half a unit they touched the lowest card and read as a caption on it. */
+  gap: calc(var(--u) * 0.75);
+  align-content: start;
+}
+.opp--top {
+  grid-area: top;
+  /* Nudged toward the centre without taking part in the layout. Moving the
+     seat inside the grid would grow its row and push the play area off the
+     centre of the table; an offset draws it closer and leaves the centring
+     exactly where it was. The card layer measures the fan's real position, so
+     cards still land in it. */
+  position: relative;
+  top: calc(var(--u) * 5);
+}
+.opp--left {
+  grid-area: left;
+  align-content: center;
+}
+.opp--right {
+  grid-area: right;
+  align-content: center;
+}
+.opp__name {
+  font-size: var(--text-md);
+}
+.opp__meta {
+  font-size: var(--text-sm);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  /* Fixed, like the status slot below it. This row swaps a line of text for a
+     medal badge the moment a seat finishes, and the two are not the same
+     height — which moved the side seats by a pixel at the exact moment the
+     player was looking at them. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(7 * var(--px));
+}
+.opp.is-turn .opp__name {
+  color: var(--gold);
+}
+@keyframes turn-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+/* Whose turn it is — one marker, every seat, your own included.
+   Always drawn, so a name never shifts sideways as the turn moves round: what
+   changes is the marker's state, not whether there is one. At rest a dim
+   square that reads as punctuation; on turn it grows, fills gold, gains a ring
+   and blinks. */
+.turndot {
+  width: calc(var(--px) * 3);
+  height: calc(var(--px) * 3);
+  background: var(--table-hi);
+  display: inline-block;
+  margin-right: calc(var(--px) * 3);
+  vertical-align: middle;
+  flex: none;
+  transition: width 140ms steps(2), height 140ms steps(2), background-color 140ms;
+}
+.turndot.is-on {
+  width: calc(var(--px) * 5);
+  height: calc(var(--px) * 5);
+  /* A ring rather than a solid block: at five pixels square a filled marker
+     started to read as a tiny card of its own. */
+  background: var(--gold);
+  box-shadow: inset 0 0 0 var(--px) var(--table);
+  /* Stepped, not eased — this art has no gradients in it and a smooth fade
+     reads as a different material from everything around it. */
+  animation: turn-pulse 1.4s steps(2, end) infinite;
+}
+
+/* A reserved slot, not a row that appears.
+   "Passed" used to be added to and removed from the seat's grid, so every seat
+   it happened to grew and shrank by a line — shoving its own cards, and on the
+   side seats the whole column, up and down the screen. Holding the line's
+   height whether or not anything is in it costs one empty row and removes the
+   entire class of jump. */
+.opp__status {
+  display: block;
+  /* A fixed height, not a minimum. A minimum still lets the text inside win
+     when its own line box is taller, which is exactly what happened: the slot
+     measured 12px empty and 14px with "passed" in it, so the jump shrank
+     rather than went away. Nothing inside can change this box. */
+  height: calc(5 * var(--px));
+  line-height: calc(5 * var(--px));
+}
+.opp__status > * {
+  line-height: inherit;
+}
+.opp__passed {
+  font-size: var(--text-xs);
+  letter-spacing: 0;
+  color: var(--alert);
+}
+
+/* Where a seat finished, shown in place of its card count once it is empty.
+   Colour does the ranking at a glance and the ordinal says it exactly; the
+   medal is there so the row reads as an achievement rather than a status. */
+.place {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--px));
+  vertical-align: middle;
+}
+.place__medal {
+  /* Sized to sit inside the meta row's line rather than to stretch it. */
+  /* Two device pixels per art pixel of its 9x9 grid — a whole multiple, like
+     the suit pips. At five units it rendered 1.67 pixels each and the ribbon
+     came out thicker on one side than the other. */
+  width: calc(6 * var(--px));
+  height: calc(6 * var(--px));
+  display: block;
+  flex: none;
+}
+.place__text {
+  font-variant-numeric: tabular-nums;
+}
+.place.is-gold {
+  color: var(--gold);
+}
+.place.is-silver {
+  color: var(--silver);
+}
+.place.is-bronze {
+  color: var(--bronze);
+}
+.place.is-last {
+  color: var(--dim);
+}
+
+/* Miniature fan of backs for each opponent. */
+/* Opponent card art is no longer a separate, smaller drawing. One drawing at
+   one authored size, shown at CARD_SCALE.small — two pictures cannot be
+   interpolated, and interpolation is the entire point. */
+
+/* Centre: cards in play, and the face-down mound.
+
+   Three columns with a fixed middle gutter, so the two piles sit at equal
+   offsets either side of the table's centre line and can never touch. A flex
+   row centred the *pair*, which meant the midpoint drifted whenever the trick
+   grew and the discard pile slid along with it. Pinning the gutter instead
+   makes the pile's position a constant: the in-play box grows leftward into
+   its own column and nothing else moves. */
+.centre {
+  grid-area: centre;
+  /* Positioned so the opened trick centres on the *table*, not on the in-play
+     box. The in-play box is pinned left of the middle gutter, so centring the
+     panel on it threw a four-combo trick off the left edge of the screen. The
+     panel is a read-out laid over the table, and the table is what it should
+     be centred on. */
+  position: relative;
+  display: grid;
+  /* Three fixed tracks with **equal side columns**, which is what puts the
+     in-play zone dead centre on the table: it sits in the middle column, and a
+     middle column flanked by equal columns is centred no matter what is in the
+     side ones. The discard pile lives in the right column and therefore cannot
+     shift it.
+
+     Every width here is a constant, so nothing in the middle of the table ever
+     moves — not when a trick grows, not when it is hovered, not when the
+     discard pile fills up. Sizing columns from their contents is what let the
+     in-play box drift off-centre and stay there. Content that outgrows a zone
+     overflows it rather than resizing it. */
+  grid-template-columns: var(--centre-side) var(--centre-zone) var(--centre-side);
+  /* One row only. The caption below is positioned out of flow, so it cannot
+     drag the play area off centre — with it in the grid, the *pair* was
+     centred and the pile itself sat high by half a caption. */
+  grid-template-rows: var(--centre-row);
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  justify-items: center;
+  transform-style: preserve-3d;
+}
+.centre > .inplay {
+  grid-column: 2;
+  grid-row: 1;
+}
+.centre > .mound {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: start;
+  /* Fixed clearance from the in-play zone, so the two never crowd each other. */
+  margin-left: calc(var(--u) * 3);
+}
+/* The combo type, stated once under the trick instead of once per group. */
+.centre__read {
+  position: absolute;
+  top: calc(50% + var(--centre-row) / 2 + var(--u));
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--u) * 2);
+  margin-top: var(--u);
+  min-height: calc(6 * var(--px));
+}
+.centre__type {
+  font-size: var(--text-sm);
+  color: var(--gold);
+}
+.centre__by {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.inplay {
+  /* Fixed size, and the drop target for dragging cards onto the table. Both
+     properties matter: a target that resizes as you drag toward it is a target
+     that moves out from under the pointer. */
+  display: grid;
+  place-items: center;
+  width: var(--centre-zone);
+  height: var(--centre-row);
+  /* Deliberately not positioned: that hands the opened panel's containing
+     block up to .centre. z-index still applies here because this is a grid
+     item. */
+  z-index: var(--layer-raised);
+  cursor: zoom-in;
+  padding: var(--u);
+  border: var(--px) solid transparent;
+}
+/* Opened, the trick can be wider than the centre column, so it lifts above the
+   seats and takes a plate of its own rather than colliding with their labels. */
+.inplay.is-open {
+  z-index: var(--layer-readout);
+}
+.inplay:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: calc(3 * var(--px));
+}
+/* Lit while a dragged card is over it — dropping here plays the cards. */
+.inplay.is-drop-target {
+  border-color: var(--gold);
+  background: var(--gold-wash);
+}
+.inplay__empty {
+  color: var(--dim);
+  font-size: var(--text-sm);
+  align-self: center;
+  /* It wraps to two lines in the centre column, and a centred block of
+     left-aligned text reads as though it has slipped sideways. */
+  text-align: center;
+  text-wrap: balance;
+}
+/* The pile's box is the stack alone, so it centres on the same line as the
+   cards in play. The count hangs below out of flow — inside the box it pushed
+   the stack up by half a label and the two sat at different heights. */
+.mound {
+  position: relative;
+  display: block;
+  /* The standing combo rests 5px above the row's centre (the lift in
+     zoneGeometry's trickTransform), so the pile sits on that same line. */
+  top: -5px;
+}
+.mound__stack {
+  position: relative;
+  /* Sized to the cards plus their lean, and no more, so the pile sits centred
+     under its own label rather than floating in a box of empty space. */
+  width: calc(var(--card-w) + 2 * var(--px));
+  height: calc(var(--card-h) + 2 * var(--px));
+}
+.mound__layer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform-origin: 50% 100%;
+}
+/* Card backs here look like card backs anywhere else on the board — the same
+   dark outline. Muting the border to blend the stack into the felt made the
+   pile read as a different kind of object from every other card on the table. */
+.mound__layer .pcard {
+  box-shadow: none;
+}
+/* Only the card actually touching the table casts, and it casts straight down
+   like every other resting card on the board. */
+.mound__layer:first-child .pcard {
+  box-shadow: 0 var(--px) 0 var(--shade);
+}
+.mound__count {
+  position: absolute;
+  left: 50%;
+  /* Measured from the pile's centre by one card's height, exactly as a trick
+     caption is measured from its cards (labelY in CardLayer). From the stack's
+     bottom edge instead, the stack's extra lean pushed it lower. */
+  top: calc(50% + var(--card-h) / 2 + var(--u));
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.mound.is-empty {
+  visibility: hidden;
+}
+
+/* ── Hand ────────────────────────────────────────────────────────────── */
+.handzone {
+  grid-area: hand;
+  display: grid;
+  gap: calc(var(--u) * 1.5);
+  justify-items: center;
+  /* The fan is the thing being read most often, and it was sitting almost on
+     the bottom edge with the utility row crowding it. The space below is what
+     lets it read as held in front of you rather than jammed against the frame.
+     Now that the cards are half again as large, that space has to grow with
+     them or the proportion is lost. */
+  padding-bottom: calc(var(--u) * 5);
+  /* Every element between .table (which owns the perspective) and a card must
+     preserve 3D, or the subtree is flattened and translateZ silently does
+     nothing — the card lifts on Y but never actually comes closer. */
+  transform-style: preserve-3d;
+}
+/* An anchor, not a container. It holds the space the fan occupies and is the
+   surface a sweep starts on; the cards are drawn by the card layer. */
+.hand {
+  position: relative;
+  /* Sized to what it actually holds: a card at the hand's own scale (4/3),
+     plus room for one to lift when picked and to grow when touched. Left at
+     the old single-card height the fan's top edge cut through cards that had
+     done nothing but be hovered. */
+  height: calc(var(--card-h) * 4 / 3 + 22 * var(--px));
+  width: 100%;
+}
+/* ── Status line ─────────────────────────────────────────────────────── */
+/* ── Controls ────────────────────────────────────────────────────────────
+   One row above the fan: what is true right now, and what you can do about it.
+   No panel, no border, no fill. Two boxes used to stand here — a turn prompt
+   and a selection read-out — and between them they took more vertical room
+   than the cards they described, while framing information that is only ever
+   one sentence long. A line of text and three buttons need no container to be
+   legible; the space they gave back went to the hand. */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  width: min(880px, 100%);
+}
+/* The line wraps to two rather than ending in an ellipsis. These messages are
+   the reason the row exists — "those cards do not form a combination you can
+   play" is the sentence that tells you why the button is dead, and half of it
+   tells you nothing. Two lines are always reserved, so a long message does not
+   shove the fan down the screen and a short one does not let it drift back up. */
+.controls__read {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-md);
+  line-height: 1.35;
+  color: var(--bone-dim);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.7em;
+  align-content: center;
+}
+.controls__actions {
+  display: flex;
+  gap: var(--u);
+  flex-shrink: 0;
+  /* The turn clock hangs off this box, out of flow (see .controls__clock). */
+  position: relative;
+}
+/* Tone carries the state now that there is no panel to tint.
+   Colour is never the only signal: the sentence says the same thing in words,
+   the turn marker beside it says whether the move is yours, and the Play
+   button's disabled state says whether these particular cards can go. Three
+   channels, so none of them has to be read on its own — which is what makes it
+   safe to lean on colour at all. */
+
+/* Your turn: the prompt, or a selection that will play. */
+.controls.is-live .controls__read {
+  color: var(--gold);
+}
+/* Your turn, but these cards cannot go — and you, having passed out of the
+   trick. The one red every "no" on the board uses: a passed seat's name, the
+   Pass button, the table refusing a play. A second, softer red for this line
+   read as a different signal from all of those. */
+.controls.is-blocked .controls__read,
+.controls.is-passed .controls__read {
+  color: var(--alert);
+}
+/* Your hand is empty. Nothing to do, and nothing wrong: the medal beside it
+   carries the colour. */
+.controls.is-finished .controls__read {
+  color: var(--bone-dim);
+}
+/* Somebody else's move. Recessive, and a full step darker than is-blocked so
+   the two are told apart by more than the marker. */
+.controls.is-waiting .controls__read {
+  color: var(--dim);
+}
+/* The table actually refused a play. */
+.controls.is-error .controls__read {
+  color: var(--alert);
+}
+
+/* ── Utility bar ─────────────────────────────────────────────────────── */
+.utility {
+  /* Set well clear of the fan: these are settings, and a settings row within
+     a few pixels of the cards invites a misclick on the thing you were
+     reaching past it for. */
+  margin-top: calc(var(--u) * 2.5);
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  width: min(880px, 100%);
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+.utility__spacer {
+  flex: 1;
+}
+.utility__seed {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Sort control ────────────────────────────────────────────────────── */
+/* The pips hang below the button, out of flow, so the control's box is the
+   button alone. Everything else on this row centres on that box — the round
+   and seed read-out, the leave button — instead of on a taller box whose
+   middle sat somewhere between the button and its pips. */
+.sort {
+  position: relative;
+  display: flex;
+}
+.sort__btn {
+  font: inherit;
+  background: var(--table-hi);
+  color: var(--bone);
+  border: var(--px) solid var(--ink);
+  box-shadow: var(--px) var(--px) 0 var(--ink);
+  cursor: pointer;
+}
+.sort__pips {
+  position: absolute;
+  left: 50%;
+  /* Clear of the button's shadow, which drops a pixel below its edge and two
+     on hover, with a pixel of air after that. At one pixel the pips touched
+     the shadow and read as part of it. */
+  top: calc(100% + 3 * var(--px));
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--px);
+}
+.sort__pip {
+  width: var(--px);
+  height: var(--px);
+  background: var(--table-hi);
+}
+.sort__pip.is-on {
+  background: var(--gold);
+}
+
+/* ── Score strip ─────────────────────────────────────────────────────── */
+.scores {
+  display: flex;
+  gap: var(--u);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+.scores strong {
+  color: var(--gold);
+}
+
+/* ── Log drawer ──────────────────────────────────────────────────────── */
+.log {
+  position: fixed;
+  top: var(--u);
+  right: var(--u);
+  gap: var(--u);
+  z-index: var(--layer-cards);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-height: calc(100vh - 2 * var(--u));
+}
+.log__toggle {
+  font: inherit;
+  font-size: var(--text-sm);
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-sm);
+  padding: 0 var(--u);
+  background: var(--table-lo);
+  color: var(--dim);
+  border: var(--px) solid var(--table-hi);
+  box-shadow: var(--px) var(--px) 0 var(--shade);
+  cursor: pointer;
+}
+.log__toggle:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: calc(-1 * var(--px));
+}
+/* A true overlay: the log floats above the table and never reserves space for
+   itself. It used to push the table aside with 320px of padding, which meant
+   opening a read-only panel re-laid-out the entire board — the seats moved,
+   the fan narrowed, and the middle of the table slid sideways. Nothing about
+   reading the log should move the game. It is opaque and shadowed instead, so
+   it stays legible over whatever it covers. */
+.log__list {
+  margin: 0;
+  padding: var(--u);
+  list-style: none;
+  width: calc(100 * var(--px));
+  max-height: calc(100vh - 2 * var(--u) - var(--control-sm) - var(--u));
+  overflow-y: auto;
+  background: var(--ink);
+  border: var(--px) solid var(--table-hi);
+  box-shadow: var(--px) var(--px) 0 var(--shade);
+  font-size: var(--text-sm);
+  color: var(--bone-dim);
+}
+.log__line {
+  padding: var(--px) 0;
+}
+
+/* ── Round end ───────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-chrome);
+  display: grid;
+  place-items: center;
+  background: var(--scrim-strong);
+}
+.overlay__box {
+  min-width: 360px;
+  padding: calc(var(--u) * 2.5);
+  background: var(--table-lo);
+  border: var(--px) solid var(--gold);
+  box-shadow: calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--shade);
+  text-align: center;
+}
+.overlay__box h2 {
+  margin: 0 0 var(--u);
+  font-size: var(--text-lg);
+  color: var(--gold);
+}
+.overlay__scores {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--u);
+}
+.overlay__scores li {
+  display: grid;
+  grid-template-columns: calc(12 * var(--px)) 1fr auto auto;
+  gap: calc(var(--u) * 2);
+  align-items: baseline;
+  padding: calc(var(--px)) 0;
+  border-bottom: var(--px) solid var(--table-hi);
+}
+.overlay__note {
+  margin: 0 0 calc(var(--u) * 1.5);
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+.overlay__actions {
+  display: flex;
+  gap: var(--u);
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+
+
+/* ── Narrow screens ──────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  :root {
+    --scale: 2;
+  }
+
+  /* Side seats cannot keep their own columns on a phone — the centre would be
+     squeezed to nothing. They pair up on one row above the table instead. */
+  .table {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas:
+      'top    top'
+      'left   right'
+      'centre centre'
+      'hand   hand';
+    padding: var(--u);
+  }
+  /* The nudge toward the centre is for a table with side columns. Here the
+     side seats sit in the row directly below, and the nudge pushed the top
+     seat into them. */
+  .opp--top {
+    top: 0;
+  }
+  .opp--left,
+  .opp--right {
+    align-content: start;
+  }
+  .opp--left .minifan,
+  .opp--right .minifan {
+    height: calc(33 * var(--px));
+    min-width: 0;
+  }
+
+  .centre {
+    gap: calc(var(--u) * 2);
+  }
+
+  /* Narrow: the buttons take their own line rather than squeezing the read-out
+     into one word per line. */
+  .controls {
+    flex-wrap: wrap;
+  }
+  .controls__read {
+    flex-basis: 100%;
+  }
+  .controls__actions {
+    flex-wrap: wrap;
+  }
+
+  .utility {
+    flex-wrap: wrap;
+  }
+  .utility__spacer {
+    flex-basis: 100%;
+  }
+
+  .menu {
+    grid-template-columns: 1fr;
+  }
+  .menu__hero {
+    display: none;
+  }
+
+  .log__list {
+    width: calc(80 * var(--px));
+  }
+}
+
+/* ── Short viewports ─────────────────────────────────────────────────────
+   A card table is a fixed composition: if it does not fit, the page scrolls
+   and a seat can end up off-screen — which is exactly what happens when focus
+   moves to a button near the bottom. So the board is budgeted to fit rather
+   than allowed to overflow. */
+@media (max-height: 760px) {
+  :root {
+    --scale: 2;
+  }
+  .minifan {
+    height: calc(30 * var(--px));
+  }
+  .opp--left .minifan,
+  .opp--right .minifan {
+    height: calc(30 * var(--px));
+  }
+  .inplay {
+    min-height: calc(var(--card-h) + var(--u));
+  }
+}
+
+@media (max-height: 560px) {
+  :root {
+    --scale: 2;
+  }
+  .controls__read,
+  .opp__meta,
+  .utility,
+  .mound__count {
+    font-size: var(--text-xs);
+  }
+  .opp__name {
+    font-size: var(--text-sm);
+  }
+}
+
+
+/* ── Deal ceremony ───────────────────────────────────────────────────── */
+.overlay--ceremony {
+  background: var(--scrim-strong);
+}
+.ceremony {
+  display: grid;
+  justify-items: center;
+  gap: calc(var(--u) * 2);
+}
+.ceremony__line {
+  margin: 0;
+  font-size: var(--text-md);
+  color: var(--bone);
+}
+.ceremony__piles {
+  display: flex;
+  gap: calc(var(--u) * 2);
+}
+.cpile {
+  display: grid;
+  justify-items: center;
+  gap: var(--u);
+  transition: opacity 200ms ease-out;
+}
+.cpile.is-taken {
+  opacity: 0.35;
+}
+/* The pile itself is the button while it can still be taken. */
+.cpile__hit {
+  display: block;
+  padding: calc(2 * var(--px));
+  background: none;
+  border: var(--px) solid transparent;
+  cursor: default;
+}
+.cpile.is-pickable .cpile__hit {
+  cursor: pointer;
+  border-color: var(--table-hi);
+}
+.cpile.is-pickable .cpile__hit:hover,
+.cpile.is-pickable .cpile__hit:focus-visible {
+  border-color: var(--gold);
+  background: var(--gold-wash);
+  outline: none;
+}
+.cpile__stack {
+  position: relative;
+  display: block;
+  /* Exactly the cards, their lean, and the shadow under them. Thirteen layers
+     half a device pixel apart lean two art pixels up and across; the bottom
+     card's shadow drops two more. Sized for the lean alone, the shadow hung two
+     pixels below the stack, through the button's padding and onto its outline. */
+  width: calc(var(--card-w) + 2 * var(--px));
+  height: calc(var(--card-h) + 4 * var(--px));
+}
+.cpile__card {
+  position: absolute;
+  left: 0;
+  /* Lifted by the shadow's depth, so the shadow lands inside the stack. */
+  bottom: calc(2 * var(--px));
+}
+/* A stack of thirteen cards is a block with visible edges, not a fan. Each
+   layer sits one art pixel up and half a pixel across from the one below, so
+   the side of the deck reads as a stack of paper; only the top card is a full
+   card face. The bottom layer alone casts the shadow, because the pile rests
+   on the table rather than hovering above it. */
+.cpile__card .pcard {
+  box-shadow: none;
+}
+.cpile__card:first-child .pcard {
+  box-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--shade);
+}
+.cpile__label {
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+.cpile.is-taken .cpile__label {
+  color: var(--gold);
+}
+
+/* Round-end standings: place, seat, what they scored, running total. */
+.overlay__scores li.is-you {
+  color: var(--bone);
+}
+.overlay__place {
+  color: var(--dim);
+  font-size: var(--text-xs);
+  text-align: left;
+}
+/* The seat name column reads as a list, so it starts on a common left edge
+   rather than inheriting the box's centring. */
+.overlay__scores li > span:nth-child(2) {
+  text-align: left;
+}
+.overlay__gain {
+  color: var(--gold);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Card layer ──────────────────────────────────────────────────────────
+   Every card on the table, drawn once, positioned absolutely. Zones own their
+   chrome and report their boxes; this owns the cards. A card moving between
+   zones is a change of transform on a node that never unmounts — which is the
+   difference between a card that travels and one that is destroyed here and
+   recreated there. */
+.cardlayer {
+  position: absolute;
+  inset: 0;
+  /* Inert. The zones underneath keep their own hit areas, because they are the
+     things that know what a click in their region means. */
+  pointer-events: none;
+  z-index: var(--layer-cards);
+  transform-style: preserve-3d;
+}
+.cardlayer__card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* Transforms position a card's *centre*, so the geometry can talk about
+     where a card is rather than where its corner is. */
+  margin-left: calc(var(--card-w) / -2);
+  margin-top: calc(var(--card-h) / -2);
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+.cardlayer__card .pcard {
+  box-shadow: 0 var(--px) 0 var(--shade);
+}
+/* A caption is positioned by its combo's centre, so it has to *be* centred on
+   that point. The old fixed 80px box only centred text that fitted inside it:
+   anything longer — "Seat 1 (you)" — overflowed and drifted off its cards. A
+   zero-width anchor with an absolutely centred child centres any length. */
+.cardlayer__label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+}
+.cardlayer__labeltext {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: var(--text-xs);
+  letter-spacing: 0;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.cardlayer__label.is-standing .cardlayer__labeltext {
+  color: var(--gold);
+}
+
+/* Zone anchors. These hold space and report a box; they draw nothing.
+   A fixed size, deliberately: the seat columns must not grow with the number
+   of cards a player happens to be holding, or the middle of the table shifts
+   every time somebody plays. The fan is fitted into this box instead. */
+.minifan {
+  position: relative;
+  width: calc(64 * var(--px));
+  /* Tall enough for the widest fan a seat can hold, including the overhang of
+     the rotated end cards — 26 units fitted a small hand and let a big one
+     spill onto the card count printed underneath. The fan is centred on its
+     true extent (see `fanExtent`), so the slack sits evenly above and below
+     and every seat reads the same whatever it is holding. */
+  height: calc(33 * var(--px));
+}
+
+/* A beaten combo recedes by tone, not by transparency — fading it lets the
+   felt and its neighbours show through, and overlapping cards compound into a
+   grey mush. Darkening an opaque card reads as "further back, in shadow". */
+.cardlayer__card.is-beaten {
+  filter: brightness(0.58) saturate(0.75);
+}
+.cardlayer.is-open .cardlayer__card.is-beaten {
+  filter: brightness(0.8) saturate(0.9);
+}
+/* The plate behind the trick when it is opened out for reading. Translucent,
+   so the felt still shows through and it reads as a temporary read-out laid
+   over the table rather than a modal that replaced it. */
+.cardlayer__backdrop {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 50% 50%;
+  background: var(--scrim);
+  backdrop-filter: blur(2px);
+  border: var(--px) solid var(--table-hi);
+  box-shadow: 0 calc(3 * var(--px)) 0 var(--shade-soft);
+  pointer-events: none;
+}
+
+/* Only the cards you can actually act on take pointer events. The layer itself
+   is inert so the zones underneath keep their own hit areas. */
+.cardlayer__card.is-live {
+  pointer-events: auto;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: grab;
+  touch-action: none;
+}
+.cardlayer__card.is-dragging {
+  cursor: grabbing;
+}
+.cardlayer__card.is-marked .pcard,
+.cardlayer__card.is-dragging .pcard {
+  border-color: var(--gold);
+}
+/* The combo that currently stands. Gold edge and a longer shadow: it is the
+   card everyone is playing against, and it should be obvious which one that is
+   without counting along the row. The beaten cards behind it are already
+   darkened, so the two cues point the same way rather than competing. */
+.cardlayer__card.is-standing .pcard {
+  border-color: var(--gold);
+  box-shadow: calc(3 * var(--px)) calc(4 * var(--px)) 0 var(--shade);
+}
+.cardlayer__card.is-live:focus-visible {
+  outline: none;
+}
+.cardlayer__card.is-live:focus-visible .pcard {
+  outline: var(--px) solid var(--gold);
+  outline-offset: calc(2 * var(--px));
+}
+
+
+/* ── Drop targets ────────────────────────────────────────────────────────
+   While a card is being dragged, the zone under the pointer says what letting
+   go would do — before you let go, not after. Three states, and the difference
+   between them is the whole point: a lit boundary means "this will work here",
+   a struck-through one means "this zone takes cards, but not these ones".
+
+   Drawn as an inset ring rather than a border so nothing reflows: a target
+   that changes size as you drag toward it is a target that moves out from
+   under the pointer. */
+.hand.is-drop-target,
+.inplay.is-drop-target,
+.inplay.is-drop-blocked {
+  position: relative;
+}
+.hand.is-drop-target::after,
+.inplay.is-drop-target::after,
+.inplay.is-drop-blocked::after {
+  content: '';
+  position: absolute;
+  inset: calc(-2 * var(--px));
+  pointer-events: none;
+  border: var(--px) dashed var(--gold);
+  background: var(--gold-wash);
+  animation: dropglow 900ms ease-in-out infinite alternate;
+}
+/* Legal everywhere it lights up, except the table, which is the one zone that
+   can refuse what you are holding. */
+.inplay.is-drop-blocked::after {
+  border-color: var(--alert);
+  border-style: solid;
+  background: var(--alert-wash);
+  animation: none;
+}
+@keyframes dropglow {
+  from {
+    background-color: rgba(217, 164, 65, 0.05);
+  }
+  to {
+    background-color: rgba(217, 164, 65, 0.13);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hand.is-drop-target::after,
+  .inplay.is-drop-target::after {
+    animation: none;
+  }
+}
+
+/* The sweep box, drawn on the table it was swept across. Marking cards is a
+   gesture of the whole board now, so the marquee is too. */
+.table__marquee {
+  position: absolute;
+  z-index: var(--layer-marquee);
+  border: var(--px) dashed var(--gold);
+  background: var(--gold-wash-strong);
+  pointer-events: none;
+}
+
+
+/* The board is a surface you drag on, not a document you read, so selection
+   is off for the whole page (see body). A sweep to pick cards, or a drag to
+   play them, would otherwise start selecting whatever text it crossed — the
+   browser's own drag gesture fighting ours. The only places that keep a text
+   cursor are the ones you actually type into. */
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ── Menu: opening and joining a shared table ────────────────────────────
+   Hosting and joining are the same act from opposite ends, so they sit on one
+   screen rather than behind a mode switch. Nothing here is required: a name is
+   optional, and playing on your own needs neither. */
+.menu__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--u);
+  margin-bottom: calc(var(--u) * 3);
+}
+.menu__join {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--u);
+  padding-top: calc(var(--u) * 2);
+  border-top: var(--px) solid var(--table-hi);
+}
+.menu__field {
+  display: grid;
+  gap: calc(var(--u) / 2);
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+.menu__field input {
+  font: inherit;
+  font-size: var(--text-sm);
+  width: 14ch;
+  color: var(--bone);
+  background: var(--field);
+  border: var(--px) solid var(--edge);
+}
+.menu__field input:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+.menu__error {
+  margin: calc(var(--u) * 2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--alert);
+}
+
+/* ── Connection banner ───────────────────────────────────────────────────
+   From inside a game a dropped connection looks exactly like three people
+   thinking for a very long time, so it has to be said out loud. It also has to
+   say the reassuring part: the seat is held server-side and a computer is
+   covering it, so this is an interruption rather than a loss. */
+.link {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--layer-banner);
+  padding: var(--u) calc(var(--u) * 2);
+  font-size: var(--text-sm);
+  background: var(--table-lo);
+  border: var(--px) solid var(--table-hi);
+  border-top: none;
+  color: var(--bone-dim);
+}
+.link--reconnecting {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.link--closed {
+  border-color: var(--alert);
+  color: var(--alert);
+}
+
+/* ── Turn clock ──────────────────────────────────────────────────────────
+   Whole pixels, like everything else: a smooth ring or a sliding bar needs
+   sub-pixel coverage to describe its own edge, and anti-aliased grey is the
+   thing that makes pixel work look like a screenshot of pixel work. Time goes
+   out one segment at a time instead, which also makes it countable.
+
+   Three tones, not a ramp. A colour creeping through amber has no moment you
+   can point at, and giving you moments you can point at is the whole job. */
+/* Hung above the buttons, out of flow. It takes no width from the read-out,
+   so the sentence beside the controls never re-wraps as the seconds fall. */
+.controls__clock {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--u));
+  pointer-events: none;
+}
+.clock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--u);
+  flex: none;
+}
+.clock__bar {
+  display: flex;
+  gap: var(--px);
+}
+.clock__seg {
+  width: calc(2 * var(--px));
+  height: calc(3 * var(--px));
+  background: var(--table-hi);
+  /* Stepped, because a segment either is or is not lit. An eased fade would
+     put a half-lit segment on screen, which is a state time never occupies. */
+  transition: background-color 120ms steps(2);
+}
+.clock__count {
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  /* Two digits' worth, always. A count that narrows as it falls drags the bar
+     sideways with it once a minute. */
+  min-width: 2ch;
+  text-align: right;
+  transition: color 120ms steps(2);
+}
+
+/* Over twenty seconds: present, legible, ignorable. Dim rather than absent,
+   because a clock that appears late is a clock that springs a deadline. */
+.clock.is-calm .clock__seg.is-lit {
+  background: var(--dim);
+}
+.clock.is-calm .clock__count {
+  color: var(--dim);
+}
+
+/* Under a third of the time: the same gold the board already uses for "your move". */
+.clock.is-notice .clock__seg.is-lit {
+  background: var(--gold);
+}
+.clock.is-notice .clock__count {
+  color: var(--gold);
+}
+
+/* Under a sixth. Colour is not the only signal — the bar is nearly empty by
+   definition and the number is small enough to read at a glance. */
+.clock.is-urgent .clock__seg.is-lit {
+  background: var(--alert);
+  animation: clock-urgent 800ms steps(2, end) infinite;
+}
+.clock.is-urgent .clock__count {
+  color: var(--alert);
+}
+@keyframes clock-urgent {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clock.is-urgent .clock__seg.is-lit {
+    animation: none;
+  }
+}
+
+/* Under a seat: smaller, sharing the status line that already holds "passed".
+   The two never appear together — a seat that has passed is out of the trick
+   and is not being waited on. */
+.clock--seat {
+  gap: calc(var(--u) / 2);
+}
+.clock--seat .clock__seg {
+  width: var(--px);
+  height: calc(2 * var(--px));
+}
+.clock--seat .clock__count {
+  font-size: var(--text-xs);
+}
+
+/* ── Interaction states ──────────────────────────────────────────────────
+   One vocabulary for everything you can press or type into. Before this each
+   control had grown its own: three inputs with three backgrounds and one with
+   no focus style at all, quiet buttons that nudged on hover with no shadow to
+   explain the movement, and small controls that did nothing on hover.
+
+   Two tiers of button, and the difference is consequence, not decoration:
+
+     raised  anything that changes the game or leaves a screen — Deal, Play,
+             Pass, Clear, Leave, Back, and the sort control. It casts a shadow,
+             lifts one art pixel on hover and presses flat when clicked.
+     flat    conveniences and toggles — copy, new seed, difficulty, sit here,
+             the log. No shadow and no movement; hover brightens its outline.
+
+   Everything shares one focus ring, one disabled treatment and one stepped
+   transition, so a control behaves the same wherever it appears. No corner
+   radius anywhere: the art has square corners and so do the controls. */
+
+.btn,
+.chip,
+.seats__sit,
+.sort__btn,
+.log__toggle {
+  transition:
+    transform 90ms steps(2),
+    box-shadow 90ms steps(2),
+    color 90ms steps(2),
+    border-color 90ms steps(2),
+    background-color 90ms steps(2);
+}
+
+/* Raised. */
+.sort__btn:hover {
+  color: var(--bone);
+  transform: translate(calc(-1 * var(--px)), calc(-1 * var(--px)));
+  box-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--ink);
+}
+.sort__btn:active {
+  transform: translate(var(--px), var(--px));
+  box-shadow: 0 0 0 var(--ink);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--gold-hi);
+}
+
+/* Flat. */
+.btn--flat:hover:not(:disabled),
+.chip:hover,
+.seats__sit:hover,
+.log__toggle:hover {
+  color: var(--bone);
+  border-color: var(--dim);
+}
+.chip[aria-pressed='true']:hover {
+  color: var(--on-gold);
+  border-color: var(--gold);
+}
+
+/* One focus ring. */
+.btn:focus-visible,
+.chip:focus-visible,
+.seats__sit:focus-visible,
+.sort__btn:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+
+/* Disabled, raised: the same button, faded, sitting still. It keeps its own
+   hue — a disabled Play cards is still the gold button — loses its shadow so it
+   rests on the felt instead of above it, and has no hover. Lower opacity, so
+   the felt shows through and the button reads as not there yet. */
+.btn:disabled,
+.sort__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+/* Disabled, flat: there is no surface to dither, so it dims its outline. */
+.btn--flat:disabled,
+.chip:disabled,
+.seats__sit:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+  background-color: transparent;
+  color: var(--dim);
+  border-color: var(--table-hi);
+}
+
+/* Flat: a convenience beside the thing it acts on. */
+.btn--flat {
+  background: transparent;
+  color: var(--dim);
+  border-color: var(--table-hi);
+  box-shadow: none;
+}
+.btn--flat:hover:not(:disabled),
+.btn--flat:active:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+.icon {
+  display: block;
+  width: calc(7 * var(--px));
+  height: calc(7 * var(--px));
+}
+.field__row {
+  display: flex;
+  gap: var(--u);
+  align-items: center;
+}
+.field__row input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Lobby frame, shared by both lobbies ─────────────────────────────────
+   One layout for playing alone and playing together, so nothing is learned
+   twice; only the options unique to a mode differ. */
+.panel__error {
+  margin: 0 0 var(--u);
+  font-size: var(--text-sm);
+  color: var(--alert);
+}
+
+/* ── Control sizing and labels ───────────────────────────────────────────
+   Two heights, one label size, one weight. "Deal me in" used to inherit the
+   page's body size while chips and the sort control set a smaller one, so the
+   same kind of label rendered at two sizes and read as two weights. Every
+   control label is now --text-sm at weight 400; emphasis comes from surface and
+   colour. Icon buttons are square: as wide as they are tall. */
+.btn,
+.chip,
+.seats__sit,
+.sort__btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+.btn,
+.sort__btn {
+  height: var(--control-md);
+  padding: 0 calc(var(--u) * 1.5);
+}
+.btn--small,
+.chip,
+.seats__sit {
+  height: var(--control-sm);
+  padding: 0 var(--u);
+}
+/* A square button holding one pixel icon. */
+.btn--icon {
+  place-items: center;
+  width: var(--control-md);
+  padding: 0;
+}
+.btn--icon.btn--small {
+  width: var(--control-sm);
+}
+.btn--wide {
+  display: flex;
+  width: 100%;
+  margin-top: var(--u);
+}
+.field input,
+.menu__field input {
+  box-sizing: border-box;
+  height: var(--control-md);
+  padding: 0 var(--u);
+}
+.field input:disabled {
+  background: var(--table);
+  color: var(--dim);
+  cursor: not-allowed;
+}
+
+/* Pass takes the colour of "passed", so the button and the tag it produces on
+   a seat are visibly the same act. */
+.btn--pass {
+  background: var(--pass);
+  color: var(--bone);
+}
+.btn--pass:hover:not(:disabled) {
+  background: var(--pass-hi);
+}
+
+/* A seat's name says its state at a glance, like the gold of a seat on turn:
+   red once it has passed out of the trick, dim once it has finished. */
+.opp.is-passed .opp__name {
+  color: var(--alert);
+}
+.opp.is-out .opp__name {
+  color: var(--dim);
+}
+
+/* Who holds a seat — (You), (CPU), (Player) — said the same quiet way for
+   everyone, in brackets after the seat. Tags were one more box in rows that
+   already hold a seat button and three chips. */
+.seats__role {
+  color: var(--dim);
+}
+/* A person's name, on the right where a computer's difficulty would be. */
+.seats__player {
+  font-size: var(--text-sm);
+  color: var(--bone-dim);
+}
+
+/* ── Click to copy ───────────────────────────────────────────────────────
+   Codes, seeds and links are copied by clicking them. Every copyable thing
+   hovers the same way: pointer cursor, faded. Styled as the text it is,
+   so that hover is the whole of the affordance. */
+.copyable {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+/* Only the value fades — not the "Table code" label over it, not the box the
+   invite link sits in. The value is the thing being copied. */
+.copyable__text {
+  transition: opacity 90ms steps(2);
+}
+.copyable:hover .copyable__text {
+  opacity: 0.6;
+}
+.copyable.field__static .copyable__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.copyable:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+
+/* The table's title in a shared lobby. */
+.tablecode {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--px);
+  text-align: right;
+}
+.tablecode__label {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.tablecode__value {
+  font-size: var(--text-lg);
+  line-height: 1;
+  letter-spacing: var(--px);
+  color: var(--bone);
+}
+
+/* A value shown in the shape of a field, that is not one: the invite link. No
+   caret, no selection, no focus ring on click — clicking copies it. */
+.copyable.field__static {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: var(--control-md);
+  padding: 0 var(--u);
+  background: var(--table);
+  border: var(--px) solid var(--table-hi);
+  color: var(--bone-dim);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The copy toast: just the words, in gold, at the pointer. No box and no
+   entrance — it is there the instant the copy lands, follows the pointer, and
+   fades over two steps. An ink drop shadow keeps it legible over cards. */
+.toast {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: var(--layer-toast);
+  pointer-events: none;
+}
+.toast__bubble {
+  position: absolute;
+  left: calc(3 * var(--px));
+  bottom: calc(3 * var(--px));
+  display: inline-flex;
+  align-items: center;
+  gap: calc(2 * var(--px));
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: var(--gold);
+  filter: drop-shadow(var(--px) var(--px) 0 var(--ink));
+  animation: toast-out 200ms steps(2) 1200ms forwards;
+}
+@keyframes toast-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Every seat row is the same height whoever is in it. A person's row holds only
+   text and a computer's holds a button and chips, so without this taking a seat
+   made one row shorter and the next taller, and everything below them jumped. */
+.seats__who,
+.seats__diff {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-sm);
+}
+.seats__diff {
+  justify-content: flex-end;
+}
+
+/* ── Between rounds at a shared table ─────────────────────────────────── */
+.overlay__ready {
+  color: var(--dim);
+}
+.overlay__ready.is-ready {
+  color: var(--gold);
+}
+.overlay__countdown {
+  margin: 0 0 var(--u);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--bone-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A computer is playing your seat. Out of the board's flow, so appearing and
+   going away moves nothing on the table. */
+.standin {
+  position: fixed;
+  top: var(--u);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--layer-banner);
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  max-width: calc(100vw - 2 * var(--u));
+  padding: var(--u) calc(var(--u) * 1.5);
+  background: var(--ink);
+  border: var(--px) solid var(--gold);
+  box-shadow: var(--px) var(--px) 0 var(--shade);
+  font-size: var(--text-sm);
+  color: var(--bone);
+}
+
+/* ── How to play ─────────────────────────────────────────────────────────── */
+/* How to play, from the table: the log toggle's twin in the opposite corner —
+   same inset, height, surface and shadow — and square, holding one icon. */
+.helpbtn {
+  position: fixed;
+  top: var(--u);
+  left: var(--u);
+  z-index: var(--layer-cards);
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  padding: 0;
+  background: var(--table-lo);
+  color: var(--dim);
+  border: var(--px) solid var(--table-hi);
+  box-shadow: var(--px) var(--px) 0 var(--shade);
+  cursor: pointer;
+  line-height: 0;
+  transition: color 90ms steps(2), border-color 90ms steps(2);
+}
+.helpbtn:hover {
+  color: var(--bone);
+  border-color: var(--dim);
+}
+.helpbtn:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+
+.rules {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--layer-banner) + 10);
+  display: grid;
+  place-items: center;
+  padding: var(--u);
+  background: var(--scrim-strong);
+}
+.rules__box {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: min(640px, 100%);
+  max-height: calc(100vh - 2 * var(--u));
+  background: var(--table-lo);
+  border: var(--px) solid var(--table-hi);
+  box-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--shade-soft);
+}
+.rules__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--u);
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 2);
+  border-bottom: var(--px) solid var(--table-hi);
+}
+.rules__head h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+.rules__body {
+  overflow-y: auto;
+  padding: var(--u) calc(var(--u) * 2) calc(var(--u) * 2);
+}
+/* A section the table sent you to: a gold edge and a wash, not a louder font —
+   it should be found at a glance and then read like every other section. */
+.rules__section {
+  margin: 0 calc(-1 * var(--u));
+  padding: var(--u);
+  border-left: var(--px) solid transparent;
+}
+.rules__section.is-highlight {
+  border-left-color: var(--gold);
+  background: var(--gold-wash);
+}
+.rules__section h3 {
+  margin: 0 0 calc(var(--u) / 2);
+  font-size: var(--text-md);
+  font-weight: 400;
+  color: var(--gold);
+}
+.rules__section p {
+  margin: 0 0 calc(var(--u) / 2);
+  max-width: 60ch;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--bone-dim);
+}
+.rules__table {
+  width: 100%;
+  margin: 0 0 calc(var(--u) / 2);
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.rules__table th,
+.rules__table td {
+  padding: calc(2 * var(--px)) 0;
+  border-bottom: var(--px) solid var(--table-hi);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.5;
+  color: var(--bone-dim);
+}
+.rules__table th {
+  padding-right: var(--u);
+  font-weight: 400;
+  white-space: nowrap;
+  color: var(--bone);
+}
+
+/* ── Leaving ─────────────────────────────────────────────────────────────
+   Above the round-end overlay, which also has a Leave table button. */
+.overlay--confirm {
+  z-index: calc(var(--layer-chrome) + 1);
+}
+.overlay__box--confirm {
+  max-width: min(440px, calc(100vw - 2 * var(--u)));
+  min-width: 0;
+}
+
+/* ── The bomb moment ─────────────────────────────────────────────────────
+   One flash, a shake of a couple of art pixels, and the words. Stepped, like
+   every other motion here; under reduced motion the words simply appear. */
+.table.is-shaking {
+  animation: table-shake 360ms steps(1, end);
+}
+@keyframes table-shake {
+  0% {
+    transform: translate(0, 0);
+  }
+  16% {
+    transform: translate(calc(2 * var(--px)), calc(-1 * var(--px)));
+  }
+  32% {
+    transform: translate(calc(-2 * var(--px)), var(--px));
+  }
+  48% {
+    transform: translate(var(--px), var(--px));
+  }
+  64% {
+    transform: translate(calc(-1 * var(--px)), 0);
+  }
+  80% {
+    transform: translate(var(--px), calc(-1 * var(--px)));
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+.bomb-flash {
+  position: absolute;
+  inset: 0;
+  z-index: var(--layer-readout);
+  pointer-events: none;
+  background: var(--gold-wash-strong);
+  opacity: 0;
+  animation: bomb-flash 300ms steps(3, end);
+}
+@keyframes bomb-flash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.bomb {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  z-index: calc(var(--layer-readout) + 1);
+  display: grid;
+  justify-items: center;
+  gap: var(--u);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: bomb-hold 1800ms steps(1, end) both;
+}
+.bomb__title {
+  font-size: calc(var(--text-lg) * 2);
+  line-height: 1;
+  letter-spacing: var(--px);
+  white-space: nowrap;
+  color: var(--gold);
+  text-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--ink);
+  animation: bomb-pop 240ms steps(3, end) both;
+}
+/* Four 2s is not a bomb landing on something — it is the ceiling of the game.
+   Bone, the colour of a card face, rather than the gold of a standing play. */
+.bomb--ceiling .bomb__title {
+  color: var(--bone);
+}
+.bomb__detail {
+  padding: calc(2 * var(--px)) var(--u);
+  background: var(--ink);
+  border: var(--px) solid var(--gold);
+  box-shadow: var(--px) var(--px) 0 var(--shade);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  color: var(--bone);
+}
+@keyframes bomb-pop {
+  0% {
+    opacity: 0;
+    transform: scale(2);
+  }
+  34% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+  67% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes bomb-hold {
+  0%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (max-width: 720px) {
+  .bomb__title {
+    font-size: var(--text-lg);
+  }
+}
+
+/* ── Option sets ─────────────────────────────────────────────────────────
+   A setting with more than one kind of answer: an outlined set of labelled
+   rows, one row per kind, so where one kind ends and the next begins is drawn
+   rather than inferred. Match length is Points and Rounds. */
+.field__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--u);
+  margin-bottom: calc(var(--u) / 2);
+}
+.field__head .field__label {
+  margin-bottom: 0;
+}
+.optionset {
+  border: var(--px) solid var(--table-hi);
+}
+.optionset__row {
+  display: grid;
+  grid-template-columns: calc(var(--u) * 6) 1fr;
+  align-items: center;
+  gap: var(--u);
+  padding: calc(var(--u) * 0.75) var(--u);
+}
+.optionset__row + .optionset__row {
+  border-top: var(--px) solid var(--table-hi);
+}
+.optionset__name {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.optionset__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--px);
+}
+.optionset__choices .chip {
+  margin-left: 0;
+  min-width: var(--control-md);
+}
+
+/* ── Settings someone else controls ──────────────────────────────────────
+   Read-only, not missing: the layout is the host's, the chosen option is still
+   marked — a gold outline instead of a gold fill, because a fill says "pressed,
+   and you can press it" — and the "Host only" tag beside the label says why. */
+.chip[aria-pressed='true']:disabled {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+.is-locked .chip:disabled {
+  cursor: default;
+}
+.panel__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--u);
+  margin: 0 0 var(--u);
+}
+.panel__title h2 {
+  margin: 0;
+}
+.hostonly {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(2 * var(--px));
+  font-size: var(--text-xs);
+  color: var(--dim);
+  white-space: nowrap;
+}
+.hostonly__lock {
+  display: block;
+  width: calc(5 * var(--px));
+  height: calc(5 * var(--px));
+  flex: none;
+}
+/* Where the match stands, above the round's note on the scores screen. */
+.overlay__match {
+  margin: 0 0 var(--u);
+  font-size: var(--text-sm);
+  color: var(--bone-dim);
+}
+
+/* ── Browser-hosted tables ─────────────────────────────────────────────── */
+/* Whether the round passed its fairness check: quiet when it did, the one red
+   every "no" uses when it did not. */
+.overlay__fair {
+  margin: 0 0 var(--u);
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+.overlay__fair.is-failed {
+  color: var(--alert);
+}
+
+/* A button whose label changes — Play with friends, then Opening… — keeps the
+   width of its longer label. Both share one grid cell; the one not showing is
+   hidden, not removed, so it still holds the space. */
+.btn__labels {
+  display: inline-grid;
+}
+.btn__labels > span {
+  grid-area: 1 / 1;
+  text-align: center;
+}
+.btn__labels > .is-hidden {
+  visibility: hidden;
+}
+
+/* ── Ready up ──────────────────────────────────────────────────────────── */
+/* A player's ready state, beside their name: gold and filled once ready, the
+   same outline as any other tag until then. */
+.seats__ready {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-sm);
+  margin-right: var(--u);
+  padding: 0 calc(2 * var(--px));
+  border: var(--px) solid var(--table-hi);
+  font-size: var(--text-xs);
+  color: var(--dim);
+  vertical-align: middle;
+}
+.seats__ready.is-ready {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--on-gold);
+}
+/* Where starting stands, just above the button that starts. */
+.panel__status {
+  margin: var(--u) 0 0;
+  font-size: var(--text-sm);
+  color: var(--bone-dim);
+  text-align: center;
+}
+
+/* ── Inline help ───────────────────────────────────────────────────────────
+   A bracketed "[?]", 5 art pixels tall like the Host only lock, beside a label.
+   Hover, keyboard focus or a click shows a note that floats over the page, so
+   showing it moves nothing. */
+.field__labelgroup {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(2 * var(--px));
+}
+/* The note hangs from the whole field head, not the "?", so it takes the
+   field's width and its left edge at any screen size rather than running off
+   the right of a phone. */
+.field__head:has(.infotip) {
+  position: relative;
+}
+.infotip {
+  display: inline-flex;
+}
+.infotip__trigger {
+  display: grid;
+  place-items: center;
+  width: calc(13 * var(--px));
+  height: calc(7 * var(--px));
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 90ms steps(2);
+}
+.infotip__trigger:hover,
+.infotip__trigger[aria-expanded='true'] {
+  color: var(--bone);
+}
+.infotip__trigger:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+.infotip__glyph {
+  display: block;
+  width: calc(11 * var(--px));
+  height: calc(5 * var(--px));
+}
+.infotip__panel {
+  position: absolute;
+  top: calc(100% + 2 * var(--px));
+  left: 0;
+  z-index: var(--layer-readout);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(var(--u) * 40);
+  padding: var(--u);
+  background: var(--ink);
+  border: var(--px) solid var(--table-hi);
+  box-shadow: var(--px) var(--px) 0 var(--shade);
+  text-align: left;
+  white-space: normal;
+}
+.infotip__panel p {
+  margin: 0 0 calc(var(--u) / 2);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--bone-dim);
+}
+.infotip__panel p:last-child {
+  margin-bottom: 0;
+}
+/* A term is picked out in the brighter text, not in bold: only card ranks are bold. */
+.infotip__term {
+  color: var(--bone);
+}
+
+/* ── The pile pick clock ──────────────────────────────────────────────────
+   A fixed-height slot under "Choose a pile.", so the piles never move as the
+   clock comes and goes between pickers. */
+.ceremony__clock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(7 * var(--px));
+}

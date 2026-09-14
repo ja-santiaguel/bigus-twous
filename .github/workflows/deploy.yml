@@ -1,0 +1,63 @@
+# Builds the game and publishes it to GitHub Pages on every push to main.
+#
+# One-time setup in the repository: Settings → Pages → Source: "GitHub Actions".
+# Shared tables are hosted in players' browsers, so the static site is the
+# whole deployment — no server.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Nothing ships that does not type-check and pass every suite.
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Build the client
+        run: npm run build:client
+        env:
+          # A project site is served from /<repository>/; a <user>.github.io
+          # repository is served from the root.
+          VITE_BASE: ${{ endsWith(github.event.repository.name, '.github.io') && '/' || format('/{0}/', github.event.repository.name) }}
+          # A TURN relay, once there is one: add these as repository secrets
+          # (Settings → Secrets and variables → Actions) and uncomment.
+          # VITE_TURN_URLS: ${{ secrets.VITE_TURN_URLS }}
+          # VITE_TURN_USERNAME: ${{ secrets.VITE_TURN_USERNAME }}
+          # VITE_TURN_CREDENTIAL: ${{ secrets.VITE_TURN_CREDENTIAL }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/app/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
