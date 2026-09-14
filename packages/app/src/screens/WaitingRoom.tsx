@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore.js';
 import { joinLinkFor } from '../lib/joinLink.js';
 import { seatName } from '../lib/format.js';
 import { Copyable } from '../components/Copyable.js';
+import { copyWithNotice } from '../lib/copy.js';
 import { HostOnly } from '../components/HostOnly.js';
 import { LobbyLayout, SeatRow } from '../components/LobbyLayout.js';
 import { MatchField } from '../components/MatchField.js';
@@ -105,11 +106,20 @@ export function WaitingRoom() {
         </button>
       }
       aside={
-        // Only the code is clickable: the label names it, the code is what
-        // gets copied, so the hover and click area is the code alone.
+        // One way to share, shown once. The code is for saying aloud or typing
+        // into the join box, and copies on click; the link is for sending in a
+        // message, and one button beneath the code copies it. A separate
+        // invite-link field said the same thing twice.
         <div className="tablecode">
           <span className="tablecode__label">Table code</span>
           <Copyable className="tablecode__value" value={code} message="Code copied" label="Table code" />
+          <button
+            type="button"
+            className="seats__sit tablecode__link"
+            onClick={(event) => void copyWithNotice(link, 'Link copied', event)}
+          >
+            Copy invite link
+          </button>
         </div>
       }
       seatsAside={!iAmHost && seats.length > 0 ? <HostOnly label="Host sets difficulty" /> : undefined}
@@ -201,14 +211,6 @@ export function WaitingRoom() {
       {/* At a browser-hosted table every device adds to the shuffle, so there
           is no single seed to show or set. */}
       {hosting !== 'browser' && <SeedField seed={seed} onChange={setSeed} onNew={newSeed} disabled={!connected} />}
-
-      <div className="field">
-        <span className="field__label">Invite link</span>
-        {/* Not a text field: there is nothing to edit or select in it. It is
-            the link, and clicking it copies it. */}
-        <Copyable className="field__static" value={link} message="Link copied" label="Invite link" />
-        <p className="field__hint">Click to copy. Anyone with this link can take an empty seat.</p>
-      </div>
     </LobbyLayout>
   );
 }

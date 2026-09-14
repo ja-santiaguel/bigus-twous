@@ -123,7 +123,10 @@ export function RulesSheet({
 
           <section className="rules__section">
             <h3>Passing</h3>
-            <p>Passing takes you out of the whole trick, not just this turn. You are back in when the table clears.</p>
+            <p>
+              Passing takes you out of the whole trick, not just this turn — even if a 2 is played that your bomb could
+              chop. You are back in when the table clears.
+            </p>
           </section>
 
           <section className={section('opening')} id="rules-opening">

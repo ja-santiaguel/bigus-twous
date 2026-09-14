@@ -76,8 +76,8 @@
   --layer-toast: 600;
 
   /* How anything transient leaves: the copy toast and the inline help note
-     fade out over the same two steps, so dismissing feels the same everywhere. */
-  --fade-out: 200ms;
+     fade out the same smooth way, so dismissing feels the same everywhere. */
+  --fade-out: 260ms;
 
   /* Control sizes: two heights, and nothing else. Buttons, inputs and icon
      buttons beside inputs are md; chips, seat buttons, the sort control and
@@ -100,6 +100,16 @@
   --scale: 3;
   --px: calc(var(--scale) * 1px);
   --u: calc(4 * var(--px));
+
+  /* Spacing: five steps, and nothing between them. Margins, paddings and
+     gaps take one of these; eleven hand-picked multiples of --u had grown in
+     their place, so neighbouring screens were spaced by 6 and 8 and 10 for no
+     reason anyone could name. See DESIGN.md, section 4. */
+  --space-xs: calc(var(--u) / 2); /* 2 art px: a label to its control */
+  --space-sm: var(--u); /* 4: between controls in a row, inside a group */
+  --space-md: calc(var(--u) * 2); /* 8: between fields and rows */
+  --space-lg: calc(var(--u) * 3); /* 12: between sections */
+  --space-xl: calc(var(--u) * 5); /* 20: breathing room around the hand */
 
   /* Card art is 22x31 pixels; the mini and tray variants are the same drawing
      at smaller whole-number sizes. */
@@ -269,30 +279,34 @@ body {
   grid-template-columns: minmax(0, 1fr) auto;
   align-content: center;
   align-items: center;
-  gap: calc(var(--u) * 4);
+  gap: var(--space-xl);
   max-width: 900px;
   margin: 0 auto;
-  padding: calc(var(--u) * 3);
+  padding: var(--space-lg);
 }
 .menu__title {
-  /* Silkscreen draws its capitals one glyph-pixel in from the left of the text
-     box: 8px at 72px, against 1px for the 16px description under it. Pulled
-     back by the difference — in em, so it holds at every clamped size — the
-     title's ink and the description's ink share one left edge. */
-  margin: 0 0 calc(var(--u) * 1.5) calc(1px - 0.111em);
-  font-size: clamp(40px, 8vw, 72px);
-  line-height: 0.95;
-  letter-spacing: var(--px);
+  margin: 0 0 var(--space-md);
+  line-height: 0;
+}
+/* Drawn lettering (PixelTitle): the share image's five-row letters, one glyph
+   pixel per --u. Only the height is set; the width follows from the drawing, so
+   every cell lands on whole pixels at every --scale. Its ink starts at the left
+   edge of its box, so it lines up with the description with no correction. */
+.pixeltitle {
+  display: block;
+  height: calc(var(--u) * 5);
+  width: auto;
+  color: var(--bone);
 }
 .menu__blurb {
-  margin: 0 0 calc(var(--u) * 2);
+  margin: 0 0 var(--space-md);
   max-width: 34ch;
   color: var(--bone-dim);
 }
 .menu__hero {
   display: grid;
   justify-items: center;
-  gap: var(--u);
+  gap: var(--space-sm);
 }
 /* The title card is the in-game sprite drawn at two art pixels per pixel.
    Doubling --px on the card itself doubles everything declared against it —
@@ -313,19 +327,21 @@ body {
 .panel {
   width: min(620px, 100%);
   margin: auto;
-  padding: calc(var(--u) * 2);
+  padding: var(--space-md);
   background: var(--table-lo);
   border: var(--px) solid var(--table-hi);
 }
 .panel__head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: calc(var(--u) * 1.5);
+  /* Top-aligned: Leave sits level with the "Table code" title, not with the
+     middle of the label-and-code block beside it. */
+  align-items: flex-start;
+  margin-bottom: var(--space-md);
 }
 .panel h2 {
   font-size: var(--text-lg);
-  margin: 0 0 var(--u);
+  margin: 0 0 var(--space-sm);
 }
 
 .btn {
@@ -382,14 +398,14 @@ body {
 .seats {
   list-style: none;
   padding: 0;
-  margin: 0 0 calc(var(--u) * 2);
+  margin: 0 0 var(--space-md);
 }
 .seats__row {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: var(--u);
+  gap: var(--space-sm);
   align-items: center;
-  padding: var(--u) 0;
+  padding: var(--space-sm) 0;
   border-bottom: var(--px) solid var(--table-hi);
 }
 .seats__row.is-mine {
@@ -398,7 +414,7 @@ body {
 .seats__who {
   display: flex;
   align-items: center;
-  gap: var(--u);
+  gap: var(--space-sm);
 }
 .seats__name {
   white-space: nowrap;
@@ -411,15 +427,15 @@ body {
   cursor: pointer;
 }
 .field__hint--lead {
-  margin: 0 0 var(--u);
+  margin: 0 0 var(--space-sm);
 }
 .field {
-  margin-bottom: calc(var(--u) * 1.5);
+  margin-bottom: var(--space-md);
 }
 .field label,
 .field__label {
   display: block;
-  margin-bottom: calc(var(--u) / 2);
+  margin-bottom: var(--space-xs);
   font-size: var(--text-sm);
   color: var(--dim);
 }
@@ -435,7 +451,7 @@ body {
   outline-offset: var(--px);
 }
 .field__hint {
-  margin: calc(var(--u) / 2) 0 0;
+  margin: var(--space-xs) 0 0;
   font-size: var(--text-sm);
   color: var(--dim);
 }
@@ -464,8 +480,8 @@ body {
     '.    top    .'
     'left centre right'
     'hand hand   hand';
-  gap: var(--u);
-  padding: calc(var(--u) * 1.5) calc(var(--u) * 2.5);
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
   /* Perspective without tilt: cards gain depth when they lift, the plane does not. */
   perspective: 1200px;
   perspective-origin: 50% 50%;
@@ -476,7 +492,7 @@ body {
   justify-items: center;
   /* The count and the points belong to the seat but are not part of the fan.
      At half a unit they touched the lowest card and read as a caption on it. */
-  gap: calc(var(--u) * 0.75);
+  gap: var(--space-sm);
   align-content: start;
 }
 .opp--top {
@@ -667,7 +683,7 @@ body {
   grid-row: 1;
   justify-self: start;
   /* Fixed clearance from the in-play zone, so the two never crowd each other. */
-  margin-left: calc(var(--u) * 3);
+  margin-left: var(--space-lg);
 }
 /* The combo type, stated once under the trick instead of once per group. */
 .centre__read {
@@ -678,8 +694,8 @@ body {
   white-space: nowrap;
   display: flex;
   align-items: baseline;
-  gap: calc(var(--u) * 2);
-  margin-top: var(--u);
+  gap: var(--space-md);
+  margin-top: var(--space-sm);
   min-height: calc(6 * var(--px));
 }
 .centre__type {
@@ -699,7 +715,7 @@ body {
      item. */
   z-index: var(--layer-raised);
   cursor: zoom-in;
-  padding: var(--u);
+  padding: var(--space-sm);
   border: var(--px) solid transparent;
 }
 /* Opened, the trick can be wider than the centre column, so it lifts above the
@@ -763,14 +779,14 @@ body {
 .handzone {
   grid-area: hand;
   display: grid;
-  gap: calc(var(--u) * 1.5);
+  gap: var(--space-md);
   justify-items: center;
   /* The fan is the thing being read most often, and it was sitting almost on
      the bottom edge with the utility row crowding it. The space below is what
      lets it read as held in front of you rather than jammed against the frame.
      Now that the cards are half again as large, that space has to grow with
      them or the proportion is lost. */
-  padding-bottom: calc(var(--u) * 5);
+  padding-bottom: var(--space-xl);
   /* Every element between .table (which owns the perspective) and a card must
      preserve 3D, or the subtree is flattened and translateZ silently does
      nothing — the card lifts on Y but never actually comes closer. */
@@ -798,7 +814,7 @@ body {
 .controls {
   display: flex;
   align-items: center;
-  gap: calc(var(--u) * 1.5);
+  gap: var(--space-md);
   width: min(880px, 100%);
 }
 /* The line wraps to two rather than ending in an ellipsis. These messages are
@@ -821,7 +837,7 @@ body {
 }
 .controls__actions {
   display: flex;
-  gap: var(--u);
+  gap: var(--space-sm);
   flex-shrink: 0;
   /* The turn clock hangs off this box, out of flow (see .controls__clock). */
   position: relative;
@@ -872,10 +888,10 @@ body {
   /* Set well clear of the fan: these are settings, and a settings row within
      a few pixels of the cards invites a misclick on the thing you were
      reaching past it for. */
-  margin-top: calc(var(--u) * 2.5);
+  margin-top: var(--space-lg);
   display: flex;
   align-items: center;
-  gap: var(--u);
+  gap: var(--space-sm);
   width: min(880px, 100%);
   font-size: var(--text-sm);
   color: var(--dim);
@@ -927,7 +943,7 @@ body {
 /* ── Score strip ─────────────────────────────────────────────────────── */
 .scores {
   display: flex;
-  gap: var(--u);
+  gap: var(--space-sm);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -943,7 +959,7 @@ body {
   position: fixed;
   top: var(--u);
   right: var(--u);
-  gap: var(--u);
+  gap: var(--space-sm);
   z-index: var(--layer-cards);
   display: flex;
   flex-direction: column;
@@ -957,7 +973,7 @@ body {
   display: inline-flex;
   align-items: center;
   height: var(--control-sm);
-  padding: 0 var(--u);
+  padding: 0 var(--space-sm);
   background: var(--table-lo);
   color: var(--dim);
   border: var(--px) solid var(--table-hi);
@@ -976,7 +992,7 @@ body {
    it stays legible over whatever it covers. */
 .log__list {
   margin: 0;
-  padding: var(--u);
+  padding: var(--space-sm);
   list-style: none;
   width: calc(100 * var(--px));
   max-height: calc(100vh - 2 * var(--u) - var(--control-sm) - var(--u));
@@ -1002,38 +1018,38 @@ body {
 }
 .overlay__box {
   min-width: 360px;
-  padding: calc(var(--u) * 2.5);
+  padding: var(--space-lg);
   background: var(--table-lo);
   border: var(--px) solid var(--gold);
   box-shadow: calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--shade);
   text-align: center;
 }
 .overlay__box h2 {
-  margin: 0 0 var(--u);
+  margin: 0 0 var(--space-sm);
   font-size: var(--text-lg);
   color: var(--gold);
 }
 .overlay__scores {
   list-style: none;
   padding: 0;
-  margin: 0 0 var(--u);
+  margin: 0 0 var(--space-sm);
 }
 .overlay__scores li {
   display: grid;
   grid-template-columns: calc(12 * var(--px)) 1fr auto auto;
-  gap: calc(var(--u) * 2);
+  gap: var(--space-md);
   align-items: baseline;
   padding: calc(var(--px)) 0;
   border-bottom: var(--px) solid var(--table-hi);
 }
 .overlay__note {
-  margin: 0 0 calc(var(--u) * 1.5);
+  margin: 0 0 var(--space-md);
   font-size: var(--text-sm);
   color: var(--dim);
 }
 .overlay__actions {
   display: flex;
-  gap: var(--u);
+  gap: var(--space-sm);
   justify-content: center;
 }
 
@@ -1060,7 +1076,7 @@ body {
       'left   right'
       'centre centre'
       'hand   hand';
-    padding: var(--u);
+    padding: var(--space-sm);
   }
   /* The nudge toward the centre is for a table with side columns. Here the
      side seats sit in the row directly below, and the nudge pushed the top
@@ -1079,7 +1095,7 @@ body {
   }
 
   .centre {
-    gap: calc(var(--u) * 2);
+    gap: var(--space-md);
   }
 
   /* Narrow: the buttons take their own line rather than squeezing the read-out
@@ -1156,7 +1172,7 @@ body {
 .ceremony {
   display: grid;
   justify-items: center;
-  gap: calc(var(--u) * 2);
+  gap: var(--space-md);
 }
 .ceremony__line {
   margin: 0;
@@ -1165,12 +1181,12 @@ body {
 }
 .ceremony__piles {
   display: flex;
-  gap: calc(var(--u) * 2);
+  gap: var(--space-md);
 }
 .cpile {
   display: grid;
   justify-items: center;
-  gap: var(--u);
+  gap: var(--space-sm);
   transition: opacity 200ms ease-out;
 }
 .cpile.is-taken {
@@ -1459,20 +1475,24 @@ textarea {
 .menu__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--u);
-  margin-bottom: calc(var(--u) * 3);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+/* Reference, on a line of its own under the ways to play. */
+.menu__more {
+  margin-bottom: var(--space-lg);
 }
 .menu__join {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: var(--u);
-  padding-top: calc(var(--u) * 2);
+  gap: var(--space-sm);
+  padding-top: var(--space-md);
   border-top: var(--px) solid var(--table-hi);
 }
 .menu__field {
   display: grid;
-  gap: calc(var(--u) / 2);
+  gap: var(--space-xs);
   font-size: var(--text-sm);
   color: var(--dim);
 }
@@ -1489,7 +1509,7 @@ textarea {
   outline-offset: var(--px);
 }
 .menu__error {
-  margin: calc(var(--u) * 2) 0 0;
+  margin: var(--space-md) 0 0;
   font-size: var(--text-sm);
   color: var(--alert);
 }
@@ -1505,7 +1525,7 @@ textarea {
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--layer-banner);
-  padding: var(--u) calc(var(--u) * 2);
+  padding: var(--space-sm) var(--space-md);
   font-size: var(--text-sm);
   background: var(--table-lo);
   border: var(--px) solid var(--table-hi);
@@ -1540,7 +1560,7 @@ textarea {
 .clock {
   display: inline-flex;
   align-items: center;
-  gap: var(--u);
+  gap: var(--space-sm);
   flex: none;
 }
 .clock__bar {
@@ -1610,7 +1630,7 @@ textarea {
    The two never appear together — a seat that has passed is out of the trick
    and is not being waited on. */
 .clock--seat {
-  gap: calc(var(--u) / 2);
+  gap: var(--space-xs);
 }
 .clock--seat .clock__seg {
   width: var(--px);
@@ -1731,7 +1751,7 @@ textarea {
 }
 .field__row {
   display: flex;
-  gap: var(--u);
+  gap: var(--space-sm);
   align-items: center;
 }
 .field__row input {
@@ -1743,7 +1763,7 @@ textarea {
    One layout for playing alone and playing together, so nothing is learned
    twice; only the options unique to a mode differ. */
 .panel__error {
-  margin: 0 0 var(--u);
+  margin: 0 0 var(--space-sm);
   font-size: var(--text-sm);
   color: var(--alert);
 }
@@ -1770,13 +1790,13 @@ textarea {
 .btn,
 .sort__btn {
   height: var(--control-md);
-  padding: 0 calc(var(--u) * 1.5);
+  padding: 0 var(--space-md);
 }
 .btn--small,
 .chip,
 .seats__sit {
   height: var(--control-sm);
-  padding: 0 var(--u);
+  padding: 0 var(--space-sm);
 }
 /* A square button holding one pixel icon. */
 .btn--icon {
@@ -1790,13 +1810,13 @@ textarea {
 .btn--wide {
   display: flex;
   width: 100%;
-  margin-top: var(--u);
+  margin-top: var(--space-sm);
 }
 .field input,
 .menu__field input {
   box-sizing: border-box;
   height: var(--control-md);
-  padding: 0 var(--u);
+  padding: 0 var(--space-sm);
 }
 .field input:disabled {
   background: var(--table);
@@ -1847,17 +1867,13 @@ textarea {
   padding: 0;
   cursor: pointer;
 }
-/* Only the value fades — not the "Table code" label over it, not the box the
-   invite link sits in. The value is the thing being copied. */
+/* Only the value fades — not the "Table code" label over it. The value is the
+   thing being copied. */
 .copyable__text {
   transition: opacity 90ms steps(2);
 }
 .copyable:hover .copyable__text {
   opacity: 0.6;
-}
-.copyable.field__static .copyable__text {
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .copyable:focus-visible {
   outline: var(--px) solid var(--gold);
@@ -1882,28 +1898,15 @@ textarea {
   letter-spacing: var(--px);
   color: var(--bone);
 }
-
-/* A value shown in the shape of a field, that is not one: the invite link. No
-   caret, no selection, no focus ring on click — clicking copies it. */
-.copyable.field__static {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: var(--control-md);
-  padding: 0 var(--u);
-  background: var(--table);
-  border: var(--px) solid var(--table-hi);
-  color: var(--bone-dim);
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Copying the link: a flat convenience beneath the code it belongs to. */
+.tablecode__link {
+  margin-top: var(--space-xs);
+  font-size: var(--text-xs);
 }
 
 /* The copy toast: just the words, in gold, at the pointer. No box and no
    entrance — it is there the instant the copy lands, follows the pointer, and
-   fades over two steps. An ink drop shadow keeps it legible over cards. */
+   fades out smoothly. An ink drop shadow keeps it legible over cards. */
 .toast {
   position: fixed;
   left: 0;
@@ -1922,7 +1925,7 @@ textarea {
   font-size: var(--text-sm);
   color: var(--gold);
   filter: drop-shadow(var(--px) var(--px) 0 var(--ink));
-  animation: fade-out var(--fade-out) steps(2) 1200ms forwards;
+  animation: fade-out var(--fade-out) ease-out 1200ms forwards;
 }
 /* The one way transient things leave (see --fade-out). */
 @keyframes fade-out {
@@ -1952,7 +1955,7 @@ textarea {
   color: var(--gold);
 }
 .overlay__countdown {
-  margin: 0 0 var(--u);
+  margin: 0 0 var(--space-sm);
   text-align: center;
   font-size: var(--text-sm);
   color: var(--bone-dim);
@@ -1969,9 +1972,9 @@ textarea {
   z-index: var(--layer-banner);
   display: flex;
   align-items: center;
-  gap: var(--u);
+  gap: var(--space-sm);
   max-width: calc(100vw - 2 * var(--u));
-  padding: var(--u) calc(var(--u) * 1.5);
+  padding: var(--space-sm) var(--space-md);
   background: var(--ink);
   border: var(--px) solid var(--gold);
   box-shadow: var(--px) var(--px) 0 var(--shade);
@@ -2018,7 +2021,7 @@ textarea {
   z-index: calc(var(--layer-banner) + 10);
   display: grid;
   place-items: center;
-  padding: var(--u);
+  padding: var(--space-sm);
   background: var(--scrim-strong);
 }
 .rules__box {
@@ -2035,8 +2038,8 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--u);
-  padding: calc(var(--u) * 1.5) calc(var(--u) * 2);
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-md);
   border-bottom: var(--px) solid var(--table-hi);
 }
 .rules__head h2 {
@@ -2045,13 +2048,13 @@ textarea {
 }
 .rules__body {
   overflow-y: auto;
-  padding: var(--u) calc(var(--u) * 2) calc(var(--u) * 2);
+  padding: var(--space-sm) var(--space-md) var(--space-md);
 }
 /* A section the table sent you to: a gold edge and a wash, not a louder font —
    it should be found at a glance and then read like every other section. */
 .rules__section {
-  margin: 0 calc(-1 * var(--u));
-  padding: var(--u);
+  margin: 0 calc(-1 * var(--space-sm));
+  padding: var(--space-sm);
   border-left: var(--px) solid transparent;
 }
 .rules__section.is-highlight {
@@ -2059,13 +2062,13 @@ textarea {
   background: var(--gold-wash);
 }
 .rules__section h3 {
-  margin: 0 0 calc(var(--u) / 2);
+  margin: 0 0 var(--space-xs);
   font-size: var(--text-md);
   font-weight: 400;
   color: var(--gold);
 }
 .rules__section p {
-  margin: 0 0 calc(var(--u) / 2);
+  margin: 0 0 var(--space-xs);
   max-width: 60ch;
   font-size: var(--text-sm);
   line-height: 1.6;
@@ -2073,7 +2076,7 @@ textarea {
 }
 .rules__table {
   width: 100%;
-  margin: 0 0 calc(var(--u) / 2);
+  margin: 0 0 var(--space-xs);
   border-collapse: collapse;
   font-size: var(--text-sm);
 }
@@ -2087,7 +2090,7 @@ textarea {
   color: var(--bone-dim);
 }
 .rules__table th {
-  padding-right: var(--u);
+  padding-right: var(--space-sm);
   font-weight: 400;
   white-space: nowrap;
   color: var(--bone);
@@ -2162,7 +2165,7 @@ textarea {
   z-index: calc(var(--layer-readout) + 1);
   display: grid;
   justify-items: center;
-  gap: var(--u);
+  gap: var(--space-sm);
   pointer-events: none;
   transform: translate(-50%, -50%);
   animation: bomb-hold 1800ms steps(1, end) both;
@@ -2182,7 +2185,7 @@ textarea {
   color: var(--bone);
 }
 .bomb__detail {
-  padding: calc(2 * var(--px)) var(--u);
+  padding: var(--space-xs) var(--space-sm);
   background: var(--ink);
   border: var(--px) solid var(--gold);
   box-shadow: var(--px) var(--px) 0 var(--shade);
@@ -2229,8 +2232,8 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--u);
-  margin-bottom: calc(var(--u) / 2);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
 }
 .field__head .field__label {
   margin-bottom: 0;
@@ -2242,8 +2245,8 @@ textarea {
   display: grid;
   grid-template-columns: calc(var(--u) * 6) 1fr;
   align-items: center;
-  gap: var(--u);
-  padding: calc(var(--u) * 0.75) var(--u);
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-sm);
 }
 .optionset__row + .optionset__row {
   border-top: var(--px) solid var(--table-hi);
@@ -2277,8 +2280,8 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--u);
-  margin: 0 0 var(--u);
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-sm);
 }
 .panel__title h2 {
   margin: 0;
@@ -2299,7 +2302,7 @@ textarea {
 }
 /* Where the match stands, above the round's note on the scores screen. */
 .overlay__match {
-  margin: 0 0 var(--u);
+  margin: 0 0 var(--space-sm);
   font-size: var(--text-sm);
   color: var(--bone-dim);
 }
@@ -2308,7 +2311,7 @@ textarea {
 /* Whether the round passed its fairness check: quiet when it did, the one red
    every "no" uses when it did not. */
 .overlay__fair {
-  margin: 0 0 var(--u);
+  margin: 0 0 var(--space-sm);
   font-size: var(--text-sm);
   color: var(--dim);
 }
@@ -2338,7 +2341,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   height: var(--control-sm);
-  margin-right: var(--u);
+  margin-right: var(--space-sm);
   padding: 0 calc(2 * var(--px));
   border: var(--px) solid var(--table-hi);
   font-size: var(--text-xs);
@@ -2351,8 +2354,22 @@ textarea {
   color: var(--on-gold);
 }
 /* Where starting stands, just above the button that starts. */
+/* Where starting stands, what went wrong, and the button that starts: one
+   group, a section step clear of the options above and held together by the
+   small step inside. */
+.panel__start {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+.panel__start > .btn--wide,
+.panel__start > .panel__error,
+.panel__start > .panel__status {
+  margin: 0;
+}
 .panel__status {
-  margin: var(--u) 0 0;
+  margin: var(--space-sm) 0 0;
   font-size: var(--text-sm);
   color: var(--bone-dim);
   text-align: center;
@@ -2409,7 +2426,7 @@ textarea {
   box-sizing: border-box;
   width: 100%;
   max-width: calc(var(--u) * 40);
-  padding: var(--u);
+  padding: var(--space-sm);
   background: var(--ink);
   border: var(--px) solid var(--table-hi);
   box-shadow: var(--px) var(--px) 0 var(--shade);
@@ -2417,7 +2434,7 @@ textarea {
   white-space: normal;
 }
 .infotip__panel p {
-  margin: 0 0 calc(var(--u) / 2);
+  margin: 0 0 var(--space-xs);
   font-size: var(--text-sm);
   line-height: 1.6;
   color: var(--bone-dim);
@@ -2427,7 +2444,7 @@ textarea {
 }
 /* Leaving: the copy toast's fade, and no longer something to point at. */
 .infotip__panel.is-leaving {
-  animation: fade-out var(--fade-out) steps(2) forwards;
+  animation: fade-out var(--fade-out) ease-out forwards;
   pointer-events: none;
 }
 /* A term is picked out in the brighter text, not in bold: only card ranks are bold. */

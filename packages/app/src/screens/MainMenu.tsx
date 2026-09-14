@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore.js';
 import { CardFace } from '../components/card/PixelCard.js';
 import { RulesSheet } from '../components/RulesSheet.js';
+import { PixelTitle } from '../components/PixelTitle.js';
 
 /**
  * The hero is a single oversized 2 of Hearts: the highest card in the game,
@@ -26,7 +27,9 @@ export function MainMenu() {
     <div className="screen">
       <div className="menu">
         <div>
-          <h1 className="menu__title">BIG TWO</h1>
+          <h1 className="menu__title">
+            <PixelTitle text="Big Two" />
+          </h1>
           <p className="menu__blurb">
             Four seats, thirteen cards each. Beat what is on the table or pass. First to empty their hand wins the
             round.
@@ -57,8 +60,11 @@ export function MainMenu() {
                 </span>
               </span>
             </button>
-            {/* Quiet, not default: reference beside the ways in, and a different
-                surface from Play with friends so the two do not read as a pair. */}
+          </div>
+
+          {/* Reference on a line of its own, under the ways to play: quiet, and
+              apart, so it never reads as a third way to start. */}
+          <div className="menu__more">
             <button className="btn btn--quiet" onClick={() => setRulesOpen(true)}>
               How to play
             </button>

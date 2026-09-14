@@ -268,7 +268,7 @@ Two **separate, non-interoperable** bomb families:
 - Once every other player still holding cards has passed, the last player to have played takes the trick and leads the next one with a completely free choice of combo.
   - If taking the trick emptied that player's hand, the lead passes clockwise to the next player who still holds cards. The `TRICK_RESET` event records `wonBy` and `leader` separately for exactly this case.
 - **Why this is a clarification and not a change of mind**: the original wording said "all other *active* players", which presumes a notion of being out of the trick, but the engine did not track one — it counted consecutive passes and kept cycling the turn, so a player who passed could play again later in the same trick. The rule above is the standard one and is what the wording always implied.
-- **Consequence worth naming**: a player who has passed can no longer be forced to bust a Two under 9.5, because they are out of the trick entirely. The forced-bust rule only ever applies to a player whose turn it actually is.
+- **Consequence worth naming**: a player who has passed can no longer be forced to bust a Two under 9.5, because they are out of the trick entirely. The forced-bust rule only ever applies to a player whose turn it actually is. *(Confirmed 2026-09-14)* Nor may they choose to: **nothing overrides passing** — not a 2 on the pile, not a bomb in hand. A player who has passed is out until the trick closes.
 - A clearly visible **"Pass"** button drives this in the UI. How long a person has to decide is in 9.11 *(amended 2026-09-13)*.
 
 ### 9.8 Match / scoring structure *(superseded 2026-09-11 — see 9.15)*

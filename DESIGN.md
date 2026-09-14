@@ -108,8 +108,25 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
   padding is exactly `--u` on every side.
 - **Icon buttons are square**, width equal to height. Buttons are square or wider
   than tall — never taller than wide.
-- **One gap between controls: `--u`** — a field and its icon buttons, the
+- **Spacing is a five-step scale, and nothing between the steps.** Every margin,
+  padding and gap is one of:
+
+  | Token | Size | For |
+  |---|---|---|
+  | `--space-xs` | 2 art px (`--u` / 2) | A label to its control; a caption to its value |
+  | `--space-sm` | 4 art px (`--u`) | Between controls in a row; inside a group |
+  | `--space-md` | 8 art px | Between fields, rows and options |
+  | `--space-lg` | 12 art px | Between sections — e.g. the start group and the options above it |
+  | `--space-xl` | 20 art px | Breathing room around the hand and the top seat |
+
+  Sizes that are not spacing — a column width, a panel's maximum width — may
+  still be written in `--u`. A new margin that seems to need a value off the
+  scale is a sign the grouping is wrong, not that the scale is.
+- **One gap between controls: `--space-sm`** — a field and its icon buttons, the
   utility row, a row of action buttons.
+- **Lobbies end with a start group**: the error, the status line and the start
+  button, `--space-sm` apart, set `--space-lg` below the last option. Leave, top
+  left, is top-aligned with the table code's title.
 - Floating controls sit `--u` in from the viewport edge, never flush against it.
 
 ## 5. Buttons
@@ -181,7 +198,7 @@ Every field is `--control-md` tall with a `--table-hi` border. The surface says
 whether you can type in it:
 
 - **Editable** — your name, the seed, a table code: the darker `--field`.
-- **Not editable** — the invite link, a disabled field: the lighter `--table`.
+- **Not editable** — a disabled field: the lighter `--table`.
 
 Keyboard focus draws the shared gold outline. Only editable fields can be
 drag-selected; nothing else on any screen can.
@@ -216,8 +233,9 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 - Stepped (`steps(2)`) for anything that is simply on or off: controls, markers,
   clock segments.
 - Short ease-out for anything that travels: cards, the trick opening.
-- **Transient things leave with one fade:** `--fade-out` (200ms) over two steps,
-  `@keyframes fade-out`. The copy toast and the inline help note both use it;
+- **Transient things leave with one fade:** `--fade-out` (260ms), eased out —
+  smooth, not stepped, because a fade is something going away rather than
+  something switching off — `@keyframes fade-out`. The copy toast and the inline help note both use it;
   anything new that shows for a moment and goes away uses it too, rather than a
   timing of its own.
 - **A resize is not a move.** Cards follow the window instantly while it is being
@@ -255,8 +273,10 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 - **The title card** is the in-game card sprite at two art pixels per pixel —
   `--px` doubled on the card — so its border and inner edge match the table's
   cards. No caption.
-- **The main menu title** sits `1.5 × --u` above the description, and is pulled
-  left by its glyph side-bearing so its ink shares the description's left edge.
+- **The main menu title is drawn, not typed**: the share image's five-row pixel
+  lettering (`PixelTitle`), one glyph pixel per `--u`, in bone, `--space-md`
+  above the description. The menu and a link preview show one piece of
+  lettering. The name is kept as screen-reader text.
 - **How to play** is one sheet (`RulesSheet`), opened from the main menu
   ("How to play", raised) and from the table (the `help` icon floating top left,
   the log toggle's twin: same inset, height, surface and shadow, but square).
@@ -322,10 +342,10 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   raised); the host gets "Start game", disabled until everyone else is ready. A
   status line in `--bone-dim` sits just above the button saying who is waited on.
 - **The main menu**: title and description; one row of ways in — Continue game
-  (while a solo save exists), Play on your own (primary), Play with friends
-  (default raised) and How to play (quiet, a different surface, so reference does
-  not read as a third way to start); then a ruled-off row with your name, a table
-  code and Join. A button whose label changes while it works ("Opening…") keeps
+  (while a solo save exists), Play on your own (primary) and Play with friends
+  (default raised); How to play (quiet) on a line of its own beneath them, so
+  reference never reads as a third way to start; then a ruled-off row with your
+  name, a table code and Join. A button whose label changes while it works ("Opening…") keeps
   the width of its longer label.
 - **Inline help** is a bracketed pixel "[?]" (11×5) beside a field label — the
   brackets mark it as pressable, where a bare "?" reads as punctuation. `--dim`,
@@ -355,12 +375,14 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     moves nothing on the screen.
   - Playing alone you are always seat 1, whatever seat you last took at a
     shared table.
-  - In a shared lobby: your name, then the seed, then the invite link. Your
-    name starts as a random common name, kept until you change it.
+  - In a shared lobby: your name, then the match length, then the seed (at a
+    table server only). Your name starts as a random common name, kept until
+    you change it.
   - A shared lobby's title, top right, is its **Table code**: a small dim label
-    over the code at `--text-lg`.
-  - Shared tables only: taking a seat, your name, the invite link, the table
-    code.
+    over the code at `--text-lg`, and beneath it a flat **Copy invite link**
+    button. One way to share, shown once — the code to say aloud or type, the
+    link to send in a message. There is no separate invite-link field.
+  - Shared tables only: taking a seat, your name, the table code and its link.
 
 ## 11. Seeds
 
@@ -375,16 +397,15 @@ seed first.
 
 ## 12. Copying
 
-- **Codes copy on click; fields copy with a button.** The table code, the
-  in-game seed and the invite link are `Copyable` buttons styled as text. They
-  all hover the same way: **pointer cursor, and only the value fades to 60%** —
-  never its label or the box around it (mark it `copyable__text`). The invite
-  link is a `Copyable` in the shape of a field (`.field__static`), not an input.
-  The seed *field* is somewhere you type and select, so it copies with a flat
-  copy icon button beside it instead of on click.
+- **Codes copy on click; everything else copies with a button.** The table code
+  and the in-game seed are `Copyable` buttons styled as text. They hover the
+  same way: **pointer cursor, and only the value fades to 60%** — never its
+  label (mark it `copyable__text`). The seed *field* is somewhere you type and
+  select, so it copies with a flat copy icon button beside it. The invite link
+  is never shown — a whole URL is noise — and copies with the flat "Copy invite
+  link" button beneath the table code.
 - **The toast** is just a check and the words, in gold with an ink drop shadow —
   no box. It appears instantly at the pointer, follows it for 1.4s, and leaves
   with the shared `--fade-out`. Keyboard
   copies place it over the element. It is also announced politely to screen
   readers. Messages: "Seed copied", "Code copied", "Link copied".
-- A copyable value shown as a field says so in its hint: "Click to copy."

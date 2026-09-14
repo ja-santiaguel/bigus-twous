@@ -22,7 +22,7 @@ const GLYPH = ['##..###..##', '#......#..#', '#....##...#', '#.........#', '##..
 const HIDE_AFTER_MS = 120;
 
 /** The shared fade-out's length — `--fade-out` in styles.css. */
-const FADE_OUT_MS = 200;
+const FADE_OUT_MS = 260;
 
 export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
   const [hovered, setHovered] = useState(false);

@@ -8,8 +8,8 @@ import { seatName } from '../lib/format.js';
  * company, so their lobbies are one layout: a way back, the seats, whatever is
  * particular to that kind of game, and the button that deals. Somebody who has
  * set up one has already learned where everything is in the other. Only the
- * options genuinely unique to a mode differ — a seed alone, a name and an
- * invite link together — and they sit in the same slot in both.
+ * options genuinely unique to a mode differ — a seed alone, a name and the
+ * table's code together — and they sit in the same slot in both.
  */
 export function LobbyLayout({
   back,
@@ -58,13 +58,16 @@ export function LobbyLayout({
 
         {children}
 
-        {error && <p className="panel__error">{error}</p>}
-        {status && (
-          <p className="panel__status" role="status">
-            {status}
-          </p>
-        )}
-        {primary}
+        {/* Starting, as one group set apart from the options above it. */}
+        <div className="panel__start">
+          {error && <p className="panel__error">{error}</p>}
+          {status && (
+            <p className="panel__status" role="status">
+              {status}
+            </p>
+          )}
+          {primary}
+        </div>
       </div>
     </div>
   );

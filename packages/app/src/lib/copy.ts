@@ -1,10 +1,11 @@
 /**
  * Copying, and saying so where you are looking.
  *
- * There are no copy buttons. The thing worth copying — a seed, a table code, an
- * invite link — is itself what you click, and a small toast appears at the
- * pointer that clicked it. A button beside every code was one more control per
- * row for something the code could simply do.
+ * A thing worth copying — a seed, a table code — is itself what you click, and
+ * a small toast appears at the pointer that clicked it. A button beside every
+ * code was one more control per row for something the code could simply do.
+ * The one copy button is the invite link's: a whole URL is not worth showing,
+ * so it lives as "Copy invite link" beneath the table code it belongs to.
  */
 
 export interface CopyNotice {

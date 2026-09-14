@@ -3,7 +3,7 @@ import { detectCombo } from '../src/combos.js';
 import { getTurnOptions, playTurn } from '../src/orchestrator.js';
 import type { Player } from '../src/player.js';
 import { createRng } from '../src/rng.js';
-import { createNewRound, type GameState } from '../src/state.js';
+import { applyPass, applyPlay, createNewRound, type GameState } from '../src/state.js';
 import type { Card } from '../src/types.js';
 
 const c = (rank: Card['rank'], suit: Card['suit']): Card => ({ rank, suit });
@@ -25,6 +25,45 @@ function stateWithPile(handOfCurrentPlayer: Card[], pile: ReturnType<typeof comb
     trick: { pile, lastPlayedBy: pile ? 'p2' : null, passCount: 0 },
   };
 }
+
+describe('passing and the forced two-bust (9.7)', () => {
+  it('a player who passed cannot bomb a 2 played later in the same trick — nothing overrides passing', () => {
+    // The position is built directly: seat, hand and trick exactly as the
+    // situation needs, rather than simulating games until one happens to arise.
+    const base = createNewRound(PLAYER_IDS, createRng('passing'), 'passing', 1, null, {});
+    const hands: Card[][] = [
+      [c('6', 'SPADE'), c('6', 'CLUB'), c('6', 'DIAMOND'), c('6', 'HEART'), c('4', 'CLUB')],
+      [c('2', 'SPADE'), c('9', 'HEART')],
+      [c('5', 'DIAMOND'), c('8', 'CLUB')],
+      [c('A', 'SPADE'), c('7', 'DIAMOND')],
+    ];
+    let state: GameState = {
+      ...base,
+      firstPlayPending: false,
+      turnIndex: 0,
+      players: base.players.map((p, i) => ({ ...p, hand: hands[i]! })),
+      trick: { pile: combo([c('K', 'HEART')]), lastPlayedBy: 'p4', passed: [], passCount: 0 },
+    };
+    const onTurn = () => state.players[state.turnIndex]!.id;
+
+    // p1 holds four 6s, but passes on the king.
+    state = applyPass(state, 'p1');
+    expect(onTurn()).toBe('p2');
+
+    // p2 answers with a single 2 — exactly what p1's four of a kind could chop.
+    state = applyPlay(state, 'p2', combo([c('2', 'SPADE')]));
+    expect(onTurn()).toBe('p3');
+    state = applyPass(state, 'p3');
+
+    // The turn goes straight past p1: having passed, they are out of this trick.
+    expect(onTurn()).toBe('p4');
+    state = applyPass(state, 'p4');
+
+    // And the trick closes to p2 without p1 ever being asked.
+    expect(state.history[state.history.length - 1]).toMatchObject({ type: 'TRICK_RESET', wonBy: 'p2' });
+    expect(onTurn()).toBe('p2');
+  });
+});
 
 describe('TurnOptions.constraint', () => {
   it('reports FORCED_OPENING on the first play of a round, carrying the required card', () => {
