@@ -1,0 +1,51 @@
+<!doctype html>
+<!--
+  Dev server only: two phone-sized views of the same deal, side by side, for
+  comparing layouts. Open http://localhost:5173/compare.html. Not part of a build.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Opponent seats: fans or badges</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        background: #1b1f24;
+        color: #e4dccb;
+        font:
+          15px/1.4 system-ui,
+          sans-serif;
+      }
+      figure {
+        margin: 0;
+      }
+      figcaption {
+        margin: 0 0 10px;
+      }
+      figcaption span {
+        color: #95a39e;
+      }
+      iframe {
+        display: block;
+        width: 390px;
+        height: 844px;
+        border: 1px solid #35443f;
+        background: #2b3a36;
+      }
+    </style>
+  </head>
+  <body>
+    <figure>
+      <figcaption>Fans <span>— current</span></figcaption>
+      <iframe title="Opponents as fans" src="/?demo=table&amp;seed=ABCD-2345"></iframe>
+    </figure>
+    <figure>
+      <figcaption>Badges <span>— trial</span></figcaption>
+      <iframe title="Opponents as badges" src="/?demo=table&amp;seed=ABCD-2345&amp;seats=badges"></iframe>
+    </figure>
+  </body>
+</html>

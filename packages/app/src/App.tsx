@@ -4,6 +4,7 @@ import { useGameStore } from './store/gameStore.js';
 import { readJoinLink } from './lib/joinLink.js';
 import { MainMenu } from './screens/MainMenu.js';
 import { CopyToast } from './components/CopyToast.js';
+import { devDemo, devSeed } from './lib/devFlags.js';
 
 /*
  * Only the menu is in the first download. The lobbies, the table and the
@@ -80,9 +81,42 @@ function useJoinOnLoad() {
   }, [joinByCode, setPlayerName, reopenHostedTable]);
 }
 
+/** Once per page, however often React runs the effect in development. */
+let demoStarted = false;
+
+/**
+ * Dev server only: `?demo=table` deals a game on your own straight away and
+ * takes the first pile, so a layout can be looked at — or two compared side
+ * by side on the same `?seed=` — without clicking through the menu each time.
+ */
+function useDevDemo() {
+  useEffect(() => {
+    if (devDemo !== 'table' || demoStarted) return undefined;
+    demoStarted = true;
+    const store = useGameStore.getState();
+    store.goToLobby();
+    if (devSeed) useGameStore.getState().setSeed(devSeed);
+    useGameStore.getState().startMatch();
+    let picked = false;
+    const pickFirstPile = (state: ReturnType<typeof useGameStore.getState>) => {
+      // Choosing updates the store, which calls this again before the choice lands.
+      if (picked) return;
+      if (state.ceremony.kind === 'picking' && state.ceremony.interactive) {
+        picked = true;
+        state.choosePile(state.ceremony.remaining[0]!);
+      }
+    };
+    const unsubscribe = useGameStore.subscribe(pickFirstPile);
+    // The pick may already be waiting: a subscription only hears what changes next.
+    pickFirstPile(useGameStore.getState());
+    return unsubscribe;
+  }, []);
+}
+
 export function App() {
   useJoinOnLoad();
   usePreloadScreens();
+  useDevDemo();
 
   // Only the DOM animation feature set is loaded: this app animates transforms
   // and opacity, and hand-rolls its own drag against the fan geometry. Pulling

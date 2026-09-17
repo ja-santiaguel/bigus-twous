@@ -29,7 +29,16 @@ export function SortControl({ mode, onCycle }: { mode: SortMode; onCycle: () => 
         aria-label={`Sort by ${SORT_LABELS[mode].toLowerCase()} — click to change`}
         title={`${SORT_HINTS[mode]} Click to change.`}
       >
-        Sort · {SORT_LABELS[mode]}
+        {/* Every label in one cell, all but the current one hidden, so the
+            button is always as wide as its longest label. A button that
+            changed width as it cycled moved the pips hanging off it. */}
+        <span className="btn__labels">
+          {SORT_MODES.map((m) => (
+            <span key={m} className={m === mode ? '' : 'is-hidden'} aria-hidden="true">
+              Sort · {SORT_LABELS[m]}
+            </span>
+          ))}
+        </span>
       </button>
       <span className="sort__pips" aria-hidden="true">
         {SORT_MODES.map((m, i) => (

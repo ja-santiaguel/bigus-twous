@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cardId, detectCombo, type Card } from '@big-two/engine';
 import { buildScene, placeholderId, type SceneInput } from '../src/lib/cardScene.js';
-import { transformFor, TRICK_OPEN_Z, ZONE_SCALE, type SceneMetrics } from '../src/lib/zoneGeometry.js';
+import { openTrickLayout, transformFor, TRICK_OPEN_Z, ZONE_SCALE, type SceneMetrics } from '../src/lib/zoneGeometry.js';
 import { CARD_SCALE } from '../src/design/cardScale.js';
 import type { TrickPlay } from '../src/lib/tableView.js';
 
@@ -31,6 +31,17 @@ function scene(overrides: Partial<SceneInput> = {}) {
 }
 
 const rect = (x: number, y: number, width: number, height: number) => ({ x, y, width, height });
+
+/** Thirteen singles, one after another — a long exchange. */
+function longTrick(): TrickPlay[] {
+  const suits = ['SPADE', 'CLUB', 'DIAMOND', 'HEART'] as const;
+  const ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'] as const;
+  return ranks.map((rank, i) => ({
+    playerId: SEATS[i % 4]!,
+    combo: combo(c(rank, suits[i % 4]!)),
+    isActive: i === ranks.length - 1,
+  }));
+}
 
 function metrics(overrides: Partial<SceneMetrics> = {}): SceneMetrics {
   return {
@@ -170,20 +181,55 @@ describe('transformFor', () => {
     }
   });
 
-  it('puts the standing combo at the centre of the trick zone, beaten cards to its left', () => {
+  it('stands the newest combo in the middle, and piles everything it beat beneath it', () => {
     const plays: TrickPlay[] = [
       { playerId: 'seat-1', combo: combo(c('4', 'SPADE')), isActive: false },
       { playerId: 'seat-2', combo: combo(c('6', 'SPADE')), isActive: false },
       { playerId: 'seat-3', combo: combo(c('9', 'SPADE')), isActive: true },
     ];
-    const entities = scene({ trickPlays: plays });
     const m = metrics();
-    const xs = entities.map((e) => transformFor(e.placement, m).x);
+    const t = scene({ trickPlays: plays }).map((e) => transformFor(e.placement, m));
 
-    // Trick zone centre is 500.
-    expect(xs[2]).toBe(500);
-    expect(xs[1]).toBeLessThan(xs[2]!);
-    expect(xs[0]).toBeLessThan(xs[1]!);
+    // Trick zone centre is 500, and the combo that stands sits square on it.
+    expect(t[2]!.x).toBe(500);
+    expect(t[2]!.rotate).toBe(0);
+    // What it beat stays beneath it, like the discard pile — not trailing away.
+    for (const beaten of [t[0]!, t[1]!]) {
+      expect(Math.abs(beaten.x - 500)).toBeLessThan(m.cardWidth * 0.2);
+      expect(beaten.z).toBeLessThan(t[2]!.z);
+    }
+  });
+
+  it('keeps a long closed trick within its own footprint', () => {
+    const m = metrics();
+    const xs = scene({ trickPlays: longTrick() }).map((e) => transformFor(e.placement, m).x);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(m.cardWidth * 0.5);
+  });
+
+  it('flattens your hand on a phone, so each card shows a wider strip to touch', () => {
+    const ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'] as const;
+    const hand = ranks.map((rank) => c(rank, 'SPADE'));
+    const narrow = { hands: new Map([[0, rect(10, 700, 370, 140)]]) };
+    const layout = (compact: boolean) =>
+      scene({ handCards: hand }).map((e) => transformFor(e.placement, metrics({ ...narrow, compact })));
+
+    const strip = (compact: boolean) => layout(compact)[1]!.x - layout(compact)[0]!.x;
+    expect(strip(true)).toBeGreaterThan(strip(false));
+    expect(Math.max(...layout(true).map((t) => Math.abs(t.rotate)))).toBeLessThanOrEqual(6);
+  });
+
+  it('keeps a full opponent fan inside its narrow phone column', () => {
+    const column = rect(12, 84, 112, 52);
+    const phone = metrics({ compact: true, cardWidth: 36, cardHeight: 50, hands: new Map([[2, column]]) });
+    const fan = scene({ opponentCounts: new Map([[2, 13]]) })
+      .filter((e) => e.placement.zone === 'hand' && e.placement.seat === 2)
+      .map((e) => transformFor(e.placement, phone));
+    const half = (36 * ZONE_SCALE.opponentHand) / 2;
+
+    expect(fan).toHaveLength(13);
+    // Card centres plus half a card either side: the column the seat was given.
+    expect(Math.min(...fan.map((t) => t.x)) - half).toBeGreaterThanOrEqual(column.x - 4);
+    expect(Math.max(...fan.map((t) => t.x)) + half).toBeLessThanOrEqual(column.x + column.width + 4);
   });
 
   it('lifts the standing combo and sets the beaten ones back, only while closed', () => {
@@ -260,18 +306,37 @@ describe('transformFor', () => {
     expect((xs[0]! + xs[xs.length - 1]!) / 2).toBeCloseTo(500, 6);
   });
 
-  it('squeezes a long opened trick to fit the table', () => {
-    const suits = ['SPADE', 'CLUB', 'DIAMOND', 'HEART'] as const;
-    const ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'] as const;
-    const plays: TrickPlay[] = ranks.map((rank, i) => ({
-      playerId: SEATS[i % 4]!,
-      combo: combo(c(rank, suits[i % 4]!)),
-      isActive: i === ranks.length - 1,
-    }));
-    const m = metrics({ trickOpen: true });
-    const xs = scene({ trickPlays: plays }).map((e) => transformFor(e.placement, m).x);
+  it('opens a long trick in a window of limited width, with the newest plays in view', () => {
+    const m = metrics({ trickOpen: true, layer: rect(0, 0, 3000, 900) });
+    const t = scene({ trickPlays: longTrick() }).map((e) => transformFor(e.placement, m));
+    const layout = openTrickLayout(13, 13, m);
 
-    expect(xs[xs.length - 1]! - xs[0]!).toBeLessThanOrEqual(m.layer.width - m.cardWidth * CARD_SCALE.large);
+    // Even on a very wide table the window stops well short of the whole line.
+    expect(layout.maxScroll).toBeGreaterThan(0);
+    expect(layout.right - layout.left).toBeCloseTo(layout.viewport, 6);
+    expect(layout.viewport).toBeLessThan(1000);
+    // Newest in view; oldest faded out beyond the window's edge.
+    expect(t[12]!.opacity).toBeCloseTo(1, 6);
+    expect(t[0]!.opacity).toBe(0);
+  });
+
+  it('scrolls a long opened trick back to its oldest plays, and no further', () => {
+    const far = metrics({ trickOpen: true, layer: rect(0, 0, 3000, 900), trickScroll: 1e6 });
+    const t = scene({ trickPlays: longTrick() }).map((e) => transformFor(e.placement, far));
+    const layout = openTrickLayout(13, 13, far);
+
+    expect(layout.scroll).toBe(layout.maxScroll);
+    expect(t[0]!.opacity).toBeCloseTo(1, 6);
+    expect(t[12]!.opacity).toBe(0);
+  });
+
+  it('does not scroll or fade a trick that fits its window', () => {
+    const m = metrics({ trickOpen: true, layer: rect(0, 0, 3000, 900) });
+    const plays = longTrick().slice(0, 3);
+    const t = scene({ trickPlays: plays }).map((e) => transformFor(e.placement, m));
+
+    expect(openTrickLayout(3, 3, m).maxScroll).toBe(0);
+    for (const card of t) expect(card.opacity).toBeUndefined();
   });
 
   it('lifts the opened trick above every other zone', () => {

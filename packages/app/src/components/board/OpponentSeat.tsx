@@ -1,6 +1,7 @@
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { SNAP, transition } from '../../design/motion.js';
 import type { SeatPosition } from '../../lib/format.js';
+import { CardBack } from '../card/PixelCard.js';
 import { TurnDot } from './TurnDot.js';
 import { TurnClock } from './TurnClock.js';
 import { PlaceBadge } from './PlaceBadge.js';
@@ -12,6 +13,10 @@ import { PlaceBadge } from './PlaceBadge.js';
  * The fan itself belongs to the card layer. This seat only says where it is —
  * which is what lets a card travel from here to the table as one object
  * instead of being destroyed in this component and recreated in another.
+ *
+ * `badge` is a trial, reachable only on the dev server (`?seats=badges`): the
+ * seat as a compact badge with a single card back and a count, for comparing
+ * against the fans on a phone.
  */
 export function OpponentSeat({
   name,
@@ -23,6 +28,7 @@ export function OpponentSeat({
   hasPassed,
   clock,
   fanRef,
+  variant = 'fan',
 }: {
   name: string;
   position: SeatPosition;
@@ -37,21 +43,75 @@ export function OpponentSeat({
   clock: { remainingMs: number; totalMs: number } | null;
   /** Anchor the card layer positions this seat's cards into. */
   fanRef: (el: HTMLElement | null) => void;
+  variant?: 'fan' | 'badge';
 }) {
   const reduced = useReducedMotion() ?? false;
 
+  const nameLine = (
+    <span className="opp__name">
+      <TurnDot on={isTurn} />
+      {name}
+      {/* The blinking marker says whose turn it is to the eye only. */}
+      {isTurn && <span className="sr-only"> (playing now)</span>}
+    </span>
+  );
+
+  /* A fixed slot, not a row that appears: "passed" and the clock share it, so a
+     seat is the same height whether anything is in it or not. */
+  const statusLine = (
+    <span className="opp__status">
+      {clock && <TurnClock remainingMs={clock.remainingMs} totalMs={clock.totalMs} variant="seat" />}
+      <AnimatePresence>
+        {hasPassed && (
+          <m.span
+            className="opp__passed"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={transition(reduced, SNAP)}
+          >
+            passed
+          </m.span>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+
+  const className = `opp opp--${position} ${variant === 'badge' ? 'opp--badge' : ''} ${isTurn ? 'is-turn' : ''} ${
+    hasPassed ? 'is-passed' : ''
+  } ${place !== null ? 'is-out' : ''}`;
+
+  if (variant === 'badge') {
+    return (
+      <div className={className}>
+        {nameLine}
+        <span className="oppbadge">
+          {/* The anchor cards played by this seat travel from. */}
+          <span className="oppbadge__back" ref={fanRef} aria-hidden="true">
+            <CardBack />
+          </span>
+          <span className="oppbadge__count">
+            {place !== null ? (
+              <PlaceBadge place={place} />
+            ) : (
+              <>
+                {cardCount}
+                <span className="sr-only"> {cardCount === 1 ? 'card' : 'cards'}</span>
+              </>
+            )}
+          </span>
+        </span>
+        <span className="opp__meta">
+          {points} {points === 1 ? 'pt' : 'pts'}
+        </span>
+        {statusLine}
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`opp opp--${position} ${isTurn ? 'is-turn' : ''} ${hasPassed ? 'is-passed' : ''} ${
-        place !== null ? 'is-out' : ''
-      }`}
-    >
-      <span className="opp__name">
-        <TurnDot on={isTurn} />
-        {name}
-        {/* The blinking marker says whose turn it is to the eye only. */}
-        {isTurn && <span className="sr-only"> (playing now)</span>}
-      </span>
+    <div className={className}>
+      {nameLine}
 
       {/* An anchor, not a fan. The cards are drawn by the card layer, which
           positions them from this box — so the card that leaves this seat when
@@ -64,33 +124,17 @@ export function OpponentSeat({
             round ends. "Out" was the wrong word for it — it reads as
             eliminated, when it is the opposite: they finished, and finishing
             first is how you win. So say where they came. */}
-        {place !== null ? <PlaceBadge place={place} /> : `${cardCount} ${cardCount === 1 ? 'card' : 'cards'}`} ·{' '}
-        {points} {points === 1 ? 'pt' : 'pts'}
+        <span>
+          {place !== null ? <PlaceBadge place={place} /> : `${cardCount} ${cardCount === 1 ? 'card' : 'cards'}`}
+        </span>
+        {/* On a phone the two halves stack instead, and the dot goes. */}
+        <span className="opp__sep">·</span>
+        <span>
+          {points} {points === 1 ? 'pt' : 'pts'}
+        </span>
       </span>
 
-      {/* A fixed slot, not a row that appears.
-          "Passed" used to be added to and removed from the grid, so every seat
-          it happened to grew and shrank by a line and shoved its own cards —
-          and on the left and right seats, the whole column — up and down the
-          screen. The space is reserved whether or not anything is in it. */}
-      {/* The clock shares the reserved status line rather than adding one, so a
-          seat is the same height whether it is being waited on or not. */}
-      <span className="opp__status">
-        {clock && <TurnClock remainingMs={clock.remainingMs} totalMs={clock.totalMs} variant="seat" />}
-        <AnimatePresence>
-          {hasPassed && (
-            <m.span
-              className="opp__passed"
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={transition(reduced, SNAP)}
-            >
-              passed
-            </m.span>
-          )}
-        </AnimatePresence>
-      </span>
+      {statusLine}
     </div>
   );
 }

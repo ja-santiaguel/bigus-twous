@@ -128,6 +128,9 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
   button, `--space-sm` apart, set `--space-lg` below the last option. Leave, top
   left, is top-aligned with the table code's title.
 - Floating controls sit `--u` in from the viewport edge, never flush against it.
+- **On a touch screen (`pointer: coarse`) both control heights are at least
+  44px**, rounded up to a whole art pixel. The art does not grow; the button
+  does. A mouse keeps the pixel-exact heights.
 
 ## 5. Buttons
 
@@ -224,6 +227,27 @@ Every shadow is cast in the same ink:
 - `--shade`: resting and lifted things — cards, buttons.
 - `--shade-soft`: large surfaces lying flat — panels, the menu card.
 
+**A card's shadow says how far off the felt it is.**
+
+| Card | Shadow |
+|---|---|
+| Played — every card of the closed trick, the standing combo included | two pixels straight down |
+| Discard pile | the bottom card only, one pixel down |
+| Held — your hand and every seat's fan | three pixels straight down, levitating like cards in a hand |
+| Picked up — hovered, pressed, picked or dragged | two across, five down, above the hand it left |
+| An opened trick | two across, three down |
+
+Card shadows are **crisp with a soft edge**: half an art pixel of blur for
+cards on or just above the felt, a pixel for an opened trick, a pixel and a
+half for a card picked up — the higher the card, the softer its shadow. Fully
+hard, a shadow read as an outline drawn on the art; blurred wide, as haze.
+Cards resting on the table or held in a hand cast into **one shared shadow
+group** beneath every card: opaque shapes drawn together at a single `--shade`
+opacity, so where shadows overlap they merge instead of darkening into
+stripes. A card picked up, or a card in an opened trick, casts its own shadow
+instead, since it has left the rest. The standing combo is marked by its gold
+edge, not a bigger shadow.
+
 Page layers are the `--layer-*` tokens. Inside the card layer, cards stack by
 the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 `HOVER_Z` 800, `DRAG_Z` 900).
@@ -246,23 +270,39 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   card for the first 13. The scatter is fixed per card, so it never twitches.
   A shadow under the bottom card only. A closing trick travels there as itself;
   there is no separately drawn pile.
+- **The trick and the discard pile share one centre line**, and their captions
+  (the seat under the trick, "N played" under the pile) share one line too:
+  both `--text-xs`, both one `--u` below their cards. The pile is centred as a
+  full pile (its thickening is offset by a fixed half), so no card moves when
+  another lands.
 - **Captions and other pixel text land on whole pixels.** A caption's transform
   is a flat, rounded `translate`, and it is centred by a rounded margin rather
   than `translateX(-50%)` — a half pixel or a 3D transform blurs pixel type.
+- **A closed trick is a pile with the newest combo on top.** The standing combo
+  sits centred on the row; every combo it beat lies beneath it at the
+  normal size, turned up to 10° and nudged a few pixels, fixed per card like the
+  discard pile. However long the exchange, the trick never grows wider than the
+  combo on top.
 - **An opened trick is one line**: every card at the raised size, a step of just
-  over a card, half a card of extra air between combos, the whole line centred
-  and squeezed to fit the table when it is long. Combos of different sizes sit
-  evenly; each caption stays under its own cards.
+  over a card, half a card of extra air between combos. Combos of different
+  sizes sit evenly; each caption stays under its own cards. A line that fits is
+  centred. A longer one shows a **window** of at most one card plus seven steps
+  (never wider than the table), starting on the newest play; it scrolls back by
+  wheel, drag or swipe, and the arrow keys, Home and End. A card fades as it
+  passes the window's edge, gone once 60% of a card is outside it, and the plate behind the trick
+  stops at the window.
 - Clocks change tone at a third and a sixth of their allowance — 20 and 10
   seconds of a turn, 5 and 2½ of a pile pick.
 - One pulse per urgent state (turn marker, a clock's last sixth), stepped, and off
   under `prefers-reduced-motion`.
 - **The bomb moment** is the one celebration during play: a gold flash across
   the table (3 steps), a shake of one or two art pixels (360ms), and a callout
-  over the middle — "Chopped!", "Counter-bomb!" or "Four 2s!" (bone) at twice
-  `--text-lg`, popping in over 3 steps, with a line saying who did it. It holds
-  for 1.8s. Only for a bomb on a 2, a bomb on a bomb, and four 2s; read from the
-  event log, never replayed on arrival. Reduced motion keeps the words only.
+  over the middle — "Chopped!", "Counter-bomb!", "Four 2s!" (bone) or
+  "Straight of N!" at twice `--text-lg`, popping in over 3 steps, with a line
+  saying who did it ("Mia runs 3 to 7"). It holds for 1.8s. Only for a bomb on
+  a 2, a bomb on a bomb, four 2s, and a straight of five cards or more, led or
+  answered; read from the event log, never replayed on arrival. Reduced motion
+  keeps the words only.
 
 ## 10. Layout
 
@@ -278,8 +318,28 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   above the description. The menu and a link preview show one piece of
   lettering. The name is kept as screen-reader text.
 - **How to play** is one sheet (`RulesSheet`), opened from the main menu
-  ("How to play", raised) and from the table (the `help` icon floating top left,
+  ("How to play", raised) and from the table (the `help` icon floating top right,
   the log toggle's twin: same inset, height, surface and shadow, but square).
+- **The turn marker** is a five-pixel slot on every seat and beside your own
+  read-out: a three-pixel dim square at rest, the whole slot gold (with a felt
+  ring) on turn, so text beside it never shifts. It is centred on its text and
+  `--space-sm` from it, everywhere.
+- **Every hand fans the same way**: opponents' fans use your hand's spread and
+  curve, the radius scaled to their smaller cards. A fan squeezed into less
+  room than it wants fans less — its spread shrinks with its gap, down to half
+  — as a hand held closer does; a fan with room keeps the whole arc.
+- **The table's bottom row** (desktop) is three columns with equal outer
+  columns: Sort left, Leave table right, the round and seed centred on the row.
+- **Sort's pips** sit centred above the button on every screen, two pixels
+  clear of it: two pixels square with a mouse, three on a phone. The button is
+  always as wide as its longest label (all labels share one cell, the others
+  hidden), so the pips never move as it cycles.
+- **Dropping to play** takes the whole middle band of the table, between the
+  seats and your controls, not just the trick's box. While a card is dragged
+  over it, it lights exactly as your hand does — a dashed gold ring and gold
+  wash — or with a solid `--alert` ring when those cards cannot play.
+- **Table corners, every screen size:** Log top left; How to play (or, on a
+  phone, Menu) top right.
   Written from Section 9 only. Opened from the table, it scrolls to and marks
   (gold edge, gold wash) the rule being enforced right then: bombing a 2, or
   the opening play.
@@ -294,8 +354,54 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 - **The host** (longest-seated connected person) is marked "(Host)" to others
   and gets a flat "Remove" on other people's rows, in the slot "Sit here" uses,
   until the first deal.
-- **On phones** the side seats share a row under the top seat; the top seat
-  drops its nudge toward the centre there.
+- **On phones (720px wide or less)** the table is one screen, never scrolled:
+  - The seats start `--space-xl` below the Log and Menu buttons.
+  - The three opponents share one row across the top, a third of the width
+    each, left seat to right seat in turn order. Each keeps a fan of real card
+    backs — a hand, not a number — closed up to fit its column; the count and
+    points go on two lines beneath it.
+  - Top right, **Menu** (flat) opens a panel — `--table-lo`, like every other
+    panel, so its buttons' ink borders and shadows show — with the round, match
+    length and seed, How to play (raised) and Leave table (quiet), full width;
+    Escape or a tap outside closes it. Log
+    sits top left. "Menu" is a place, not an action — the one exception to
+    labels leading with a verb.
+  - Above your hand: the turn marker, what to do, and your clock, on one line,
+    the sentence beside the marker. It sits close over the hand — the row
+    overlaps part of the hand's lift room — so it reads as belonging to the
+    cards, while a picked card still rises clear of the text.
+  - Below the hand, two rows: Sort
+    and Clear, then Pass and Play cards at half the width each, Play on the
+    right where a right thumb rests. Touch buttons stand `--space-md` apart,
+    across a row and between the rows — a step wider than a mouse's
+    `--space-sm`, because Pass beside Play is the slip that costs a trick.
+  - Your hand is nearly flat (an arc spends width on turned corners, and width
+    is what each card's touchable strip is made of).
+- **Opponent badges** (one card back and a large count) exist only as a trial
+  on the dev server (`?seats=badges`, compared at `/compare.html`). Fans are
+  the design.
+- **Picking cards by touch** — the finger has no hover, and covers what it
+  touches:
+  - A press magnifies and lifts the card under the finger, so you can see what
+    you are about to take.
+  - A tap selects the card whose visible strip is under the finger: the last
+    card whose left edge is at or left of it, not whichever card's rotated box
+    happens to be on top.
+  - Sliding sideways selects every card the finger crosses — or deselects them,
+    if the first card was already selected. Every card crossed stays changed
+    until the finger lifts; cross it again with a new slide to change it back.
+  - Pushing up lifts the selection; letting go over the table plays it.
+    Reordering the hand is by mouse only; on touch, use Sort.
+  - Hover effects only answer a mouse, so nothing stays raised after a tap.
+    A mouse hovers by **centreline**: the boundary between two cards is halfway
+    between their centres, so each card has an equal zone either side of its
+    own centre, however much of it is covered and however much a hovered card
+    has grown. The hovered card keeps the hover 4px past a boundary (a quarter
+    of the distance between centres where cards are tighter), so a pointer
+    resting on a boundary does not flick between two cards. A press takes the
+    hovered card. A finger still goes by the visible strip, which is what a
+    fingertip covers.
+  - The trick opens on a tap and closes on a tap anywhere else.
 - **Leaving a game asks first.** Both Leave table buttons open a confirmation
   over everything else: "Stay" (quiet, focused) and "Leave table" (pass red).
   Alone it says the match ends; at a shared table, that a computer plays the
@@ -308,9 +414,12 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   save exists, "Continue game" takes the menu's primary slot and "Play on your
   own" steps down to a default button.
 - **Your name** appears in both lobbies, above the seed.
-- **The pile ceremony**: each pile's box holds the cards, their two-pixel lean
-  and the bottom card's two-pixel shadow, so the shadow sits inside the pile's
-  outline rather than across it.
+- **The pile ceremony**: each pile's box holds the cards, their lean and their
+  shadow, so the shadow sits inside the pile's outline rather than across it.
+  The stack casts one shadow as a single block — a drop shadow of the whole
+  stack's outline, two pixels straight down with the same soft edge as the
+  table's cards — rather than the bottom card's own, which stuck out from
+  under one corner of the lean.
 - **Match length** sits in both lobbies between your name and the seed, as an
   **option set**: an outlined box of labelled rows, one per kind of answer —
   *Points* 15 · 30 · 50 and *Rounds* 5 · 10 — divided by a `--table-hi` rule,

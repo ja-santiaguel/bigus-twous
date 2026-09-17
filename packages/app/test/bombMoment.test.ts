@@ -46,6 +46,25 @@ describe('the bomb moment', () => {
     expect(readMoment(history, 1, 'seat-1', label)).toMatchObject({ tone: 'counter', title: 'Counter-bomb!' });
   });
 
+  it('celebrates a straight of five or more, led or answered', () => {
+    const five = [c('3', 'SPADE'), c('4', 'CLUB'), c('5', 'HEART'), c('6', 'SPADE'), c('7', 'DIAMOND')];
+    expect(readMoment([played('seat-2', five)], 0, 'seat-1', label)).toMatchObject({
+      tone: 'straight',
+      title: 'Straight of 5!',
+      detail: 'Mia runs 3 to 7',
+    });
+    const seven = [...five, c('8', 'CLUB'), c('9', 'HEART')];
+    expect(readMoment([played('seat-1', seven)], 0, 'seat-1', label)).toMatchObject({
+      title: 'Straight of 7!',
+      detail: 'You run 3 to 9',
+    });
+  });
+
+  it('leaves a straight shorter than five alone', () => {
+    const four = [c('3', 'SPADE'), c('4', 'CLUB'), c('5', 'HEART'), c('6', 'SPADE')];
+    expect(readMoment([played('seat-2', four)], 0, 'seat-1', label)).toBeNull();
+  });
+
   it('gives four 2s its own moment', () => {
     const twos = [c('2', 'SPADE'), c('2', 'CLUB'), c('2', 'DIAMOND'), c('2', 'HEART')];
     expect(readMoment([played('seat-2', twos)], 0, 'seat-1', label)).toMatchObject({

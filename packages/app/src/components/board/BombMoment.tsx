@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { isBombType, type Combo, type GameEvent, type PlayerId } from '@big-two/engine';
+import { cardValue, isBombType, type Combo, type GameEvent, type PlayerId } from '@big-two/engine';
 
 /**
  * The bomb, celebrated.
@@ -14,14 +14,15 @@ import { isBombType, type Combo, type GameEvent, type PlayerId } from '@big-two/
  * this tab or across a socket, and it can never hold the game up.
  *
  * Only moments that matter get one — a bomb on a 2, a bomb answering a bomb,
- * and four 2s, the hand nothing beats. A bomb simply led onto an empty table is
- * a strong play, not an event.
+ * four 2s, the hand nothing beats, and a straight of five cards or more, which
+ * empties a big part of somebody's hand at once. A bomb simply led onto an
+ * empty table is a strong play, not an event.
  */
 
 export interface BombMomentCue {
   /** The event index. A new one remounts the callout, restarting its animation. */
   key: number;
-  tone: 'chop' | 'counter' | 'ceiling';
+  tone: 'chop' | 'counter' | 'ceiling' | 'straight';
   title: string;
   detail: string;
 }
@@ -77,6 +78,9 @@ export function useBombMoment(
   return { moment, shaking };
 }
 
+/** The shortest straight that gets a moment. */
+export const MOMENT_STRAIGHT_LENGTH = 5;
+
 /** Exported for tests: the moment, if any, that the play at `index` deserves. */
 export function readMoment(
   history: GameEvent[],
@@ -85,7 +89,23 @@ export function readMoment(
   labelFor: (id: PlayerId) => string,
 ): BombMomentCue | null {
   const event = history[index];
-  if (!event || event.type !== 'CARDS_PLAYED' || !isBombType(event.combo.type)) return null;
+  if (!event || event.type !== 'CARDS_PLAYED') return null;
+
+  const you = event.playerId === youId;
+  const who = you ? 'You' : labelFor(event.playerId);
+  const verb = (plain: string, third: string) => (you ? plain : third);
+
+  const { combo } = event;
+  if (combo.type === 'STRAIGHT' && combo.cards.length >= MOMENT_STRAIGHT_LENGTH) {
+    const ordered = [...combo.cards].sort((a, b) => cardValue(a) - cardValue(b));
+    return {
+      key: index,
+      tone: 'straight',
+      title: `Straight of ${combo.cards.length}!`,
+      detail: `${who} ${verb('run', 'runs')} ${ordered[0]!.rank} to ${ordered[ordered.length - 1]!.rank}`,
+    };
+  }
+  if (!isBombType(combo.type)) return null;
 
   // What it landed on: the last play since the table last cleared.
   let beaten: Combo | null = null;
@@ -97,10 +117,6 @@ export function readMoment(
       break;
     }
   }
-
-  const you = event.playerId === youId;
-  const who = you ? 'You' : labelFor(event.playerId);
-  const verb = (plain: string, third: string) => (you ? plain : third);
 
   if (event.combo.type === 'FOUR_OF_A_KIND' && event.combo.cards[0]?.rank === '2') {
     return {

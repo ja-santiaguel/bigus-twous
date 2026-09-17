@@ -15,7 +15,7 @@ import { SortControl } from '../components/hand/SortControl.js';
 import { PileCeremony } from '../components/board/PileCeremony.js';
 import { applyOrder } from '../lib/handOrder.js';
 import { buildScene } from '../lib/cardScene.js';
-import { DRAG_Z, HOVER_Z, type SceneMetrics } from '../lib/zoneGeometry.js';
+import { DRAG_Z, HOVER_Z, openTrickLayout, type SceneMetrics } from '../lib/zoneGeometry.js';
 import { useZoneRects } from '../lib/useZoneRects.js';
 import { CardLayer, type CardVisual } from '../components/table/CardLayer.js';
 import { TurnDot } from '../components/board/TurnDot.js';
@@ -30,6 +30,9 @@ import { useTableDrag } from '../lib/useTableDrag.js';
 import { useSweepSelect, sweepStyle } from '../lib/useSweepSelect.js';
 import { CARD_SCALE } from '../design/cardScale.js';
 import { SETTLE } from '../design/motion.js';
+import { TableMenu } from '../components/TableMenu.js';
+import { COMPACT_QUERY, useMediaQuery } from '../lib/useMediaQuery.js';
+import { devSeats } from '../lib/devFlags.js';
 
 const NO_HISTORY: GameEvent[] = [];
 
@@ -87,7 +90,6 @@ export function Table() {
   const rulesFocus =
     constraint.kind === 'FORCED_TWO_BUST' ? 'bombs' : constraint.kind === 'FORCED_OPENING' ? 'opening' : undefined;
   const playCards = useGameStore((s) => s.playCards);
-  const playZoneRef = useRef<HTMLDivElement>(null);
 
   const HUMAN_ID = SEAT_IDS[humanSeat]!;
   const mine = seatsAtTable.find((seat) => seat.id === HUMAN_ID);
@@ -130,6 +132,12 @@ export function Table() {
   // Zones report their boxes; the card layer positions every card from them.
   const zones = useZoneRects();
   const [trickOpen, setTrickOpen] = useState(false);
+  /** How far the opened trick is scrolled back from its newest play. */
+  const [trickScroll, setTrickScroll] = useState(0);
+  // Every opening, and every new trick, starts at the newest plays.
+  useEffect(() => setTrickScroll(0), [trickOpen, view?.trickId]);
+  /** The phone layout: a few controls are arranged differently there, not only styled differently. */
+  const compact = useMediaQuery(COMPACT_QUERY);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   /**
@@ -147,21 +155,23 @@ export function Table() {
     return () => window.removeEventListener('resize', read);
   }, []);
 
-  const cardCentre = (id: string) => {
+  const cardBox = (id: string) => {
     const el = document.querySelector<HTMLElement>(`.cardlayer__card[data-id="${CSS.escape(id)}"]`);
     if (!el) return null;
     const r = el.getBoundingClientRect();
-    return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2, left: r.x };
   };
 
   const [drag, dragHandlers] = useTableDrag({
     zones: {
       hand: zones.rects[`hand:${humanSeat}`] ?? null,
-      trick: zones.rects['trick'] ?? null,
+      // The whole middle band of the table takes a drop, not just the trick's box.
+      trick: zones.rects['drop'] ?? zones.rects['trick'] ?? null,
     },
     handIds,
     selectedIds,
-    cardCentre,
+    cardBox,
+    hoveredId,
     actions: {
       // One meaning, always: a click picks a card up or puts it back. Picking
       // is allowed off-turn too, so a combo can be lined up while the CPUs
@@ -176,6 +186,8 @@ export function Table() {
       // grabbed, so there is nothing else to fold in.
       onPlay: (ids) => playCards(toCards(ids)),
       onReorder: (id, toIndex) => reorderHand(id, toIndex),
+      // A finger sliding along the hand picks up (or puts back) every card it passes.
+      onSelect: (ids) => setSelection(toCards(ids)),
     },
   });
 
@@ -221,7 +233,10 @@ export function Table() {
   // The scene: every card that should be on screen, and where it belongs.
   // Derived from the redacted view plus local intent — never from anything
   // only this client could know about another player.
-  const opponentCounts = new Map(self.opponents.map((o) => [o.seat, o.cardCount]));
+  // The badge trial draws no opponent fans: each seat shows a count instead.
+  const opponentCounts = new Map<number, number>(
+    devSeats === 'badges' ? [] : self.opponents.map((o) => [o.seat, o.cardCount] as const),
+  );
   const entities = buildScene({
     humanSeat,
     seatIds: SEAT_IDS,
@@ -244,7 +259,16 @@ export function Table() {
     cardHeight: cardSize.height,
     viewerSeat: humanSeat,
     trickOpen,
+    trickScroll,
+    compact,
   };
+
+  // The opened trick's window, measured as it would be open, so the play area
+  // knows whether there is anything to scroll before it is opened.
+  const trickCardCount = view.trickPlays.reduce((n, play) => n + play.combo.cards.length, 0);
+  const trickLayout = openTrickLayout(trickCardCount, view.trickPlays.length, { ...metrics, trickOpen: true });
+  const scrollTrick = (by: number) =>
+    setTrickScroll((current) => Math.min(Math.max(current + by, 0), trickLayout.maxScroll));
 
   /**
    * What the drop under the pointer would do, and whether the table would
@@ -270,18 +294,22 @@ export function Table() {
     if (!mine) continue;
     const dragging = draggingSet.has(entity.id);
     const hovered = hoveredId === entity.id && !dragging;
+    // The card under a finger pressing the hand: raised clear of the fingertip
+    // that covers it, so you can see which card you are about to pick.
+    const previewed = drag.previewId === entity.id;
     const chosen = selectedIds.has(entity.id);
     visuals.set(entity.id, {
       interactive: true,
       marked: chosen,
       ...(entity.card ? { label: cardSpoken(entity.card) } : {}),
       ...(dragging ? { dx: drag.dx, dy: drag.dy, z: DRAG_Z } : {}),
-      ...(hovered ? { z: HOVER_Z } : {}),
-      ...(dragging || hovered ? { scale: CARD_SCALE.raised } : {}),
+      ...(hovered || previewed ? { z: HOVER_Z } : {}),
+      ...(dragging || hovered || previewed ? { scale: CARD_SCALE.raised } : {}),
       // A picked card stands clear of the row; hovering nudges one that is
       // not picked, so the two cues never add up into one taller lift that
       // means neither thing on its own.
-      lift: chosen ? 26 : hovered ? 14 : 0,
+      lift: previewed ? 40 : chosen ? 26 : hovered ? 14 : 0,
+      raised: dragging || hovered || previewed || chosen,
     });
   }
 
@@ -344,8 +372,71 @@ export function Table() {
     finished: myPlace !== null,
   });
 
+  /* Pieces of the controls, arranged one way on a wide screen and another on a
+     phone (see the hand zone below). */
+  const placeBadge = myPlace !== null && (
+    <>
+      {/* The same medal an opponent's seat shows when they finish, so going out
+          first looks like the win it is from your side too. */}
+      <PlaceBadge place={myPlace} />{' '}
+    </>
+  );
+  const myClock =
+    clock && clock.playerId === HUMAN_ID ? (
+      <span className="controls__clock">
+        <TurnClock remainingMs={clock.remainingMs} totalMs={clock.totalMs} />
+      </span>
+    ) : null;
+  const clearButton = (
+    <button className="btn" onClick={clearSelection} disabled={selection.length === 0}>
+      Clear
+    </button>
+  );
+  const passButton = (
+    <button className="btn btn--pass" onClick={pass} disabled={!isMyTurn || !canPass}>
+      Pass
+    </button>
+  );
+  const playButton = (
+    <button className="btn btn--primary" onClick={playSelection} disabled={!isMyTurn || status.kind !== 'LEGAL'}>
+      Play cards
+    </button>
+  );
+  const handElement = (
+    <Hand
+      containerRef={handRef}
+      anchorRef={zones.anchor(`hand:${humanSeat}`)}
+      cardCount={handCards.length}
+      dropActive={drag.over === 'hand'}
+    />
+  );
+  /* The round and the seed that dealt it, as one line of text: the seed reads
+     the same whether this table is yours alone or shared, so a deal can be
+     carried from one to the other. */
+  const gameInfo = (
+    <>
+      Round {roundNumber}
+      {match.rule.kind === 'rounds' ? ` of ${match.rule.count}` : ` · first to ${match.rule.target}`}
+      {/* At a shared table, the code to give somebody who wants in. */}
+      {online && (
+        <>
+          {' · Table '}
+          <Copyable value={tableCode} message="Code copied" label="Table code" />
+        </>
+      )}
+      {/* A browser-hosted table deals from everyone's shuffle, so its seed
+          would not repeat the deal and is not shown. */}
+      {online && hosting === 'browser' ? null : (
+        <>
+          {' · '}
+          <Copyable value={seed} message="Seed copied" label="Seed" />
+        </>
+      )}
+    </>
+  );
+
   return (
-    <div className="screen">
+    <div className="screen screen--table">
       {/* A dropped connection has to be visible, because from inside the game
           it looks exactly like three people thinking for a very long time.
           The seat is not lost while this is up — the table holds it, and a
@@ -373,6 +464,7 @@ export function Table() {
             hasPassed={view.passedThisTrick.has(opponent.id)}
             clock={clock && clock.playerId === opponent.id ? clock : null}
             fanRef={zones.anchor(`hand:${opponent.seat}`)}
+            variant={devSeats === 'badges' ? 'badge' : 'fan'}
           />
         ))}
 
@@ -380,11 +472,13 @@ export function Table() {
           trickPlays={view.trickPlays}
           moundCount={view.moundCount}
           labelFor={labelFor}
-          dropRef={playZoneRef}
+          dropRef={zones.anchor('drop')}
           trickRef={zones.anchor('trick')}
           discardRef={zones.anchor('discard')}
           open={trickOpen}
           onOpenChange={setTrickOpen}
+          onScroll={trickLayout.maxScroll > 0 ? scrollTrick : undefined}
+          scrollStep={trickLayout.step}
           dropActive={drag.over === 'trick'}
           dropValid={dropValid}
         />
@@ -403,8 +497,22 @@ export function Table() {
               const card = byId.get(id);
               if (card) toggleCard(card);
             },
-            onPointerEnter: setHoveredId,
-            onPointerLeave: (id) => setHoveredId((cur) => (cur === id ? null : cur)),
+            // Hover goes by the nearest card centreline, not by the element under
+            // the pointer: taken from the element, a hovered card grew over its
+            // right-hand neighbour and that neighbour could never be reached.
+            onPointerMove: (e) => {
+              if (e.pointerType === 'mouse' && !drag.grabbedId) {
+                setHoveredId((current) => dragHandlers.cardAt(e.clientX, current));
+              }
+              dragHandlers.onPointerMove(e);
+            },
+            onPointerEnter: (e) => setHoveredId((current) => dragHandlers.cardAt(e.clientX, current)),
+            onPointerLeave: (e) => {
+              // Moving from one card onto the next is not leaving the hand.
+              const next =
+                e.relatedTarget instanceof Element ? e.relatedTarget.closest('.cardlayer__card.is-live') : null;
+              if (!next) setHoveredId(null);
+            },
           }}
         />
 
@@ -413,95 +521,67 @@ export function Table() {
         </p>
 
         <div className="handzone">
-          {/* One line of chrome above the fan, not two boxes.
-              A turn prompt and a selection read-out were saying related things
-              in two stacked panels, and between them they took more vertical
-              room than the cards they were describing. Merged, the line always
-              shows the most specific thing true right now — an error, then what
-              you have picked, then whose turn it is — and the actions sit on
-              the same row because they are what you do about it. */}
-          <div className={`controls ${tone}`} aria-live="polite">
-            {/* The same marker every other seat carries. Your own turn was the
-                one state on the board with no mark on it — announced in words
-                at the bottom of the screen while three opponents each had a
-                blinking gold square. */}
-            <TurnDot on={isMyTurn} />
-            <span className="controls__read">
-              {/* The same medal an opponent's seat shows when they finish, so
-                  going out first looks like the win it is from your side too. */}
-              {myPlace !== null && <PlaceBadge place={myPlace} />}
-              {myPlace !== null ? ' ' : ''}
-              {message}
-            </span>
-            <div className="controls__actions">
-              {/*
-                The clock hangs off the actions, not the sentence.
-                It constrains a decision — play or pass — so it sits on the
-                controls that decision is made with, the way a chess clock sits
-                by the player's hand rather than in the commentary. Positioned
-                out of flow above the buttons, it takes no width from the
-                read-out, so nothing beside it ever wraps or shifts.
-              */}
-              {clock && clock.playerId === HUMAN_ID && (
-                <span className="controls__clock">
-                  <TurnClock remainingMs={clock.remainingMs} totalMs={clock.totalMs} />
+          {compact ? (
+            <>
+              {/* A phone: what is true right now, then your hand, then what you
+                  can do about it — the actions under the hand, where a thumb
+                  rests, with the one that plays largest and furthest right. */}
+              <div className={`controls controls--compact ${tone}`} aria-live="polite">
+                <TurnDot on={isMyTurn} />
+                <span className="controls__read">
+                  {placeBadge}
+                  {message}
                 </span>
-              )}
-              <button className="btn" onClick={clearSelection} disabled={selection.length === 0}>
-                Clear
-              </button>
-              <button
-                className="btn btn--primary"
-                onClick={playSelection}
-                disabled={!isMyTurn || status.kind !== 'LEGAL'}
-              >
-                Play cards
-              </button>
-              <button className="btn btn--pass" onClick={pass} disabled={!isMyTurn || !canPass}>
-                Pass
-              </button>
-            </div>
-          </div>
+                {myClock}
+              </div>
+              {handElement}
+              <div className="actionbar">
+                <SortControl mode={sortMode} onCycle={cycleSort} />
+                <span className="actionbar__spacer" />
+                {clearButton}
+              </div>
+              <div className="actionbar actionbar--primary">
+                {passButton}
+                {playButton}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* One line of chrome above the fan, not two boxes. The line always
+                  shows the most specific thing true right now — an error, then
+                  what you have picked, then whose turn it is — and the actions
+                  sit on the same row because they are what you do about it. */}
+              <div className={`controls ${tone}`} aria-live="polite">
+                {/* The same marker every other seat carries. */}
+                <TurnDot on={isMyTurn} />
+                <span className="controls__read">
+                  {placeBadge}
+                  {message}
+                </span>
+                <div className="controls__actions">
+                  {/* The clock hangs off the actions, not the sentence: it
+                      constrains the decision those buttons make. Out of flow
+                      above them, so nothing beside it wraps or shifts. */}
+                  {myClock}
+                  {clearButton}
+                  {playButton}
+                  {passButton}
+                </div>
+              </div>
 
-          {/* The fan is an anchor and a sweep surface. Its cards belong to the
-              card layer, which is what lets one of them travel to the tray or
-              the table as a single object. */}
-          <Hand
-            containerRef={handRef}
-            anchorRef={zones.anchor(`hand:${humanSeat}`)}
-            cardCount={handCards.length}
-            dropActive={drag.over === 'hand'}
-          />
+              {/* The fan is an anchor. Its cards belong to the card layer, which
+                  is what lets one of them travel to the table as one object. */}
+              {handElement}
 
-          <div className="utility">
-            <SortControl mode={sortMode} onCycle={cycleSort} />
-            {/* The round and the seed that dealt it, as one line of text: the
-                seed reads the same whether this table is yours alone or shared,
-                so a deal can be carried from one to the other. */}
-            <span className="utility__seed">
-              Round {roundNumber}
-              {match.rule.kind === 'rounds' ? ` of ${match.rule.count}` : ` · first to ${match.rule.target}`}
-              {/* At a shared table, the code to give somebody who wants in. */}
-              {online && (
-                <>
-                  {' · Table '}
-                  <Copyable value={tableCode} message="Code copied" label="Table code" />
-                </>
-              )}
-              {/* A browser-hosted table deals from everyone's shuffle, so its
-                  seed would not repeat the deal and is not shown. */}
-              {online && hosting === 'browser' ? null : (
-                <>
-                  {' · '}
-                  <Copyable value={seed} message="Seed copied" label="Seed" />
-                </>
-              )}
-            </span>
-            <span className="utility__spacer" />
-            <button className="btn btn--quiet" onClick={() => setConfirmLeave(true)}>
-              Leave table
-            </button>
-          </div>
+              <div className="utility">
+                <SortControl mode={sortMode} onCycle={cycleSort} />
+                <span className="utility__seed">{gameInfo}</span>
+                <button className="btn btn--quiet" onClick={() => setConfirmLeave(true)}>
+                  Leave table
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         <BombCallout moment={bomb.moment} />
@@ -511,17 +591,22 @@ export function Table() {
 
       <EventLog history={self.history} />
 
-      {/* Help floats in the top-left corner, mirroring the log in the top
-          right: both are reference you reach for, not part of playing a turn. */}
-      <button
-        type="button"
-        className="helpbtn"
-        onClick={() => setRulesOpen(true)}
-        aria-label="How to play"
-        title="How to play"
-      >
-        <PixelIcon name="help" />
-      </button>
+      {/* Top left, mirroring the log in the top right: reference you reach for,
+          not part of playing a turn. On a phone the corner holds the menu, and
+          How to play, the round and Leave table live inside it. */}
+      {compact ? (
+        <TableMenu info={gameInfo} onRules={() => setRulesOpen(true)} onLeave={() => setConfirmLeave(true)} />
+      ) : (
+        <button
+          type="button"
+          className="helpbtn"
+          onClick={() => setRulesOpen(true)}
+          aria-label="How to play"
+          title="How to play"
+        >
+          <PixelIcon name="help" />
+        </button>
+      )}
 
       {/* A computer took this seat when the countdown between rounds ran out.
           Said at the top of the screen, out of the board's flow, with the one

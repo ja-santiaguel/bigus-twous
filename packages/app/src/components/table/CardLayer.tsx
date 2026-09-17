@@ -4,7 +4,13 @@ import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { CardBack, CardFace } from '../card/PixelCard.js';
 import { NONE, SETTLE, transition } from '../../design/motion.js';
 import type { CardEntity, Placement } from '../../lib/cardScene.js';
-import { transformFor, TRICK_LABEL_ROOM, TRICK_OPEN_Z, type SceneMetrics } from '../../lib/zoneGeometry.js';
+import {
+  openTrickLayout,
+  transformFor,
+  TRICK_LABEL_ROOM,
+  TRICK_OPEN_Z,
+  type SceneMetrics,
+} from '../../lib/zoneGeometry.js';
 
 /**
  * Every card on the table, in one layer.
@@ -38,6 +44,8 @@ export interface CardVisual {
   lift?: number;
   /** Lifts the card above everything while it is in your hand. */
   z?: number;
+  /** Picked up — hovered, touched or chosen — so it casts a deeper shadow. */
+  raised?: boolean;
   marked?: boolean;
   /** Only interactive cards take pointer events or carry semantics. */
   interactive?: boolean;
@@ -62,8 +70,11 @@ export function CardLayer({
     onPointerDown(e: React.PointerEvent, id: string): void;
     onPointerMove(e: React.PointerEvent): void;
     onPointerUp(e: React.PointerEvent, id: string): void;
-    onPointerEnter(id: string): void;
-    onPointerLeave(id: string): void;
+    /** The browser took the pointer away — a scroll, a system gesture. */
+    onPointerCancel(e: React.PointerEvent): void;
+    /** A mouse only. Carries the event: which card is hovered is decided by where the pointer is. */
+    onPointerEnter(e: React.PointerEvent, id: string): void;
+    onPointerLeave(e: React.PointerEvent, id: string): void;
     /** Keyboard activation — Enter or Space on a focused card. */
     onActivate(id: string): void;
   };
@@ -71,6 +82,15 @@ export function CardLayer({
   instant?: boolean;
 }) {
   const reduced = useReducedMotion() ?? false;
+
+  // Which cards were already on screen last render. A shadow that appears for a
+  // card that was already here (a hover ending, a trick closing) fades in where
+  // the card is; only a card arriving for the first time brings it from where
+  // the card came from.
+  const known = useRef(new Set<string>());
+  useLayoutEffect(() => {
+    known.current = new Set(entities.map((entity) => entity.id));
+  });
 
   // Bounds of the opened trick, so the read-out plate can sit behind it. Taken
   // from the same transforms the cards use, so the plate can never disagree
@@ -100,6 +120,43 @@ export function CardLayer({
           />
         )}
       </AnimatePresence>
+      {/*
+       * The shadows of every card resting on the table or held in a hand.
+       *
+       * Drawn as one group, beneath all the cards, at one opacity and one blur.
+       * Each card casting its own translucent shadow darkened wherever two
+       * overlapped — and in a fan of thirteen they all overlap — into hard
+       * stripes under the hand. Opaque shapes in a translucent group merge
+       * into a single soft shadow instead. A card that is picked up casts its
+       * own (see .is-raised), because it is no longer at the height of the rest.
+       */}
+      <div className="cardlayer__shadows">
+        <AnimatePresence>
+          {entities.map((entity) => {
+            const depth = restingDepth(entity, visuals?.get(entity.id), metrics);
+            if (depth === null) return null;
+            const to = transformFor(entity.placement, metrics);
+            const from =
+              entity.enterFrom && !known.current.has(entity.id) ? transformFor(entity.enterFrom, metrics) : null;
+            const drop = (metrics.cardWidth / 22) * depth * to.scale;
+            return (
+              <m.div
+                key={entity.id}
+                className="cardlayer__shadow"
+                initial={
+                  from
+                    ? { x: from.x, y: from.y + drop, rotate: from.rotate, scale: from.scale, opacity: 0 }
+                    : { x: to.x, y: to.y + drop, rotate: to.rotate, scale: to.scale, opacity: 0 }
+                }
+                animate={{ x: to.x, y: to.y + drop, rotate: to.rotate, scale: to.scale, opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.14 } }}
+                transition={instant ? NONE : transition(reduced, SETTLE)}
+              />
+            );
+          })}
+        </AnimatePresence>
+      </div>
+
       <AnimatePresence>
         {entities.map((entity) => {
           const to = transformFor(entity.placement, metrics);
@@ -124,7 +181,7 @@ export function CardLayer({
             // A dragged card straightens up: you are holding it, not fanning it.
             rotate: dragging ? 0 : to.rotate,
             scale: v?.scale ?? to.scale,
-            opacity: 1,
+            opacity: to.opacity ?? 1,
           };
 
           return (
@@ -155,7 +212,7 @@ export function CardLayer({
                 : { 'aria-hidden': true })}
               className={`cardlayer__card ${faceUp ? '' : 'is-down'} ${beaten ? 'is-beaten' : ''} ${
                 v?.marked ? 'is-marked' : ''
-              } ${v?.interactive ? 'is-live' : ''} ${dragging ? 'is-dragging' : ''} ${standing ? 'is-standing' : ''} ${
+              } ${v?.interactive ? 'is-live' : ''} ${v?.raised ? 'is-raised' : ''} ${dragging ? 'is-dragging' : ''} ${standing ? 'is-standing' : ''} ${
                 entity.placement.zone === 'discard'
                   ? entity.placement.slot === 0
                     ? 'is-piled is-pile-base'
@@ -183,8 +240,23 @@ export function CardLayer({
                     }
                   : undefined
               }
-              onPointerEnter={v?.interactive ? () => handlers?.onPointerEnter(entity.id) : undefined}
-              onPointerLeave={v?.interactive ? () => handlers?.onPointerLeave(entity.id) : undefined}
+              onPointerCancel={v?.interactive ? handlers?.onPointerCancel : undefined}
+              // Hover is a mouse's. A finger "enters" a card by pressing it, and
+              // treating that as hover left a lifted card behind after the tap.
+              onPointerEnter={
+                v?.interactive
+                  ? (e: React.PointerEvent) => {
+                      if (e.pointerType === 'mouse') handlers?.onPointerEnter(e, entity.id);
+                    }
+                  : undefined
+              }
+              onPointerLeave={
+                v?.interactive
+                  ? (e: React.PointerEvent) => {
+                      if (e.pointerType === 'mouse') handlers?.onPointerLeave(e, entity.id);
+                    }
+                  : undefined
+              }
               initial={
                 from
                   ? { x: from.x, y: from.y, rotate: from.rotate, scale: from.scale, opacity: 1 }
@@ -227,7 +299,7 @@ export function CardLayer({
               style={{ zIndex: Math.round(at.z) }}
               transformTemplate={pixelSnap}
               initial={{ x: at.x, y: labelY(at, metrics), opacity: 0 }}
-              animate={{ x: at.x, y: labelY(at, metrics), opacity: 1 }}
+              animate={{ x: at.x, y: labelY(at, metrics), opacity: at.opacity ?? 1 }}
               exit={{ opacity: 0 }}
               transition={instant ? NONE : transition(reduced, SETTLE)}
             >
@@ -281,13 +353,36 @@ function LabelText({ text }: { text: string }) {
 }
 
 /**
+ * How far below a resting card its shadow falls, in art pixels — or null when
+ * it casts none in the shared shadow group.
+ *
+ * Played cards lie on the felt, two pixels up. Hands are held, three up. Only
+ * the bottom card of the discard pile casts, a pixel, as the pile's floor. A
+ * card that is picked up, dragged, or part of a trick opened for reading casts
+ * its own shadow instead.
+ */
+function restingDepth(entity: CardEntity, visual: CardVisual | undefined, metrics: SceneMetrics): number | null {
+  if (visual?.raised || (visual?.dx ?? 0) !== 0 || (visual?.dy ?? 0) !== 0) return null;
+  switch (entity.placement.zone) {
+    case 'hand':
+      return 3;
+    case 'trick':
+      return metrics.trickOpen ? null : 2;
+    case 'discard':
+      return entity.placement.slot === 0 ? 1 : null;
+  }
+}
+
+/**
  * Where a combo's caption sits: clear of the bottom edge of its own cards, at
  * whatever size those cards are currently drawn. Reading the scale rather than
  * assuming it keeps the caption the same distance below a raised card as below
  * a resting one.
  */
 function labelY(at: { y: number; scale: number }, metrics: SceneMetrics): number {
-  return at.y + (metrics.cardHeight / 2) * at.scale + 12;
+  // One --u (four art pixels) below the card — the same gap the discard pile's
+  // count hangs by, so the two captions beside each other sit on one line.
+  return at.y + (metrics.cardHeight / 2) * at.scale + (metrics.cardWidth / 22) * 4;
 }
 
 /**
@@ -316,6 +411,18 @@ function trickBounds(entities: CardEntity[], metrics: SceneMetrics) {
   // alone. The opened trick rises by the same amount (see `TRICK_LABEL_ROOM`),
   // so the plate grows upward in effect and its bottom edge stays clear of the
   // combo-type line printed under the zone.
+  //
+  // A trick longer than its window scrolls, so the plate is the window, not
+  // the whole line: cards beyond it are fading out, not sitting on the plate.
+  const frame = openTrickLayout(
+    inTrick[0]!.placement.trickCount ?? inTrick.length,
+    inTrick[0]!.placement.groups ?? 1,
+    metrics,
+  );
+  if (frame.maxScroll > 0) {
+    left = Math.max(left, frame.left);
+    right = Math.min(right, frame.right);
+  }
   const first = transformFor(inTrick[0]!.placement, metrics);
   const cards = metrics.cardHeight * first.scale;
   return {

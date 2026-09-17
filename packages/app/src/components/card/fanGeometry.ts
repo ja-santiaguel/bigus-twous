@@ -32,22 +32,10 @@ export interface FanOptions {
 }
 
 /**
- * Every opponent fans identically.
- *
- * Three seats holding the same number of cards should look like three seats
- * holding the same number of cards — varying the arc per position made the
- * table read as three different widgets rather than one game. Only the
- * player's own hand differs, and it earns that: it is larger, interactive, and
- * has to stay legible while thirteen cards overlap.
+ * How every hand at the table fans — yours, and each opponent's at the size
+ * their cards are drawn (see `handTransform`). One arc for all of them, so the
+ * table reads as four people holding cards rather than four different widgets.
  */
-export const OPPONENT_FAN: Required<FanOptions> = {
-  stepDegrees: 4,
-  maxSpread: 34,
-  gap: 13,
-  radius: 200,
-};
-
-/** The player's hand: wider spread, flatter arc, bigger gaps. */
 export const PLAYER_FAN: Omit<Required<FanOptions>, 'gap'> = {
   stepDegrees: 3.6,
   maxSpread: 40,

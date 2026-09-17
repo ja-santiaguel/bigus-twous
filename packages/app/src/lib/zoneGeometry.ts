@@ -1,6 +1,9 @@
-import { fanSlots, OPPONENT_FAN, PLAYER_FAN } from '../components/card/fanGeometry.js';
+import { fanSlots, PLAYER_FAN } from '../components/card/fanGeometry.js';
 import { CARD_SCALE } from '../design/cardScale.js';
 import type { Placement } from './cardScene.js';
+
+/** Your hand on a phone: barely curved, so width goes to the cards rather than to their lean. */
+const COMPACT_PLAYER_FAN = { ...PLAYER_FAN, stepDegrees: 1.2, maxSpread: 12, radius: 1600 };
 
 /**
  * Where a placement lands on screen.
@@ -37,6 +40,13 @@ export interface SceneMetrics {
   viewerSeat: number;
   /** True while the trick is expanded for reading. */
   trickOpen: boolean;
+  /**
+   * How far the opened trick is scrolled back from its newest play, in pixels.
+   * Zero shows the newest plays; a long trick scrolls toward its oldest.
+   */
+  trickScroll?: number;
+  /** The phone layout: a flatter hand, so more of each card is there to touch. */
+  compact?: boolean;
 }
 
 export interface CardTransform {
@@ -45,6 +55,8 @@ export interface CardTransform {
   rotate: number;
   scale: number;
   z: number;
+  /** Below 1 only where a card is fading out at the edge of a scrolling trick. */
+  opacity?: number;
 }
 
 /**
@@ -102,15 +114,15 @@ const centreOf = (r: Rect) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
  * short hand does not spread into a straight line. Shared by every seat so
  * that a hand of five looks like a hand of five wherever it is sitting.
  */
-export function fanGap(count: number, available: number, cardWidth: number): number {
+export function fanGap(count: number, available: number, cardWidth: number, endAngle = 20, minGap = 11): number {
   if (count <= 1 || available <= 0) return cardWidth * 0.72;
   // A rotated card is wider than its own width: the end cards sit at roughly
   // half the spread and each overhangs by height x sin(angle). Ignoring that is
   // what pushes the outermost cards off the edge of a narrow screen.
   const cardHeight = cardWidth * 1.4;
-  const overhang = cardHeight * Math.sin((20 * Math.PI) / 180) * 2;
+  const overhang = cardHeight * Math.sin((endAngle * Math.PI) / 180) * 2;
   const usable = available - cardWidth - overhang;
-  return Math.max(11, Math.min(cardWidth * 0.72, usable / (count - 1)));
+  return Math.max(minGap, Math.min(cardWidth * 0.72, usable / (count - 1)));
 }
 
 export function transformFor(placement: Placement, metrics: SceneMetrics): CardTransform {
@@ -134,15 +146,32 @@ function handTransform(placement: Placement, metrics: SceneMetrics): CardTransfo
 
   const cardWidth = metrics.cardWidth * scale;
   const cardHeight = metrics.cardHeight * scale;
-  const slots = own
-    ? fanSlots(placement.count, {
-        ...PLAYER_FAN,
-        gap: fanGap(placement.count, rect.width, cardWidth),
-      })
-    : // Fitted to the seat's box, exactly as your own fan is fitted to yours.
-      // A fixed gap looked right at one hand size and spilled off both edges of
-      // the table at thirteen cards.
-      fanSlots(placement.count, { ...OPPONENT_FAN, gap: fanGap(placement.count, rect.width, cardWidth) });
+  // On a phone the hand is nearly flat: an arc's rotation spends width on
+  // overhang, and width is what each card's touchable strip is made of.
+  // Every hand at the table fans the same way — the same spread and the same
+  // curve — so three opponents read as three people holding cards like you do.
+  // The radius is scaled to the size a seat's cards are drawn at, or a smaller
+  // card on the same radius would sit on a flatter-looking arc.
+  const fan = metrics.compact ? COMPACT_PLAYER_FAN : PLAYER_FAN;
+  // Fitted to the seat's box, as your own fan is fitted to yours. On a phone an
+  // opponent's column is narrow enough that thirteen cards at the usual minimum
+  // gap ran into the next seat, so their cards may close up further.
+  const minGap = own ? 11 : 4;
+  const roomy = fanGap(placement.count, rect.width, cardWidth, fan.maxSpread / 2, minGap);
+  // A hand squeezed into less room than it wants fans less, as a hand held
+  // closer does: the spread shrinks with the gap. Keeping the full spread on a
+  // squeezed fan turned thirteen cards in a narrow seat into a tight clump of
+  // steep angles; flattening it all the way lost the look of a hand. So a
+  // squeezed fan keeps at least half its arc, and a fan with room keeps it all.
+  const openness = 0.5 + 0.5 * Math.min(1, roomy / (cardWidth * 0.72));
+  const spread = fan.maxSpread * openness;
+  const slots = fanSlots(placement.count, {
+    ...fan,
+    stepDegrees: fan.stepDegrees * openness,
+    maxSpread: spread,
+    radius: fan.radius * (scale / ZONE_SCALE.hand),
+    gap: fanGap(placement.count, rect.width, cardWidth, spread / 2, minGap),
+  });
   const slot = slots[placement.slot] ?? { x: 0, y: 0, angle: 0 };
   const dip = slots.reduce((max, s) => Math.max(max, s.y), 0);
 
@@ -200,6 +229,63 @@ function fanExtent(
   return Number.isFinite(top) ? { top, bottom } : { top: -cardHeight / 2, bottom: cardHeight / 2 };
 }
 
+/** An opened trick shows at most this many card steps past its first card before it scrolls. */
+const OPEN_MAX_STEPS = 7;
+
+/** How an opened trick is laid out: one line, a window onto it, and how far the window can move. */
+export interface OpenTrickLayout {
+  /** Centre to centre between neighbouring cards. */
+  step: number;
+  /** Extra air between one combo and the next. */
+  gap: number;
+  /** Centre to centre, first card to last. */
+  span: number;
+  /** Width of the visible window, a card's width included. */
+  viewport: number;
+  /** How far the window can scroll back from the newest play. */
+  maxScroll: number;
+  /** The scroll in effect, clamped to what the trick allows. */
+  scroll: number;
+  /** The window's edges, in the card layer's coordinates. */
+  left: number;
+  right: number;
+}
+
+/**
+ * The opened trick: every card on one line, seen through a window of limited
+ * width.
+ *
+ * A long run of plays used to be squeezed or spread until it crossed the whole
+ * table. Now the window stops at a comfortable width and the line scrolls
+ * inside it — starting at the newest plays, which are the ones being answered —
+ * and cards fade at the window's edges, which is what says there is more.
+ */
+export function openTrickLayout(total: number, groups: number, metrics: SceneMetrics): OpenTrickLayout {
+  const cardWidth = metrics.cardWidth * CARD_SCALE.large;
+  const step = cardWidth * 1.08;
+  const gap = metrics.cardWidth * 0.5;
+  const span = Math.max(0, total - 1) * step + Math.max(0, groups - 1) * gap;
+  const content = span + cardWidth;
+  const room = Math.max(
+    cardWidth,
+    Math.min(metrics.layer.width - metrics.cardWidth, cardWidth + OPEN_MAX_STEPS * step),
+  );
+  const viewport = Math.min(content, room);
+  const maxScroll = Math.max(0, content - viewport);
+  const scroll = Math.min(Math.max(metrics.trickScroll ?? 0, 0), maxScroll);
+  const centreX = metrics.trick ? metrics.trick.x + metrics.trick.width / 2 : 0;
+  return {
+    step,
+    gap,
+    span,
+    viewport,
+    maxScroll,
+    scroll,
+    left: centreX - viewport / 2 - metrics.layer.x,
+    right: centreX + viewport / 2 - metrics.layer.x,
+  };
+}
+
 function trickTransform(placement: Placement, metrics: SceneMetrics): CardTransform {
   const scale = ZONE_SCALE.trick;
   const rect = metrics.trick;
@@ -210,50 +296,58 @@ function trickTransform(placement: Placement, metrics: SceneMetrics): CardTransf
   const count = placement.count;
   const groups = placement.groups ?? 1;
   const group = placement.group ?? 0;
+  const index = placement.trickIndex ?? placement.slot;
+  const standing = group === groups - 1;
+  // One art pixel of the card, in layout pixels: cards are authored 22 wide.
+  const px = cardWidth / 22;
 
   let x: number;
+  let settle = 0;
+  let rotate = 0;
+  let opacity: number | undefined;
   if (metrics.trickOpen) {
-    // Opened for reading: every card in the trick on one line at the raised
-    // size, a little air between combos, and the whole line centred.
-    //
-    // Laid out from the trick as a whole. Each combo used to be spaced by its
-    // *own* width, so a four of a kind among singles was thrown far off to one
-    // side — away from its caption, stretching the plate behind it.
-    //
-    // Centre to centre, a step clears a whole card plus a little air. Using
-    // the gap alone stacked a combo's cards six pixels apart.
-    const index = placement.trickIndex ?? placement.slot;
-    const total = placement.trickCount ?? count;
-    const naturalStep = cardWidth * CARD_SCALE.large * 1.08;
-    const naturalGap = cardWidth * 0.5;
-    const naturalWidth = (total - 1) * naturalStep + (groups - 1) * naturalGap;
-    // A long trick is squeezed to fit the table rather than running off it.
-    const room = Math.max(0, metrics.layer.width - cardWidth * CARD_SCALE.large - cardWidth);
-    const fit = naturalWidth > room && naturalWidth > 0 ? room / naturalWidth : 1;
-    const step = naturalStep * fit;
-    const gap = naturalGap * fit;
-    x = centre.x + index * step + group * gap - ((total - 1) * step + (groups - 1) * gap) / 2;
-  } else {
-    // Closed: one layered row, half a card apart. The standing combo is pinned
-    // to the middle of the zone and everything it beat trails away to its
-    // left, so the combo that matters never moves as the trick grows.
-    const advance = cardWidth * 0.5;
-    const index = placement.trickIndex ?? placement.slot;
+    // Opened for reading: every card on one line at the raised size, a little
+    // air between combos. Laid out from the trick as a whole, so combos of any
+    // size sit evenly and each caption stays under its own cards.
+    const layout = openTrickLayout(placement.trickCount ?? count, groups, metrics);
+    const along = index * layout.step + group * layout.gap;
+    const large = cardWidth * CARD_SCALE.large;
+    x =
+      layout.maxScroll === 0
+        ? centre.x - layout.span / 2 + along
+        : centre.x + layout.viewport / 2 - large / 2 - (layout.span - along) + layout.scroll;
+    if (layout.maxScroll > 0) {
+      const local = x - metrics.layer.x;
+      const overflow = Math.max(layout.left - (local - large / 2), local + large / 2 - layout.right, 0);
+      opacity = Math.min(1, Math.max(0, 1 - overflow / (large * 0.6)));
+    }
+  } else if (standing) {
+    // Closed: the combo that stands is spread half a card apart and pinned to
+    // the middle of the zone, exactly where the eye expects the play to beat.
     const anchor = placement.anchorIndex ?? index;
-    x = centre.x + (index - anchor) * advance;
+    x = centre.x + (index - anchor) * cardWidth * 0.5;
+  } else {
+    // Everything it beat is a messy pile beneath it, like the discard pile:
+    // turned a little either way and nudged off square, but never spreading.
+    // A long exchange used to trail half a card per play across the table.
+    x = centre.x + scatter(index, 4) * 3 * px;
+    settle = px + scatter(index, 5) * px;
+    rotate = scatter(index, 6) * PILE_TURN;
   }
 
-  const standing = group === groups - 1;
   // Opened, the whole set rises to make room for the captions beneath it.
-  const lift = metrics.trickOpen ? TRICK_LABEL_ROOM : standing ? 5 : 0;
+  // Closed, the standing combo rests on the row's centre line — the same line
+  // the discard pile beside it is centred on.
+  const lift = metrics.trickOpen ? TRICK_LABEL_ROOM : 0;
   return {
     x: x - metrics.layer.x,
-    y: centre.y - metrics.layer.y - lift,
-    rotate: 0,
+    y: centre.y - metrics.layer.y - lift + settle,
+    rotate,
     scale: metrics.trickOpen ? CARD_SCALE.large : standing ? scale : scale * 0.94,
     // Later combos sit above earlier ones, and within a combo the cards layer
     // left to right, so the row reads as one stack.
     z: (metrics.trickOpen ? TRICK_OPEN_Z + 10 : ZONE_Z.trick) + group * 10 + placement.slot,
+    ...(opacity !== undefined ? { opacity } : {}),
   };
 }
 
@@ -284,9 +378,13 @@ function discardTransform(placement: Placement, metrics: SceneMetrics): CardTran
   // turned a little one way or the other and nudged a pixel or two off square.
   // The pile only thickens slightly as it grows, rather than climbing away.
   const rise = Math.min(placement.slot, PILE_STEPS) * 0.25 * px;
+  // Centred on its anchor as a thickened pile, so it shares a centre line with
+  // the trick. A fixed offset rather than one from the pile's current size: that
+  // would move every card a fraction each time another landed.
+  const height = PILE_STEPS * 0.25 * px;
   return {
     x: centre.x - metrics.layer.x + scatter(placement.slot, 1) * 2 * px,
-    y: centre.y - metrics.layer.y + scatter(placement.slot, 2) * 1.5 * px - rise,
+    y: centre.y - metrics.layer.y + scatter(placement.slot, 2) * 1.5 * px - rise + height / 2,
     rotate: scatter(placement.slot, 3) * PILE_TURN,
     scale,
     // Kept below the hands' layer however tall the pile grows; cards sharing

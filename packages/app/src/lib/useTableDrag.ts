@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { cardInColumn, classifyTouch, nearestCentre, scrubSelection } from './handGestures.js';
 import type { Rect } from './zoneGeometry.js';
 
 /**
@@ -7,21 +8,20 @@ import type { Rect } from './zoneGeometry.js';
  * Every card lives in one layer and one coordinate space, so there is one
  * gesture implementation rather than one per zone. Where a drag ends is a
  * point-in-box test against the measured zones; what that means is a single
- * switch. Previously the fan and the tray each had their own drag, their own
- * idea of a drop target and their own bugs, and a card crossing between them
- * had to be faked at both ends.
+ * switch.
  *
- * One gesture, three outcomes, decided when you let go:
+ * With a mouse, one gesture and its outcomes, decided when you let go:
  *   released over the table → play the cards, if the play is legal
  *   released over the hand  → drop into the nearest slot
  *   released anywhere else  → nothing; the cards travel home
- *   never actually moved    → a tap, which selects
+ *   never actually moved    → a click, which selects
  *
- * There is no third destination any more. A holding tray used to sit between
- * the hand and the table, so playing a card meant two gestures and a card had
- * three places it could be. Dropping cards straight onto the table is the
- * gesture people reach for anyway, and removing the middle step removed the
- * whole class of "which zone is this card in" bugs with it.
+ * With a finger, the press itself is read first (see `handGestures`): a tap
+ * picks the card under it, a slide along the hand picks every card it passes,
+ * and a push upward lifts the selection to play on the table. The card under
+ * the finger is shown enlarged throughout, because the finger is covering it.
+ * There is no reordering by finger — a crowded hand makes that a misfire more
+ * often than a choice, and the sort button does it in one tap.
  */
 
 const DRAG_THRESHOLD_PX = 6;
@@ -48,14 +48,38 @@ export interface TableDragState {
   over: DropZone;
   /** Index in the hand the grabbed card would land on. */
   targetIndex: number;
+  /** The card under a finger pressing the hand, shown enlarged because the finger hides it. */
+  previewId: string | null;
 }
 
-const IDLE: TableDragState = { grabbedId: null, draggingIds: [], dx: 0, dy: 0, over: null, targetIndex: 0 };
+const IDLE: TableDragState = {
+  grabbedId: null,
+  draggingIds: [],
+  dx: 0,
+  dy: 0,
+  over: null,
+  targetIndex: 0,
+  previewId: null,
+};
 
 export interface TableDragActions {
   onReorder(id: string, toIndex: number): void;
   onPlay(ids: string[]): void;
   onTap(id: string): void;
+  /** Replace the selection outright — a finger sliding along the hand. */
+  onSelect(ids: string[]): void;
+}
+
+/** A finger on the hand, while it decides what it is doing. */
+interface TouchPress {
+  mode: 'pending' | 'scrub' | 'lift';
+  /** The card the finger came down on. */
+  startId: string;
+  /** What was picked when the finger came down. */
+  baseline: Set<string>;
+  /** Whether sliding picks cards up (the first was not picked) or puts them back. */
+  select: boolean;
+  visited: Set<string>;
 }
 
 function inside(rect: Rect | null | undefined, x: number, y: number, pad = 0): boolean {
@@ -68,7 +92,8 @@ export function useTableDrag({
   handIds,
   selectedIds,
   actions,
-  cardCentre,
+  cardBox,
+  hoveredId = null,
 }: {
   /** The two zones a drag can end in. */
   zones: { hand: Rect | null; trick: Rect | null };
@@ -77,14 +102,22 @@ export function useTableDrag({
   /** The cards you have picked out. Grabbing one of them carries all of them. */
   selectedIds: Set<string>;
   actions: TableDragActions;
-  /** Viewport centre of a card, by id — used to find the drop index. */
-  cardCentre: (id: string) => { x: number; y: number } | null;
+  /** A card's centre and left edge in the viewport, by id — for drop indexes and finger hit-tests. */
+  cardBox: (id: string) => { x: number; y: number; left: number } | null;
+  /** The card a mouse is hovering, which a press on the hand takes. */
+  hoveredId?: string | null;
 }): [
   TableDragState,
   {
     onPointerDown(e: React.PointerEvent, id: string): void;
     onPointerMove(e: React.PointerEvent): void;
     onPointerUp(e: React.PointerEvent, id: string): void;
+    onPointerCancel(e: React.PointerEvent): void;
+    /**
+     * The hand card a mouse at this x is over, by nearest centreline. Given the
+     * card already hovered, that card keeps it a few pixels past the boundary.
+     */
+    cardAt(x: number, current?: string | null): string | null;
   },
 ] {
   const [state, setState] = useState<TableDragState>(IDLE);
@@ -100,11 +133,41 @@ export function useTableDrag({
   const start = useRef({ x: 0, y: 0, index: 0 });
   const moved = useRef(false);
   const active = useRef(false);
+  const touch = useRef<TouchPress | null>(null);
+  /** The card a mouse press picked, by column, which may not be the element it landed on. */
+  const pressed = useRef<string | null>(null);
 
   const commit = useCallback((next: TableDragState) => {
     live.current = next;
     setState(next);
   }, []);
+
+  /** The card whose visible strip is under a finger at this x: a fingertip covers the rest of it. */
+  const cardUnder = useCallback(
+    (x: number) =>
+      cardInColumn(
+        x,
+        handIds.flatMap((id) => {
+          const box = cardBox(id);
+          return box ? [{ id, left: box.left }] : [];
+        }),
+      ),
+    [cardBox, handIds],
+  );
+
+  /** The card a mouse is over, by nearest centreline, the hovered one keeping a little give. */
+  const cardAt = useCallback(
+    (x: number, current: string | null = null) =>
+      nearestCentre(
+        x,
+        handIds.flatMap((id) => {
+          const box = cardBox(id);
+          return box ? [{ id, centre: box.x }] : [];
+        }),
+        current,
+      ),
+    [cardBox, handIds],
+  );
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent, id: string) => {
@@ -119,12 +182,31 @@ export function useTableDrag({
       } catch {
         /* capture is an optimisation, not a requirement */
       }
+
+      if (event.pointerType !== 'mouse') {
+        const startId = cardUnder(event.clientX) ?? id;
+        touch.current = {
+          mode: 'pending',
+          startId,
+          baseline: new Set(selectedIds),
+          select: !selectedIds.has(startId),
+          visited: new Set([startId]),
+        };
+        commit({ ...IDLE, previewId: startId });
+        return;
+      }
+
+      touch.current = null;
+      // By column, as a finger is: a hovered card grows over the strip of the
+      // one to its right, and pressing that strip means the card it belongs to.
+      const target = handIds.includes(id) ? (cardAt(event.clientX, hoveredId) ?? id) : id;
+      pressed.current = target;
       // Grabbing a selected card drags the whole selection, so a combo you
       // have picked out moves as one thing.
-      const group = selectedIds.has(id) ? handIds.filter((x) => selectedIds.has(x)) : [id];
-      commit({ ...IDLE, grabbedId: id, draggingIds: group.length > 0 ? group : [id] });
+      const group = selectedIds.has(target) ? handIds.filter((x) => selectedIds.has(x)) : [target];
+      commit({ ...IDLE, grabbedId: target, draggingIds: group.length > 0 ? group : [target] });
     },
-    [commit, handIds, selectedIds],
+    [cardAt, cardUnder, commit, handIds, hoveredId, selectedIds],
   );
 
   const onPointerMove = useCallback(
@@ -132,14 +214,45 @@ export function useTableDrag({
       if (!active.current) return;
       const dx = event.clientX - start.current.x;
       const dy = event.clientY - start.current.y;
-      if (!moved.current && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
-      moved.current = true;
+
+      const press = touch.current;
+      if (press) {
+        if (press.mode === 'pending') {
+          const gesture = classifyTouch(dx, dy);
+          if (gesture === 'pending') return;
+          press.mode = gesture;
+          moved.current = true;
+          if (gesture === 'scrub') {
+            actions.onSelect(scrubSelection(handIds, press.baseline, press.visited, press.select));
+          } else {
+            // Lifting a picked card lifts every picked card; an unpicked one goes alone.
+            const group = press.baseline.has(press.startId)
+              ? handIds.filter((x) => press.baseline.has(x))
+              : [press.startId];
+            live.current = { ...IDLE, grabbedId: press.startId, draggingIds: group };
+          }
+        }
+        if (press.mode === 'scrub') {
+          const id = cardUnder(event.clientX);
+          if (!id) return;
+          if (!press.visited.has(id)) {
+            press.visited.add(id);
+            actions.onSelect(scrubSelection(handIds, press.baseline, press.visited, press.select));
+          }
+          if (live.current.previewId !== id) commit({ ...IDLE, previewId: id });
+          return;
+        }
+        // A lift carries on as an ordinary drag below.
+      } else {
+        if (!moved.current && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+        moved.current = true;
+      }
 
       const { clientX: x, clientY: y } = event;
       // The table is an exact target; the hand is forgiving.
       const over: DropZone = inside(zones.trick, x, y)
         ? 'trick'
-        : inside(zones.hand, x, y, NEAR_HAND_PX)
+        : !press && inside(zones.hand, x, y, NEAR_HAND_PX)
           ? 'hand'
           : null;
 
@@ -148,13 +261,13 @@ export function useTableDrag({
       let targetIndex = 0;
       for (const id of handIds) {
         if (moving.has(id)) continue;
-        const centre = cardCentre(id);
-        if (centre && centre.x < x) targetIndex += 1;
+        const box = cardBox(id);
+        if (box && box.x < x) targetIndex += 1;
       }
 
       commit({ ...live.current, dx, dy, over, targetIndex });
     },
-    [cardCentre, commit, handIds, zones],
+    [actions, cardBox, cardUnder, commit, handIds, zones],
   );
 
   const onPointerUp = useCallback(
@@ -169,17 +282,28 @@ export function useTableDrag({
         /* already released, or the pointer is gone */
       }
 
+      const press = touch.current;
+      touch.current = null;
+      const target = pressed.current ?? id;
+      pressed.current = null;
       const wasMoved = moved.current;
       const { draggingIds, over, targetIndex } = live.current;
       moved.current = false;
-      const group = draggingIds.length > 0 ? draggingIds : [id];
+      const group = draggingIds.length > 0 ? draggingIds : [target];
 
       // Clearing the drag is what sends the cards home: their placement
       // resolves to a resting transform again and they travel back.
       commit(IDLE);
 
+      if (press) {
+        if (press.mode === 'pending') actions.onTap(press.startId);
+        else if (press.mode === 'lift' && over === 'trick') actions.onPlay(group);
+        // A slide has already made its selection as it went.
+        return;
+      }
+
       if (!wasMoved) {
-        actions.onTap(id);
+        actions.onTap(target);
         return;
       }
       if (over === 'trick') {
@@ -190,11 +314,20 @@ export function useTableDrag({
         // No off-by-one correction needed: the cards being dragged are skipped
         // when counting, so the index already describes where they land in the
         // list without them.
-        actions.onReorder(id, targetIndex);
+        actions.onReorder(target, targetIndex);
       }
     },
     [actions, commit],
   );
 
-  return [state, { onPointerDown, onPointerMove, onPointerUp }];
+  /** The browser took the pointer away. Nothing happens; the cards go home. */
+  const onPointerCancel = useCallback(() => {
+    active.current = false;
+    moved.current = false;
+    touch.current = null;
+    pressed.current = null;
+    commit(IDLE);
+  }, [commit]);
+
+  return [state, { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, cardAt }];
 }
