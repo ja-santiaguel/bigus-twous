@@ -4,6 +4,7 @@ import { useGameStore } from './store/gameStore.js';
 import { readJoinLink } from './lib/joinLink.js';
 import { MainMenu } from './screens/MainMenu.js';
 import { CopyToast } from './components/CopyToast.js';
+import { DisabledHint } from './components/DisabledHint.js';
 import { devDemo, devSeed } from './lib/devFlags.js';
 
 /*
@@ -86,8 +87,8 @@ let demoStarted = false;
 
 /**
  * Dev server only: `?demo=table` deals a game on your own straight away and
- * takes the first pile, so a layout can be looked at — or two compared side
- * by side on the same `?seed=` — without clicking through the menu each time.
+ * takes the first pile, so a layout can be looked at — on the same deal each
+ * time, with `?seed=` — without clicking through the menu.
  */
 function useDevDemo() {
   useEffect(() => {
@@ -133,6 +134,7 @@ export function App() {
         <Screen />
       </Suspense>
       <CopyToast />
+      <DisabledHint />
     </LazyMotion>
   );
 }

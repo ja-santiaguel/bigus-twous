@@ -97,7 +97,12 @@ export function MainMenu() {
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
               />
             </label>
-            <button className="btn" type="submit" disabled={code.trim().length === 0}>
+            <button
+              className="btn"
+              type="submit"
+              disabled={code.trim().length === 0}
+              data-hint="Enter a table code first"
+            >
               Join
             </button>
           </form>

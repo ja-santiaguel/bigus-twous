@@ -541,6 +541,13 @@ body {
 .opp__sep {
   margin-inline: 0.5em;
 }
+/* "(CPU)", the lobby's quiet bracket, after a computer's seat name. */
+.opp__role {
+  color: var(--dim);
+}
+.opp__role:empty {
+  display: none;
+}
 .opp.is-turn .opp__name {
   color: var(--gold);
 }
@@ -723,7 +730,6 @@ body {
      block up to .centre. z-index still applies here because this is a grid
      item. */
   z-index: var(--layer-raised);
-  cursor: zoom-in;
   padding: var(--space-sm);
   border: var(--px) solid transparent;
 }
@@ -1298,8 +1304,12 @@ body {
    overlapping cards merge into one shadow instead of darkening in stripes.
    A card picked up — hovered, touched, chosen or dragged — and the cards of an
    opened trick cast their own, because they have left the rest behind. */
+/* A card's shadow changes as the card goes up or down — hover, pick, drag,
+   the trick opening — and it eases with the card's own move rather than
+   snapping. `none` cannot be eased from, so resting is a zero shadow. */
 .cardlayer__card .pcard {
-  box-shadow: none;
+  box-shadow: 0 0 0 transparent;
+  transition: box-shadow 180ms ease-out;
 }
 .cardlayer__shadows {
   position: absolute;
@@ -1965,6 +1975,29 @@ textarea {
   filter: drop-shadow(var(--px) var(--px) 0 var(--ink));
   animation: fade-out var(--fade-out) ease-out 1200ms forwards;
 }
+/* Why a disabled button cannot be pressed, at the pointer (DisabledHint).
+   Placed and made as the copy toast is — text beside the cursor with an ink
+   drop shadow, no box — but in bone rather than gold: it explains, it does not
+   confirm. It leaves with the shared --fade-out. */
+.cursorhint {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: var(--layer-toast);
+  pointer-events: none;
+}
+.cursorhint__text {
+  position: absolute;
+  left: calc(3 * var(--px));
+  bottom: calc(3 * var(--px));
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: var(--bone);
+  filter: drop-shadow(var(--px) var(--px) 0 var(--ink));
+}
+.cursorhint__text.is-leaving {
+  animation: fade-out var(--fade-out) ease-out forwards;
+}
 /* The one way transient things leave (see --fade-out). */
 @keyframes fade-out {
   to {
@@ -2622,29 +2655,6 @@ textarea {
   justify-content: center;
 }
 
-/* ── Trial: opponents as badges (dev server, ?seats=badges) ──────────────── */
-.oppbadge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-.oppbadge__back {
-  position: relative;
-  display: block;
-  width: calc(var(--card-w) * 2 / 3);
-  height: calc(var(--card-h) * 2 / 3);
-}
-.oppbadge__back .pcard {
-  transform: scale(calc(2 / 3));
-  transform-origin: 0 0;
-}
-.oppbadge__count {
-  font-size: var(--text-lg);
-  line-height: 1;
-  color: var(--bone);
-  font-variant-numeric: tabular-nums;
-}
-
 /* ── Phone: the table ────────────────────────────────────────────────────
    One screen, no scrolling: opponents in a row across the top — left, across,
    right, as they sit — the trick in the middle taking what is left, and your
@@ -2682,6 +2692,22 @@ textarea {
     font-size: var(--text-sm);
     white-space: nowrap;
   }
+  /* A third of a phone is not wide enough for "Seat 2 (CPU)" on one line, so
+     the bracket takes a line of its own under the name, a size smaller. The
+     line is kept for a person's seat too, so every fan starts level. */
+  .opp__name {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: var(--space-xs);
+  }
+  .opp__role,
+  .opp__role:empty {
+    display: block;
+    flex-basis: 100%;
+    text-align: center;
+    font-size: var(--text-xs);
+    min-height: 1lh;
+  }
   /* A third of a phone is too narrow for "13 cards · 0 pts" on one line, and
      letting it wrap broke it mid-phrase. Two deliberate lines instead. */
   .opp__meta {
@@ -2692,9 +2718,6 @@ textarea {
   }
   .opp__sep {
     display: none;
-  }
-  .opp--badge .opp__meta {
-    height: calc(7 * var(--px));
   }
   .minifan,
   .opp--left .minifan,

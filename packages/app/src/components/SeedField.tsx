@@ -34,6 +34,7 @@ export function SeedField({
           spellCheck={false}
           autoCapitalize="characters"
           disabled={disabled}
+          data-hint="Not connected to the table"
         />
         <button
           type="button"
@@ -42,6 +43,7 @@ export function SeedField({
           aria-label="New seed"
           title="New seed"
           disabled={disabled}
+          data-hint="Not connected to the table"
         >
           <PixelIcon name="refresh" />
         </button>

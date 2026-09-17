@@ -32,7 +32,6 @@ import { CARD_SCALE } from '../design/cardScale.js';
 import { SETTLE } from '../design/motion.js';
 import { TableMenu } from '../components/TableMenu.js';
 import { COMPACT_QUERY, useMediaQuery } from '../lib/useMediaQuery.js';
-import { devSeats } from '../lib/devFlags.js';
 
 const NO_HISTORY: GameEvent[] = [];
 
@@ -101,6 +100,11 @@ export function Table() {
     if (seat.occupant === 'away') return 'Away';
     if (seat.standIn) return 'Computer playing';
     return seat.ready ? 'Ready' : 'Waiting';
+  };
+  /** A seat a computer holds for the whole game — every other seat when playing alone. */
+  const isComputer = (id: string): boolean => {
+    const seat = seatsAtTable.find((s) => s.id === id);
+    return seat ? seat.occupant === 'cpu' : !online && id !== HUMAN_ID;
   };
   const seatNames = useSeatNames();
   const labelFor = (id: string | null) => (id ? personName(SEAT_IDS.indexOf(id), humanSeat, seatNames) : 'Nobody');
@@ -233,10 +237,7 @@ export function Table() {
   // The scene: every card that should be on screen, and where it belongs.
   // Derived from the redacted view plus local intent — never from anything
   // only this client could know about another player.
-  // The badge trial draws no opponent fans: each seat shows a count instead.
-  const opponentCounts = new Map<number, number>(
-    devSeats === 'badges' ? [] : self.opponents.map((o) => [o.seat, o.cardCount] as const),
-  );
+  const opponentCounts = new Map<number, number>(self.opponents.map((o) => [o.seat, o.cardCount] as const));
   const entities = buildScene({
     humanSeat,
     seatIds: SEAT_IDS,
@@ -388,17 +389,35 @@ export function Table() {
       </span>
     ) : null;
   const clearButton = (
-    <button className="btn" onClick={clearSelection} disabled={selection.length === 0}>
+    <button className="btn" onClick={clearSelection} disabled={selection.length === 0} data-hint="No cards picked">
       Clear
     </button>
   );
   const passButton = (
-    <button className="btn btn--pass" onClick={pass} disabled={!isMyTurn || !canPass}>
+    <button
+      className="btn btn--pass"
+      onClick={pass}
+      disabled={!isMyTurn || !canPass}
+      data-hint={isMyTurn ? 'You lead, so play something' : 'Wait for your turn'}
+    >
       Pass
     </button>
   );
   const playButton = (
-    <button className="btn btn--primary" onClick={playSelection} disabled={!isMyTurn || status.kind !== 'LEGAL'}>
+    <button
+      className="btn btn--primary"
+      onClick={playSelection}
+      disabled={!isMyTurn || status.kind !== 'LEGAL'}
+      data-hint={
+        !isMyTurn
+          ? 'Wait for your turn'
+          : status.kind === 'EMPTY'
+            ? 'Pick cards to play'
+            : status.kind === 'NOT_A_COMBO'
+              ? 'Those cards are not a combination'
+              : 'Those cards cannot be played now'
+      }
+    >
       Play cards
     </button>
   );
@@ -464,7 +483,7 @@ export function Table() {
             hasPassed={view.passedThisTrick.has(opponent.id)}
             clock={clock && clock.playerId === opponent.id ? clock : null}
             fanRef={zones.anchor(`hand:${opponent.seat}`)}
-            variant={devSeats === 'badges' ? 'badge' : 'fan'}
+            cpu={isComputer(opponent.id)}
           />
         ))}
 

@@ -84,6 +84,7 @@ export function MatchField({
                   aria-pressed={isChosen(rule, row.kind, value)}
                   aria-label={row.kind === 'points' ? `First to ${value} points` : `${value} rounds`}
                   disabled={!editable}
+                  data-hint={hostOnly ? 'Only the host can change this' : 'Not connected to the table'}
                   onClick={() => onChange(ruleFor(row.kind, value))}
                 >
                   {value}

@@ -5,8 +5,7 @@
  * so every flag here is null there and the code behind it is dropped.
  *
  *   ?demo=table          start a game on your own straight away
- *   ?seed=ABCD-2345      ...dealt from this seed, so two views match
- *   ?seats=badges        opponents as compact badges instead of fans
+ *   ?seed=ABCD-2345      ...dealt from this seed, so a layout can be looked at on the same deal each time
  */
 
 function param(name: string): string | null {
@@ -16,4 +15,3 @@ function param(name: string): string | null {
 
 export const devDemo = param('demo');
 export const devSeed = param('seed');
-export const devSeats: 'fans' | 'badges' | null = param('seats') === 'badges' ? 'badges' : null;

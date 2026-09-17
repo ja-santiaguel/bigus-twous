@@ -83,17 +83,27 @@ export function WaitingRoom() {
         : 'Ready up so the host can start the game.';
 
   const primary = iAmHost ? (
-    <button className="btn btn--primary btn--wide" onClick={startGame} disabled={!connected || waitingOn > 0}>
+    <button
+      className="btn btn--primary btn--wide"
+      onClick={startGame}
+      disabled={!connected || waitingOn > 0}
+      data-hint={!connected ? 'Not connected to the table' : 'Everyone else must ready up first'}
+    >
       Start game
     </button>
   ) : iAmReady ? (
     // Named for what pressing it does. "Not ready" would read as your state —
     // the opposite of the truth, since you are ready while it shows.
-    <button className="btn btn--wide" onClick={unready} disabled={!connected}>
+    <button className="btn btn--wide" onClick={unready} disabled={!connected} data-hint="Not connected to the table">
       Cancel ready
     </button>
   ) : (
-    <button className="btn btn--primary btn--wide" onClick={ready} disabled={!connected}>
+    <button
+      className="btn btn--primary btn--wide"
+      onClick={ready}
+      disabled={!connected}
+      data-hint="Not connected to the table"
+    >
       Ready up
     </button>
   );
@@ -146,6 +156,7 @@ export function WaitingRoom() {
                   aria-label={`Sit at ${seatName(seat.seat)}`}
                   onClick={() => takeSeat(seat.seat)}
                   disabled={!connected}
+                  data-hint="Not connected to the table"
                 >
                   Sit here
                 </button>
@@ -155,6 +166,7 @@ export function WaitingRoom() {
                   aria-label={`Remove ${named ? seat.name : seatName(seat.seat)} from the table`}
                   onClick={() => kick(seat.seat)}
                   disabled={!connected}
+                  data-hint="Not connected to the table"
                 >
                   Remove
                 </button>
@@ -170,6 +182,7 @@ export function WaitingRoom() {
                     aria-label={`${seatName(seat.seat)} difficulty: ${DIFFICULTY_LABELS[d]}`}
                     onClick={() => setSeatDifficulty(seat.seat, d)}
                     disabled={!canSet}
+                    data-hint={iAmHost ? 'Not connected to the table' : 'Only the host can change this'}
                   >
                     {DIFFICULTY_LABELS[d]}
                   </button>

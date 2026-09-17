@@ -1,7 +1,6 @@
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { SNAP, transition } from '../../design/motion.js';
 import type { SeatPosition } from '../../lib/format.js';
-import { CardBack } from '../card/PixelCard.js';
 import { TurnDot } from './TurnDot.js';
 import { TurnClock } from './TurnClock.js';
 import { PlaceBadge } from './PlaceBadge.js';
@@ -13,10 +12,6 @@ import { PlaceBadge } from './PlaceBadge.js';
  * The fan itself belongs to the card layer. This seat only says where it is —
  * which is what lets a card travel from here to the table as one object
  * instead of being destroyed in this component and recreated in another.
- *
- * `badge` is a trial, reachable only on the dev server (`?seats=badges`): the
- * seat as a compact badge with a single card back and a count, for comparing
- * against the fans on a phone.
  */
 export function OpponentSeat({
   name,
@@ -28,7 +23,7 @@ export function OpponentSeat({
   hasPassed,
   clock,
   fanRef,
-  variant = 'fan',
+  cpu = false,
 }: {
   name: string;
   position: SeatPosition;
@@ -43,14 +38,19 @@ export function OpponentSeat({
   clock: { remainingMs: number; totalMs: number } | null;
   /** Anchor the card layer positions this seat's cards into. */
   fanRef: (el: HTMLElement | null) => void;
-  variant?: 'fan' | 'badge';
+  /** A computer holds this seat, said beside the name as the lobby says it. */
+  cpu?: boolean;
 }) {
   const reduced = useReducedMotion() ?? false;
 
   const nameLine = (
     <span className="opp__name">
       <TurnDot on={isTurn} />
-      {name}
+      <span>{name}</span>
+      {/* Always present, empty for a person: on a phone it is a line of its
+          own under the name, and every seat keeps that line so the fans stay
+          level whoever holds them. */}
+      <span className="opp__role">{cpu ? '(CPU)' : ''}</span>
       {/* The blinking marker says whose turn it is to the eye only. */}
       {isTurn && <span className="sr-only"> (playing now)</span>}
     </span>
@@ -77,37 +77,9 @@ export function OpponentSeat({
     </span>
   );
 
-  const className = `opp opp--${position} ${variant === 'badge' ? 'opp--badge' : ''} ${isTurn ? 'is-turn' : ''} ${
+  const className = `opp opp--${position} ${isTurn ? 'is-turn' : ''} ${
     hasPassed ? 'is-passed' : ''
   } ${place !== null ? 'is-out' : ''}`;
-
-  if (variant === 'badge') {
-    return (
-      <div className={className}>
-        {nameLine}
-        <span className="oppbadge">
-          {/* The anchor cards played by this seat travel from. */}
-          <span className="oppbadge__back" ref={fanRef} aria-hidden="true">
-            <CardBack />
-          </span>
-          <span className="oppbadge__count">
-            {place !== null ? (
-              <PlaceBadge place={place} />
-            ) : (
-              <>
-                {cardCount}
-                <span className="sr-only"> {cardCount === 1 ? 'card' : 'cards'}</span>
-              </>
-            )}
-          </span>
-        </span>
-        <span className="opp__meta">
-          {points} {points === 1 ? 'pt' : 'pts'}
-        </span>
-        {statusLine}
-      </div>
-    );
-  }
 
   return (
     <div className={className}>

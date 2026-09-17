@@ -149,8 +149,18 @@ export function CardLayer({
                     : { x: to.x, y: to.y + drop, rotate: to.rotate, scale: to.scale, opacity: 0 }
                 }
                 animate={{ x: to.x, y: to.y + drop, rotate: to.rotate, scale: to.scale, opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.14 } }}
-                transition={instant ? NONE : transition(reduced, SETTLE)}
+                // Fades at the pace the picked-up card's own shadow eases in
+                // (.cardlayer__card .pcard), so lifting a card hands its shadow
+                // over in one smooth change instead of a blink.
+                exit={{ opacity: 0, transition: { duration: reduced ? 0 : SHADOW_FADE_S, ease: 'easeOut' } }}
+                transition={
+                  instant
+                    ? NONE
+                    : {
+                        ...transition(reduced, SETTLE),
+                        opacity: { duration: reduced ? 0 : SHADOW_FADE_S, ease: 'easeOut' },
+                      }
+                }
               />
             );
           })}
@@ -351,6 +361,9 @@ function LabelText({ text }: { text: string }) {
     </span>
   );
 }
+
+/** Seconds a shadow takes to hand over between the shared group and a card's own. Matches the CSS. */
+const SHADOW_FADE_S = 0.18;
 
 /**
  * How far below a resting card its shadow falls, in art pixels — or null when

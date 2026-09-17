@@ -248,6 +248,12 @@ stripes. A card picked up, or a card in an opened trick, casts its own shadow
 instead, since it has left the rest. The standing combo is marked by its gold
 edge, not a bigger shadow.
 
+**A shadow never snaps.** When a card goes up or down — hovered, picked,
+dragged, the trick opening or closing — its own shadow eases in or out over
+180ms while its place in the shared group fades at the same pace, so the
+shadow is handed over in one smooth change. Resting cards have a zero shadow,
+not `none`, so there is something to ease from.
+
 Page layers are the `--layer-*` tokens. Inside the card layer, cards stack by
 the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 `HOVER_Z` 800, `DRAG_Z` 900).
@@ -360,6 +366,9 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     each, left seat to right seat in turn order. Each keeps a fan of real card
     backs — a hand, not a number — closed up to fit its column; the count and
     points go on two lines beneath it.
+  - A computer's seat reads "Seat 2 (CPU)", the bracket in `--dim` as in the
+    lobby. On a phone it takes its own `--text-xs` line under the name, and
+    every seat keeps that line — empty for a person — so the fans start level.
   - Top right, **Menu** (flat) opens a panel — `--table-lo`, like every other
     panel, so its buttons' ink borders and shadows show — with the round, match
     length and seed, How to play (raised) and Leave table (quiet), full width;
@@ -377,9 +386,6 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     `--space-sm`, because Pass beside Play is the slip that costs a trick.
   - Your hand is nearly flat (an arc spends width on turned corners, and width
     is what each card's touchable strip is made of).
-- **Opponent badges** (one card back and a large count) exist only as a trial
-  on the dev server (`?seats=badges`, compared at `/compare.html`). Fans are
-  the design.
 - **Picking cards by touch** — the finger has no hover, and covers what it
   touches:
   - A press magnifies and lifts the card under the finger, so you can see what
@@ -456,6 +462,17 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   reference never reads as a third way to start; then a ruled-off row with your
   name, a table code and Join. A button whose label changes while it works ("Opening…") keeps
   the width of its longer label.
+- **Disabled buttons say why, at the pointer.** Pointing a mouse at a disabled
+  button shows a short reason beside the cursor, placed as the copy toast is —
+  text with an ink drop shadow, no box — in bone rather than gold, since it
+  explains rather than confirms. It leaves with the shared `--fade-out`. Any
+  disabled control opts in with `data-hint`; keep the reason to a few words
+  saying what would enable it: "Wait for your turn", "Pick cards to play",
+  "No cards picked", "Only the host can change this", "Not connected to the
+  table". Mouse only — a finger has the read-out and the rules sheet.
+- **The trick has no zoom cursor.** Pointing at it opens it, so a magnifier
+  promised a click that does nothing more; a scrollable opened trick shows the
+  grab hand.
 - **Inline help** is a bracketed pixel "[?]" (11×5) beside a field label — the
   brackets mark it as pressable, where a bare "?" reads as punctuation. `--dim`,
   brightening to bone while its note shows, with the shared gold focus ring.
