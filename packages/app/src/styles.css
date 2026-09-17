@@ -301,8 +301,11 @@ body {
   width: auto;
   color: var(--bone);
 }
+/* The title and its description are one group; the ways in are the next, a
+   full --space-xl below — the step between groups, well over the --space-md
+   inside one, so the page reads as three blocks rather than one list. */
 .menu__blurb {
-  margin: 0 0 var(--space-md);
+  margin: 0 0 var(--space-xl);
   max-width: 34ch;
   color: var(--bone-dim);
 }
@@ -340,7 +343,7 @@ body {
   /* Top-aligned: Leave sits level with the "Table code" title, not with the
      middle of the label-and-code block beside it. */
   align-items: flex-start;
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-lg);
 }
 .panel h2 {
   font-size: var(--text-lg);
@@ -398,10 +401,12 @@ body {
 }
 
 /* ── Lobby ───────────────────────────────────────────────────────────── */
+/* The seats are one group and the options under them the next: --space-xl
+   apart, the step between groups (fields within a group are --space-md). */
 .seats {
   list-style: none;
   padding: 0;
-  margin: 0 0 var(--space-md);
+  margin: 0 0 var(--space-xl);
 }
 .seats__row {
   display: grid;
@@ -822,6 +827,10 @@ body {
 .controls {
   display: flex;
   align-items: center;
+  /* The read-out and actions belong to the hand below them, not to the trick
+     above: a group's distance from the play area, and the handzone's own
+     --space-md to the cards. */
+  margin-top: var(--space-lg);
   /* --space-sm between the turn pip and the sentence, as beside a seat's name.
      The actions add their own --space-sm on top (see .controls__actions). */
   gap: var(--space-sm);
@@ -1016,7 +1025,10 @@ body {
   margin: 0;
   padding: var(--space-sm);
   list-style: none;
-  width: calc(100 * var(--px));
+  /* Wide enough that an entry is a line, not three: at 100 art pixels a phone's
+     log wrapped "Seat 2 picked a pile" in two. Never wider than the screen. */
+  width: min(calc(160 * var(--px)), calc(100vw - 2 * var(--u)));
+  box-sizing: border-box;
   max-height: calc(100vh - 2 * var(--u) - var(--control-sm) - var(--u));
   overflow-y: auto;
   background: var(--ink);
@@ -1526,16 +1538,17 @@ textarea {
   gap: var(--space-sm);
   margin-bottom: var(--space-sm);
 }
-/* Reference, on a line of its own under the ways to play. */
+/* Reference, on a line of its own under the ways to play, still in their
+   group; joining a table is the next group, --space-xl on. */
 .menu__more {
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-xl);
 }
 .menu__join {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
   gap: var(--space-sm);
-  padding-top: var(--space-md);
+  padding-top: var(--space-lg);
   border-top: var(--px) solid var(--table-hi);
 }
 .menu__field {
@@ -2432,7 +2445,24 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  margin-top: var(--space-lg);
+  /* A field's own --space-md bottom margin plus this makes --space-xl: the
+     start group stands a group's distance from the options. */
+  margin-top: calc(var(--space-xl) - var(--space-md));
+}
+/* Where a lobby is taller than the screen — a phone, a short laptop — the start
+   group stays pinned to the bottom as the options scroll under it: the one thing
+   the page is for is never below the fold. Where it fits, it sits in place. */
+.panel__start {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  /* Out to the panel's edges, so a pinned bar is a band rather than a box. */
+  margin-inline: calc(-1 * var(--space-md));
+  padding: var(--space-md) var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom));
+  background: var(--table-lo);
+  /* A rule along its top: the edge options scroll under when it is pinned, and
+     the line setting starting apart from the options when it is not. */
+  box-shadow: 0 calc(-1 * var(--px)) 0 var(--table-hi);
 }
 .panel__start > .btn--wide,
 .panel__start > .panel__error,
@@ -2621,14 +2651,21 @@ textarea {
   position: relative;
   width: 100%;
   min-height: calc(2 * 1.35 * var(--text-sm));
+  /* The sentence's last line sits on the bottom of the row, so it is the same
+     distance from the cards whether the message runs to one line or two; the
+     row keeps two lines of height, so a longer message grows upward, into the
+     table's open space, not down into the hand. */
+  align-items: flex-end;
   /* Close over the hand's lift room, so the sentence reads as belonging to the
-     cards under it rather than floating between them and the table: the row
-     gap and part of the empty room above a resting card, leaving enough for a
-     picked card to rise without touching the text. */
+     cards under it rather than floating between them and the table. */
   margin-bottom: calc(-1 * (var(--space-md) + var(--space-sm)));
 }
 .controls--compact .controls__read {
   font-size: var(--text-sm);
+}
+/* The pip stays centred on the sentence's last line. */
+.controls--compact > .turndot {
+  margin-bottom: calc((1.35 * var(--text-sm) - 5 * var(--px)) / 2);
 }
 /* Touch buttons stand --space-md apart, a step wider than a mouse's --space-sm:
    a fingertip is less exact than a pointer, and Pass beside Play is the one
@@ -2676,9 +2713,10 @@ textarea {
       'centre centre centre'
       'hand hand hand';
     gap: var(--space-sm);
-    /* Clear of the Log and Menu buttons by a full --space-xl: the seats' fans
-       start just under them, and at --space-md they crowded the corners. */
-    padding: calc(var(--control-sm) + var(--space-xl)) var(--space-sm)
+    /* The seats start a full --space-xl below the bottom of the Log and Menu
+       buttons (which sit --u from the top): the controls and the table are
+       two groups, and at less they read as one crowded strip. */
+    padding: calc(var(--u) + var(--control-sm) + var(--space-xl)) var(--space-sm)
       calc(var(--space-sm) + env(safe-area-inset-bottom));
   }
   .opp {
@@ -2728,6 +2766,15 @@ textarea {
   .inplay__empty,
   .mound__count {
     font-size: var(--text-xs);
+  }
+  /* The trick's captions hang below it, out of flow, so centring the trick
+     alone left it low: close over the read-out and far from the seats. Room
+     for the captions at the bottom of the play area centres trick and captions
+     together between the seats and the hand's group. */
+  .centre {
+    /* A margin, not padding: the captions are placed by percentages of this
+       box, and padding would push them down by half its height. */
+    margin-bottom: var(--space-xl);
   }
   /* --space-md, like the buttons in each row: the two rows of actions are as
      far apart as the buttons beside each other. */

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { followPointer } from '../lib/pointerLabel.js';
 
 /** How long the hint takes to leave: the shared --fade-out. */
 const FADE_MS = 260;
@@ -33,7 +34,12 @@ export function DisabledHint() {
 
     const place = () => {
       if (ref.current) {
-        ref.current.style.transform = `translate(${position.current.x}px, ${position.current.y}px)`;
+        followPointer(
+          ref.current,
+          ref.current.firstElementChild as HTMLElement | null,
+          position.current.x,
+          position.current.y,
+        );
       }
     };
 
@@ -66,6 +72,18 @@ export function DisabledHint() {
       clearTimeout(fade);
     };
   }, []);
+
+  // A new hint is measured and kept on screen before it is painted.
+  useLayoutEffect(() => {
+    if (ref.current) {
+      followPointer(
+        ref.current,
+        ref.current.firstElementChild as HTMLElement | null,
+        position.current.x,
+        position.current.y,
+      );
+    }
+  }, [hint?.text]);
 
   if (!hint) return null;
   return (

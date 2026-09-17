@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { followPointer } from '../lib/pointerLabel.js';
 import { onCopied, type CopyNotice } from '../lib/copy.js';
 import { PixelIcon } from './PixelIcon.js';
 
@@ -25,7 +26,9 @@ export function CopyToast() {
     const follow = (e: PointerEvent) => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        if (ref.current) ref.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        if (ref.current) {
+          followPointer(ref.current, ref.current.firstElementChild as HTMLElement | null, e.clientX, e.clientY);
+        }
       });
     };
     window.addEventListener('pointermove', follow);
@@ -35,6 +38,13 @@ export function CopyToast() {
       cancelAnimationFrame(frame);
       clearTimeout(timer);
     };
+  }, [notice]);
+
+  // Kept on screen from its first frame, not only once the pointer moves.
+  useLayoutEffect(() => {
+    if (notice && ref.current) {
+      followPointer(ref.current, ref.current.firstElementChild as HTMLElement | null, notice.x, notice.y);
+    }
   }, [notice]);
 
   return (

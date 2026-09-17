@@ -309,7 +309,9 @@ export function Table() {
       // A picked card stands clear of the row; hovering nudges one that is
       // not picked, so the two cues never add up into one taller lift that
       // means neither thing on its own.
-      lift: previewed ? 40 : chosen ? 26 : hovered ? 14 : 0,
+      // On a phone a picked card rises a little less: the read-out sits close
+      // over the hand there, and a picked card should not cover it.
+      lift: previewed ? 40 : chosen ? (compact ? 18 : 26) : hovered ? 14 : 0,
       raised: dragging || hovered || previewed || chosen,
     });
   }

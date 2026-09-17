@@ -124,9 +124,21 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
   scale is a sign the grouping is wrong, not that the scale is.
 - **One gap between controls: `--space-sm`** — a field and its icon buttons, the
   utility row, a row of action buttons.
+- **Space says what belongs together.** Inside a group, `--space-sm` to
+  `--space-md`; between separate groups, `--space-xl` — a clear step, so a
+  screen reads as a few blocks rather than one list. The main menu is three
+  groups (title and description; the ways in, How to play included; joining a
+  table). A lobby is the seats, then the options, then the start group. The
+  table's read-out belongs to your hand: `--space-lg` from the cards, a
+  group's distance from the trick.
 - **Lobbies end with a start group**: the error, the status line and the start
-  button, `--space-sm` apart, set `--space-lg` below the last option. Leave, top
+  button, `--space-sm` apart, a group's distance (`--space-xl`) below the last
+  option, with a `--table-hi` rule along its top. Where the lobby is taller than
+  the screen — a phone, a short laptop — the group is pinned to the bottom as
+  the options scroll under it, so Start is never below the fold. Leave, top
   left, is top-aligned with the table code's title.
+- **Nothing that follows the pointer leaves the screen.** The copy toast and the
+  disabled-button hint slide back to stay 8px inside every edge.
 - Floating controls sit `--u` in from the viewport edge, never flush against it.
 - **On a touch screen (`pointer: coarse`) both control heights are at least
   44px**, rounded up to a whole art pixel. The art does not grow; the button
@@ -361,7 +373,10 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   and gets a flat "Remove" on other people's rows, in the slot "Sit here" uses,
   until the first deal.
 - **On phones (720px wide or less)** the table is one screen, never scrolled:
-  - The seats start `--space-xl` below the Log and Menu buttons.
+  - The seats start `--space-xl` below the bottom of the Log and Menu
+    buttons: the corner controls and the table are separate groups.
+  - The log opens up to 160 art pixels wide, never wider than the screen, so an
+    entry is a line rather than three.
   - The three opponents share one row across the top, a third of the width
     each, left seat to right seat in turn order. Each keeps a fan of real card
     backs — a hand, not a number — closed up to fit its column; the count and
@@ -376,9 +391,15 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     sits top left. "Menu" is a place, not an action — the one exception to
     labels leading with a verb.
   - Above your hand: the turn marker, what to do, and your clock, on one line,
-    the sentence beside the marker. It sits close over the hand — the row
-    overlaps part of the hand's lift room — so it reads as belonging to the
-    cards, while a picked card still rises clear of the text.
+    the sentence beside the marker. Its last line sits `--space-lg` above the
+    cards whether it runs to one line or two — a longer message grows upward,
+    into the table — so it reads as belonging to the hand. The pip centres on
+    that last line. A picked card rises 18px on a phone (26 with a mouse), clear
+    of the text.
+  - The trick and its captions are centred together in the play area (it keeps
+    `--space-xl` clear at its foot for the captions that hang below the cards),
+    so the trick sits between the seats and the hand's group, not on top of the
+    read-out.
   - Below the hand, two rows: Sort
     and Clear, then Pass and Play cards at half the width each, Play on the
     right where a right thumb rests. Touch buttons stand `--space-md` apart,
