@@ -58,7 +58,9 @@
      meta, sm for labels and controls, md for the sentence that matters on a
      screen, lg for headings. Nine near-identical sizes had grown in their
      place, and at 12, 13 and 14px side by side the difference read as a
-     mistake rather than as hierarchy. */
+     mistake rather than as hierarchy. The four step down together on a phone
+     and again on a small one (see "Responsive tiers"); an element asks for a
+     role, never a pixel size, and never a smaller role to fit a phone. */
   --text-xs: 12px;
   --text-sm: 14px;
   --text-md: 16px;
@@ -83,9 +85,10 @@
      buttons beside inputs are md; chips, seat buttons, the sort control and
      small controls in tight rows are sm. See DESIGN.md. */
   --control-sm: calc(11 * var(--px));
-  /* The action a screen exists for — Start game, Ready up, Pass, Play cards —
-     stands taller than the buttons around it. */
-  --control-lg: calc(19 * var(--px));
+  /* The action a screen exists for — Start game, Ready up, Pass, Play cards.
+     The same height as any button on a wide screen; on a phone, where the
+     other heights come down, it is the one that stays a finger tall. */
+  --control-lg: var(--control-md);
   /* The height of the corner controls (Log, Menu, How to play): the table's
      top padding is measured from them, so it follows them. */
   --corner: var(--control-sm);
@@ -116,6 +119,11 @@
   --space-md: calc(var(--u) * 2); /* 8: between fields and rows */
   --space-lg: calc(var(--u) * 3); /* 12: between sections */
   --space-xl: calc(var(--u) * 5); /* 20: breathing room around the hand */
+  /* Between separate groups — a lobby's seats, its fields, its start; a menu's
+     title, its ways in, its join form. A role, not a size: it steps down a
+     notch on a phone and another on a small one, as the controls and the type
+     do, so every screen keeps the same rhythm at every width. */
+  --space-group: var(--space-xl);
 
   /* Card art is 22x31 pixels; the mini and tray variants are the same drawing
      at smaller whole-number sizes. */
@@ -311,10 +319,10 @@ body {
   color: var(--bone);
 }
 /* The title and its description are one group; the ways in are the next, a
-   full --space-xl below — the step between groups, well over the --space-md
-   inside one, so the page reads as three blocks rather than one list. */
+   --space-group below — well over the --space-md inside one, so the page reads
+   as three blocks rather than one list. */
 .menu__blurb {
-  margin: 0 0 var(--space-xl);
+  margin: 0 0 var(--space-group);
   max-width: 34ch;
   color: var(--bone-dim);
 }
@@ -356,7 +364,7 @@ body {
 }
 .panel h2 {
   font-size: var(--text-lg);
-  margin: 0 0 var(--space-sm);
+  margin: 0 0 var(--space-xs);
 }
 
 .btn {
@@ -410,12 +418,13 @@ body {
 }
 
 /* ── Lobby ───────────────────────────────────────────────────────────── */
-/* The seats are one group and the options under them the next: --space-xl
-   apart, the step between groups (fields within a group are --space-md). */
+/* A lobby is a stack of groups, one --space-group apart at every width: the
+   seats' title and the line describing it (together, --space-xs apart), the
+   seats, your name, the match length, the seed, the start. */
 .seats {
   list-style: none;
   padding: 0;
-  margin: 0 0 var(--space-xl);
+  margin: var(--space-group) 0;
 }
 .seats__row {
   display: grid;
@@ -451,8 +460,10 @@ body {
 .field__hint--lead {
   margin: 0 0 var(--space-sm);
 }
-.field {
-  margin-bottom: var(--space-md);
+/* Fields are spaced from each other, not from whatever follows them, so the
+   last one hands over to the start group's own --space-group with no doubling. */
+.field + .field {
+  margin-top: var(--space-group);
 }
 .field label,
 .field__label {
@@ -1566,9 +1577,9 @@ textarea {
   margin-bottom: var(--space-sm);
 }
 /* Reference, on a line of its own under the ways to play, still in their
-   group; joining a table is the next group, --space-xl on. */
+   group; joining a table is the next group, --space-group on. */
 .menu__more {
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-group);
 }
 .menu__join {
   display: flex;
@@ -2391,9 +2402,14 @@ textarea {
   justify-content: flex-start;
   gap: var(--space-xs);
 }
+/* Every option the same size, whatever it says — "5" beside "10", "15" beside
+   "50" — so a row of them reads as a set of equal choices, not a line of
+   labels. As wide as a control is tall, on every tier. */
 .optionset__choices .chip {
   margin-left: 0;
-  min-width: var(--control-md);
+  inline-size: var(--control-md);
+  padding-inline: 0;
+  justify-content: center;
 }
 
 /* ── Settings someone else controls ──────────────────────────────────────
@@ -2412,7 +2428,7 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-sm);
-  margin: 0 0 var(--space-sm);
+  margin: 0 0 var(--space-xs);
 }
 .panel__title h2 {
   margin: 0;
@@ -2492,9 +2508,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  /* A field's own --space-md bottom margin plus this makes --space-xl: the
-     start group stands a group's distance from the options. */
-  margin-top: calc(var(--space-xl) - var(--space-md));
+  margin-top: var(--space-group);
 }
 /* Where a lobby is taller than the screen — a phone, a short laptop — the start
    group stays pinned to the bottom as the options scroll under it: the one thing
@@ -2629,15 +2643,11 @@ textarea {
    pixel grid holds. Mouse sizes are unchanged. */
 @media (pointer: coarse) {
   :root {
-    --control-lg: max(48px, calc(19 * var(--px)));
-    /* Anything a finger presses to *do* something — every button, every field —
-       stands a finger tall. */
+    /* Above a phone, every control a finger presses stands a finger tall —
+       buttons, fields and chips alike. Phones step down from here (see
+       "Responsive tiers"). */
     --control-md: max(44px, calc(15 * var(--px)));
-    /* Chips and tags are the things inside a list: a difficulty, a match
-       length, a ready state. They are wide, which is most of what makes a
-       target easy to hit, so they take a shorter height and give a phone's
-       lobby the room to breathe that four 44px rows were spending. */
-    --control-sm: max(34px, calc(11 * var(--px)));
+    --control-sm: 44px;
   }
   /* A button on its own is not a chip in a list, whatever height token it
      borrows: the corner controls and Sit here stay a finger tall. */
@@ -2656,26 +2666,52 @@ textarea {
   @supports (width: round(up, 44px, 3px)) {
     :root {
       --control-md: max(round(up, 44px, var(--px)), calc(15 * var(--px)));
-      --control-sm: max(round(up, 34px, var(--px)), calc(11 * var(--px)));
-      --control-lg: max(round(up, 48px, var(--px)), calc(19 * var(--px)));
+      --control-sm: round(up, 44px, var(--px));
     }
   }
+}
 
-  /* A phone is held in one hand and read at arm's length, so its controls come
-     down a step from a tablet's: the action a screen is for stays a finger
-     tall, ordinary buttons and fields lose a few pixels, and the chips inside a
-     list come down furthest. Heights, not art: the drawing never changes.
+/* ── Responsive tiers ────────────────────────────────────────────────────
+   Three bands, and every size that should respond to the screen responds in
+   the same steps: a wide screen (over 720px), a phone (381–720px) and a small
+   phone (380px and under — a 360 or 375 wide handset). Each band sets the type
+   scale, the spacer between groups and, on touch, the three control heights;
+   nothing else is resized per band, and no element picks a smaller role to fit
+   a phone — the roles themselves come down.
 
-     The heights are picked against the padding beside the label, not on their
-     own — a control reads as square-ish and clumsy when it is tall and tight,
-     however easy it is to hit. Roughly: side padding is a little under half the
-     height (36 with --space-md either side, 28 with --space-sm). */
-  @media (max-width: 720px) {
-    :root {
-      --control-lg: max(44px, calc(19 * var(--px)));
-      --control-md: max(36px, calc(15 * var(--px)));
-      --control-sm: max(28px, calc(11 * var(--px)));
-    }
+   Controls come down against the padding beside their labels, not on their
+   own: a control reads as a clumsy slab when it is tall and tight, however easy
+   it is to hit. Side padding runs a little under half the height. The action a
+   screen is for (--control-lg) holds a finger's 44px in every band. */
+@media (max-width: 720px) {
+  :root {
+    --text-xs: 12px;
+    --text-sm: 13px;
+    --text-md: 14px;
+    --text-lg: 20px;
+    --space-group: var(--space-lg);
+  }
+}
+@media (max-width: 380px) {
+  :root {
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --text-md: 13px;
+    --text-lg: 18px;
+    --space-group: var(--space-md);
+  }
+}
+@media (pointer: coarse) and (max-width: 720px) {
+  :root {
+    --control-lg: 44px;
+    --control-md: 36px;
+    --control-sm: 28px;
+  }
+}
+@media (pointer: coarse) and (max-width: 380px) {
+  :root {
+    --control-md: 32px;
+    --control-sm: 26px;
   }
 }
 
@@ -2746,9 +2782,7 @@ textarea {
      cards under it rather than floating between them and the table. */
   margin-bottom: calc(-1 * (var(--space-md) + var(--space-sm)));
 }
-.controls--compact .controls__read {
-  font-size: var(--text-sm);
-}
+
 /* The pip stays centred on the sentence's last line. */
 .controls--compact > .turndot {
   margin-bottom: calc((1.35 * var(--text-sm) - 5 * var(--px)) / 2);
@@ -2827,7 +2861,6 @@ textarea {
     align-content: start;
   }
   .opp__name {
-    font-size: var(--text-sm);
     white-space: nowrap;
   }
   /* A third of a phone is not wide enough for "Seat 2 (CPU)" on one line, so
@@ -2848,12 +2881,6 @@ textarea {
        screen on their own. */
     padding: var(--space-sm) 0;
   }
-  /* The seat and who holds it read a size down on a phone, which is what buys
-     the row the width to keep "(CPU)" and three difficulties on one line. */
-  .seats__name,
-  .seats__player {
-    font-size: var(--text-sm);
-  }
   .seats__player {
     min-width: 0;
     overflow: hidden;
@@ -2864,9 +2891,7 @@ textarea {
     flex-wrap: nowrap;
     gap: var(--px);
   }
-  /* The chair, square and at the row's full height: the row is narrow and an
-     icon says "sit here" in a fifth of the width. */
-  /* A chair, as wide as a phone's buttons and as tall as the chips it shares
+  /* The plus, as wide as a phone's buttons and as tall as the chips it shares
      the row with — every seat row is then the same height, and the target is
      wider than the difficulties beside it. */
   .seats__sit--icon {
@@ -2876,40 +2901,11 @@ textarea {
     padding: 0;
     justify-content: center;
   }
-  .seats__diff .chip,
-  .seats__sit,
-  .seats__ready,
-  .optionset__choices .chip {
-    font-size: var(--text-xs);
+  .seats__diff .chip {
     margin-left: 0;
-  }
-  .optionset__choices .chip {
-    min-width: var(--control-sm);
   }
   .optionset__row {
     padding: var(--space-xs) var(--space-sm);
-  }
-  /* One spacer between every group, so a lobby reads as a stack of blocks: the
-     seats, your name, the match, the seed, the start. --space-lg, half a step
-     down from the --space-xl a wide screen uses: a phone's blocks are shorter,
-     so they need less between them to read apart. Inside a group things sit
-     --space-xs to --space-sm apart — a title and the line describing it, a
-     label and its field. */
-  .panel__title {
-    margin-bottom: var(--space-xs);
-  }
-  .seats {
-    margin-top: var(--space-lg);
-    margin-bottom: var(--space-lg);
-  }
-  .field {
-    margin-bottom: var(--space-lg);
-  }
-  .field:last-of-type {
-    margin-bottom: 0;
-  }
-  .panel__start {
-    margin-top: var(--space-lg);
   }
   .opp__name {
     flex-wrap: wrap;
@@ -2942,10 +2938,6 @@ textarea {
   .opp--right .minifan {
     width: min(calc(56 * var(--px)), 100%);
     height: calc(26 * var(--px));
-  }
-  .inplay__empty,
-  .mound__count {
-    font-size: var(--text-xs);
   }
   /* The trick's captions hang below it, out of flow, so centring the trick
      alone left it low: close over the read-out and far from the seats. Room

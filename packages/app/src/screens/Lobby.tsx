@@ -1,7 +1,7 @@
 import { DIFFICULTIES, type Difficulty } from '@big-two/ai';
 import { useGameStore } from '../store/gameStore.js';
 import { seatName } from '../lib/format.js';
-import { LobbyLayout, SeatRow } from '../components/LobbyLayout.js';
+import { LobbyLayout, SeatRow, SitButton } from '../components/LobbyLayout.js';
 import { MatchField } from '../components/MatchField.js';
 import { SeedField } from '../components/SeedField.js';
 
@@ -29,9 +29,9 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
  *
  * The same frame, labels and controls as a shared table — Leave, the seats with
  * each computer's difficulty, your name, the match length, the seed, Start game
- * — so the two lobbies teach each other. No seat choice here: alone at a table
- * there is nothing a seat decides, since the board always turns so you sit at
- * the bottom.
+ * — so the two lobbies teach each other. Taking a seat works the same way too:
+ * the board always turns so you sit at the bottom, but which seat you hold
+ * decides who plays before and after you.
  */
 export function Lobby() {
   const seats = useGameStore((s) => s.seats);
@@ -42,6 +42,7 @@ export function Lobby() {
   const setMatchRule = useGameStore((s) => s.setMatchRule);
   const setPlayerName = useGameStore((s) => s.setPlayerName);
   const setSeatDifficulty = useGameStore((s) => s.setSeatDifficulty);
+  const takeSeat = useGameStore((s) => s.takeSeat);
   const setSeed = useGameStore((s) => s.setSeed);
   const newSeed = useGameStore((s) => s.newSeed);
   const startMatch = useGameStore((s) => s.startMatch);
@@ -62,6 +63,7 @@ export function Lobby() {
             key={seat.id}
             seat={seat.seat}
             role={mine ? 'you' : 'cpu'}
+            action={mine ? undefined : <SitButton seat={seat.seat} onSit={takeSeat} />}
             detail={
               mine
                 ? playerName.trim() && <span className="seats__player">{playerName.trim()}</span>

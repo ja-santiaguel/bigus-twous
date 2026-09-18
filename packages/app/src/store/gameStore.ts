@@ -445,9 +445,10 @@ export const useGameStore = create<GameStore>((set, get) => {
     // A new seed every time you sit down alone, so no two games start the same
     // by accident — and it stays editable, so one can start the same on purpose.
     //
-    // Playing alone always seats you at seat 1. Which chair you took at a shared
-    // table is a choice made there, for that table, and should not follow you
-    // back here — the humanSeat a shared table sets is reset on the way in.
+    // Playing alone starts you at seat 1, and you can move from there. Which
+    // chair you took at a shared table is a choice made there, for that table,
+    // and should not follow you back here — the humanSeat a shared table sets is
+    // reset on the way in.
     goToLobby: () =>
       set((s) => ({
         screen: 'lobby',
@@ -611,7 +612,20 @@ export const useGameStore = create<GameStore>((set, get) => {
     ready: () => table?.ready(),
     unready: () => table?.unready(),
     startGame: () => table?.start(),
-    takeSeat: (seat) => table?.takeSeat(seat),
+    takeSeat: (seat) => {
+      if (get().online) {
+        table?.takeSeat(seat);
+        return;
+      }
+      // Alone, the lobby is the table: moving is swapping chairs with the
+      // computer that had this one. Each seat keeps the difficulty it was set
+      // to, so the computer that moves into your old chair plays as that chair
+      // was set to play.
+      set((s) => ({
+        humanSeat: seat,
+        seats: s.seats.map((x) => ({ ...x, occupant: x.seat === seat ? ('human' as const) : ('cpu' as const) })),
+      }));
+    },
     kick: (seat) => table?.kick(seat),
     setMatchRule: (rule) => {
       // A shared table's length is the table's, and the host's to set; the

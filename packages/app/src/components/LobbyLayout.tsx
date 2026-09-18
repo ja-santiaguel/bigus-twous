@@ -1,3 +1,5 @@
+import { COMPACT_QUERY, useMediaQuery } from '../lib/useMediaQuery.js';
+import { PixelIcon } from './PixelIcon.js';
 import type React from 'react';
 import { seatName } from '../lib/format.js';
 
@@ -70,6 +72,40 @@ export function LobbyLayout({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Take a free seat — a computer's, in either lobby.
+ *
+ * Words where there is room, a plus on a phone, where the row also carries the
+ * seat, who holds it and three difficulties. What it does never changes, and
+ * neither does how it is announced.
+ */
+export function SitButton({
+  seat,
+  onSit,
+  disabled = false,
+  hint,
+}: {
+  seat: number;
+  onSit: (seat: number) => void;
+  disabled?: boolean;
+  /** Why it cannot be pressed, when it cannot. */
+  hint?: string;
+}) {
+  const compact = useMediaQuery(COMPACT_QUERY);
+  return (
+    <button
+      type="button"
+      className={`seats__sit ${compact ? 'seats__sit--icon' : ''}`}
+      aria-label={`Sit at ${seatName(seat)}`}
+      onClick={() => onSit(seat)}
+      disabled={disabled}
+      {...(hint ? { 'data-hint': hint } : {})}
+    >
+      {compact ? <PixelIcon name="sit" /> : 'Sit here'}
+    </button>
   );
 }
 

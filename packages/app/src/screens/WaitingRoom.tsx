@@ -1,13 +1,11 @@
 import { DIFFICULTIES } from '@big-two/ai';
 import { useGameStore } from '../store/gameStore.js';
-import { COMPACT_QUERY, useMediaQuery } from '../lib/useMediaQuery.js';
-import { PixelIcon } from '../components/PixelIcon.js';
 import { joinLinkFor } from '../lib/joinLink.js';
 import { seatName } from '../lib/format.js';
 import { Copyable } from '../components/Copyable.js';
 import { copyWithNotice } from '../lib/copy.js';
 import { HostOnly } from '../components/HostOnly.js';
-import { LobbyLayout, SeatRow } from '../components/LobbyLayout.js';
+import { LobbyLayout, SeatRow, SitButton } from '../components/LobbyLayout.js';
 import { MatchField } from '../components/MatchField.js';
 import { SeedField } from '../components/SeedField.js';
 import { DIFFICULTY_LABELS, DIFFICULTY_SPOKEN } from './Lobby.js';
@@ -47,7 +45,6 @@ export function WaitingRoom() {
   const setPlayerName = useGameStore((s) => s.setPlayerName);
   const leaveTable = useGameStore((s) => s.leaveTable);
   const error = useGameStore((s) => s.error);
-  const compact = useMediaQuery(COMPACT_QUERY);
 
   // The site's own address, subfolder included: on a GitHub project site the
   // game lives at /<repository>/, and a link to the bare domain finds nothing.
@@ -154,19 +151,7 @@ export function WaitingRoom() {
               // being held for somebody who is coming back — which the host may
               // still clear, so a friend who has gone home is not a seat lost.
               cpu ? (
-                <button
-                  className={`seats__sit ${compact ? 'seats__sit--icon' : ''}`}
-                  aria-label={`Sit at ${seatName(seat.seat)}`}
-                  onClick={() => takeSeat(seat.seat)}
-                  disabled={!connected}
-                  data-hint="Not connected to the table"
-                >
-                  {/* A phone's seat row also carries the seat, who holds it
-                      and three difficulties. There the button is the chair
-                      itself; what it does is unchanged, and so is how it is
-                      announced — the label above carries the words. */}
-                  {compact ? <PixelIcon name="sit" /> : 'Sit here'}
-                </button>
+                <SitButton seat={seat.seat} onSit={takeSeat} disabled={!connected} hint="Not connected to the table" />
               ) : iAmHost && !mine ? (
                 <button
                   className="seats__sit"

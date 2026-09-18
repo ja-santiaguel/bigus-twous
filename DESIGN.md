@@ -140,14 +140,27 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
 - **Nothing that follows the pointer leaves the screen.** The copy toast and the
   disabled-button hint slide back to stay 8px inside every edge.
 - Floating controls sit `--u` in from the viewport edge, never flush against it.
-- **Three heights, and they step down on a phone.** `--control-lg` is the
-  action a screen exists for (Start game, Ready up, Pass, Play cards);
-  `--control-md` is every other button and every field; `--control-sm` is a chip
-  or tag inside a list — a difficulty, a match length, a ready state, the sit
-  button. A mouse gets the pixel-exact art heights. A touch screen gets
-  48 / 44 / 34, and a phone (720px and under) 44 / 36 / 28: held in one hand,
-  read closer, and four rows of finger-tall controls filled a lobby on their
-  own. The art never changes size; the box around it does.
+- **Responsive tiers.** Three bands — a wide screen (over 720px), a phone
+  (381–720px) and a small phone (380px and under) — and everything that should
+  respond to the screen responds in the same steps. Each band sets the type
+  scale, the spacer between groups and, on touch, the control heights. An
+  element asks for a *role* (`--text-md`, `--space-group`, `--control-sm`) and
+  never a smaller role to fit a phone: the roles themselves come down.
+
+  | | Wide | Phone | Small phone |
+  |---|---|---|---|
+  | Type xs / sm / md / lg | 12 / 14 / 16 / 24 | 12 / 13 / 14 / 20 | 11 / 12 / 13 / 18 |
+  | `--space-group` | `--space-xl` | `--space-lg` | `--space-md` |
+  | Touch lg / md / sm | 44 / 44 / 44 | 44 / 36 / 28 | 44 / 32 / 26 |
+
+  `--control-lg` is the action a screen exists for (Start game, Ready up, Pass,
+  Play cards) — the same as any button on a wide screen, and the height that
+  holds at a finger's 44px as the others come down. `--control-md` is every other
+  button and every field; `--control-sm` a chip or tag inside a list — a
+  difficulty, a match length, a ready state, the sit button. A mouse gets the
+  pixel-exact art heights on every band. The spacing *scale* (`--space-xs` to
+  `--space-xl`) is in art pixels and follows `--scale`; `--space-group` is the
+  role that steps. The art never changes size; the box around it does.
 - **A height is chosen against the padding beside the label, never on its own.**
   Side padding runs a little under half the height — `--space-md` either side of
   a 36px button, `--space-sm` of a 28px chip — so a control reads as a control
@@ -544,16 +557,18 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   computer holds is worth the width. What gives way as the row tightens is the
   player's name on the right, never the seat it belongs to. A row is as tall as
   its controls and no taller.
-- **A phone's lobby is a stack of blocks**, one `--space-lg` apart — half a step
-  down from a wide screen's `--space-xl`, because a phone's blocks are shorter
-  and need less between them to read apart: the seats (their title and the line
-  describing it `--space-xs` apart, as one thing), your name, the match length,
-  the seed, the start group. Inside a block, `--space-xs` to `--space-sm`, and
-  `--space-sm` above and below each seat row so one row reads clear of the
-  next.
+- **A lobby is a stack of groups**, one `--space-group` apart at every width:
+  the seats (their title and the line describing it `--space-xs` apart, as one
+  thing), your name, the match length, the seed, the start group. Fields are
+  spaced from each other, not from what follows them, so the last hands over to
+  the start group without doubling. Inside a group, `--space-xs` to
+  `--space-sm`, and on a phone `--space-sm` above and below each seat row so one
+  row reads clear of the next. The main menu's groups use the same spacer.
 - **An option set's rows share one name column** (nine units) with `--space-md`
   to the options, so "Points" and "Rounds" keep clear of their chips and every
-  row's options start on the same left edge.
+  row's options start on the same left edge. **Every option is the same size** —
+  as wide as a control is tall — whatever it says, so "5" and "10", "15" and
+  "50" read as a set of equal choices.
 - **Lobbies share one frame** (`LobbyLayout`): Leave top left, the seats, the
   options common to both modes, the options unique to one, then the full-width
   primary action. Only mode-unique options differ in layout.
@@ -564,8 +579,10 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     The bracket is `--dim`; your own row keeps the gold underline.
     Every row is the same height whoever holds it, so taking a seat
     moves nothing on the screen.
-  - Playing alone you are always seat 1, whatever seat you last took at a
-    shared table.
+  - **Taking a seat works in both lobbies**: Sit here (a plus on a phone) on
+    every seat a computer holds. Alone, you swap chairs with that computer, and
+    each seat keeps the difficulty it was set to. You start at seat 1 each time
+    you come to the solo lobby, whatever seat you last took anywhere.
   - In a shared lobby: your name, then the match length, then the seed (at a
     table server only). Your name starts as a random common name, kept until
     you change it.

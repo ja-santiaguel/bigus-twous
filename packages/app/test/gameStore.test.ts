@@ -45,13 +45,40 @@ function freshTable() {
 describe('seats when playing alone', () => {
   beforeEach(freshTable);
 
-  it('seats every id exactly once, with the human at the bottom', () => {
-    // No seat choice alone: nothing depends on which chair you take when the
-    // other three are computers, so the store simply seats you.
+  it('seats every id exactly once, starting the human at seat 1', () => {
     const seats = store.getState().seats;
     expect(seats.map((s) => s.id).sort()).toEqual([...SEAT_IDS].sort());
     expect(seats.filter((s) => s.occupant === 'human')).toHaveLength(1);
     expect(seats.find((s) => s.occupant === 'human')!.seat).toBe(DEFAULT_HUMAN_SEAT);
+  });
+
+  it('moves you to another seat, swapping chairs with its computer', () => {
+    store.getState().setSeatDifficulty(2, 'hard');
+    store.getState().takeSeat(2);
+
+    const { seats, humanSeat } = store.getState();
+    expect(humanSeat).toBe(2);
+    expect(seats.filter((s) => s.occupant === 'human').map((s) => s.seat)).toEqual([2]);
+    // The chair you left is a computer's now; every seat keeps its difficulty.
+    expect(seats.find((s) => s.seat === DEFAULT_HUMAN_SEAT)!.occupant).toBe('cpu');
+    expect(seats.find((s) => s.seat === 2)!.difficulty).toBe('hard');
+  });
+
+  it('deals you in at the seat you moved to', async () => {
+    store.getState().takeSeat(3);
+    store.getState().startMatch();
+    await waitForDeal();
+
+    const view = store.getState().view!;
+    expect(view.selfId).toBe(SEAT_IDS[3]);
+    expect(view.hand).toHaveLength(13);
+    expect(view.opponents.map((o) => o.seat).sort()).toEqual([0, 1, 2]);
+  });
+
+  it('starts you back at seat 1 each time you come to the lobby', () => {
+    store.getState().takeSeat(3);
+    store.getState().goToLobby();
+    expect(store.getState().humanSeat).toBe(DEFAULT_HUMAN_SEAT);
   });
 
   it('sets each computer seat difficulty independently', () => {
