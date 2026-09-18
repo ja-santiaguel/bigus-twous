@@ -1,5 +1,6 @@
 import type React from 'react';
-import { useLayoutEffect, useRef } from 'react';
+import type { Card } from '@big-two/engine';
+import { memo, useLayoutEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { CardBack, CardFace } from '../card/PixelCard.js';
 import { NONE, SETTLE, transition } from '../../design/motion.js';
@@ -91,6 +92,31 @@ export function CardLayer({
   useLayoutEffect(() => {
     known.current = new Set(entities.map((entity) => entity.id));
   });
+
+  /*
+   * One bundle of handlers, made once. Every card is memoised on its props, and
+   * a fresh closure per card per render would defeat that on the very first
+   * prop: the identity of its click handler. These read the current handlers
+   * through a ref instead, so they never change.
+   */
+  const latest = useRef(handlers);
+  latest.current = handlers;
+  const on = useMemo<CardHandlers>(
+    () => ({
+      down: (e, id) => latest.current?.onPointerDown(e, id),
+      move: (e) => latest.current?.onPointerMove(e),
+      up: (e, id) => latest.current?.onPointerUp(e, id),
+      cancel: (e) => latest.current?.onPointerCancel(e),
+      enter: (e) => {
+        if (e.pointerType === 'mouse') latest.current?.onPointerEnter(e, '');
+      },
+      leave: (e) => {
+        if (e.pointerType === 'mouse') latest.current?.onPointerLeave(e, '');
+      },
+      activate: (id) => latest.current?.onActivate(id),
+    }),
+    [],
+  );
 
   // Bounds of the opened trick, so the read-out plate can sit behind it. Taken
   // from the same transforms the cards use, so the plate can never disagree
@@ -185,108 +211,44 @@ export function CardLayer({
           // says where the card belongs; this says what you are doing to it.
           const v = visuals?.get(entity.id);
           const dragging = (v?.dx ?? 0) !== 0 || (v?.dy ?? 0) !== 0;
-          const target = {
-            x: to.x + (v?.dx ?? 0),
-            y: to.y - (v?.lift ?? 0) + (v?.dy ?? 0),
-            // A dragged card straightens up: you are holding it, not fanning it.
-            rotate: dragging ? 0 : to.rotate,
-            scale: v?.scale ?? to.scale,
-            opacity: to.opacity ?? 1,
-          };
+          const piled =
+            entity.placement.zone === 'discard'
+              ? entity.placement.slot === 0
+                ? 'is-piled is-pile-base'
+                : 'is-piled'
+              : '';
 
           return (
-            /*
-             * Always a `div`, never sometimes a `button`.
-             *
-             * This used to switch element type with interactivity — a card in
-             * your hand was a button, and the moment you played it, it became
-             * a div. React sees a different type under the same key and
-             * unmounts the old node to mount a new one, which destroys the
-             * exact thing this layer exists to preserve: the card teleported
-             * to the table instead of travelling there, because the node that
-             * was in your hand no longer existed.
-             *
-             * One element type, and the semantics ride on top of it. The
-             * keyboard handling a real button would have given us is already
-             * here explicitly (see `onKeyDown`), because pointer-driven
-             * selection needed it anyway.
-             */
-            <m.div
+            <LayerCard
               key={entity.id}
-              // Only a face-up card names itself in the page. A face-down one — an
-              // opponent's, or one in the discard pile — carries no identity at all.
-              data-id={faceUp ? entity.id : undefined}
-              {...(v?.interactive
-                ? // Pressed is picked: without it a screen reader could not tell which cards are selected.
-                  { role: 'button' as const, tabIndex: 0, 'aria-label': v.label, 'aria-pressed': v.marked ?? false }
-                : { 'aria-hidden': true })}
+              id={entity.id}
+              card={entity.card}
+              faceUp={faceUp}
               className={`cardlayer__card ${faceUp ? '' : 'is-down'} ${beaten ? 'is-beaten' : ''} ${
                 v?.marked ? 'is-marked' : ''
-              } ${v?.interactive ? 'is-live' : ''} ${v?.raised ? 'is-raised' : ''} ${dragging ? 'is-dragging' : ''} ${standing ? 'is-standing' : ''} ${
-                entity.placement.zone === 'discard'
-                  ? entity.placement.slot === 0
-                    ? 'is-piled is-pile-base'
-                    : 'is-piled'
-                  : ''
-              }`}
-              style={{ zIndex: v?.z ?? to.z }}
-              onPointerDown={
-                v?.interactive ? (e: React.PointerEvent) => handlers?.onPointerDown(e, entity.id) : undefined
-              }
-              onPointerMove={v?.interactive ? handlers?.onPointerMove : undefined}
-              onPointerUp={v?.interactive ? (e: React.PointerEvent) => handlers?.onPointerUp(e, entity.id) : undefined}
-              // Selection is driven entirely by pointer events, so a card was
-              // reachable by keyboard and did nothing when activated. Handled
-              // on keydown rather than through the button's native click so
-              // there is one path, not two: `preventDefault` suppresses the
-              // click the browser would synthesise, which would otherwise
-              // toggle the card straight back again.
-              onKeyDown={
-                v?.interactive
-                  ? (e: React.KeyboardEvent) => {
-                      if (e.key !== 'Enter' && e.key !== ' ') return;
-                      e.preventDefault();
-                      handlers?.onActivate(entity.id);
-                    }
-                  : undefined
-              }
-              onPointerCancel={v?.interactive ? handlers?.onPointerCancel : undefined}
-              // Hover is a mouse's. A finger "enters" a card by pressing it, and
-              // treating that as hover left a lifted card behind after the tap.
-              onPointerEnter={
-                v?.interactive
-                  ? (e: React.PointerEvent) => {
-                      if (e.pointerType === 'mouse') handlers?.onPointerEnter(e, entity.id);
-                    }
-                  : undefined
-              }
-              onPointerLeave={
-                v?.interactive
-                  ? (e: React.PointerEvent) => {
-                      if (e.pointerType === 'mouse') handlers?.onPointerLeave(e, entity.id);
-                    }
-                  : undefined
-              }
-              initial={
-                from
-                  ? { x: from.x, y: from.y, rotate: from.rotate, scale: from.scale, opacity: 1 }
-                  : { x: to.x, y: to.y, rotate: to.rotate, scale: to.scale, opacity: 0 }
-              }
-              animate={target}
-              // Cards leave the layer only when they stop existing on screen —
-              // reaching the discard pile, or a round ending. Everything else
-              // is a move, not an exit.
-              exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.14 } }}
-              transition={
-                instant
-                  ? NONE
-                  : dragging
-                    ? { x: NONE, y: NONE, rotate: SETTLE, scale: SETTLE }
-                    : transition(reduced, SETTLE)
-              }
-            >
-              {faceUp && entity.card ? <CardFace card={entity.card} /> : <CardBack />}
-            </m.div>
+              } ${v?.interactive ? 'is-live' : ''} ${v?.raised ? 'is-raised' : ''} ${
+                dragging ? 'is-dragging' : ''
+              } ${standing ? 'is-standing' : ''} ${piled}`}
+              z={v?.z ?? to.z}
+              x={to.x + (v?.dx ?? 0)}
+              y={to.y - (v?.lift ?? 0) + (v?.dy ?? 0)}
+              // A dragged card straightens up: you are holding it, not fanning it.
+              rotate={dragging ? 0 : to.rotate}
+              scale={v?.scale ?? to.scale}
+              opacity={to.opacity ?? 1}
+              fromX={(from ?? to).x}
+              fromY={(from ?? to).y}
+              fromRotate={(from ?? to).rotate}
+              fromScale={(from ?? to).scale}
+              fromOpacity={from ? 1 : 0}
+              interactive={v?.interactive ?? false}
+              label={v?.label}
+              marked={v?.marked ?? false}
+              dragging={dragging}
+              instant={instant}
+              reduced={reduced}
+              on={on}
+            />
           );
         })}
       </AnimatePresence>
@@ -361,6 +323,128 @@ function LabelText({ text }: { text: string }) {
     </span>
   );
 }
+
+interface CardHandlers {
+  down(e: React.PointerEvent, id: string): void;
+  move(e: React.PointerEvent): void;
+  up(e: React.PointerEvent, id: string): void;
+  cancel(e: React.PointerEvent): void;
+  enter(e: React.PointerEvent): void;
+  leave(e: React.PointerEvent): void;
+  activate(id: string): void;
+}
+
+/**
+ * One card in the layer, drawn only when something about *it* changes.
+ *
+ * The layer re-renders on every pointer move — a finger sliding along the hand,
+ * a card being dragged — and rebuilding fifty-two cards and their pixel art each
+ * time was most of the work a phone did during a gesture. Every prop here is a
+ * number, a string or a value that keeps its identity, so React skips the cards
+ * the gesture did not touch.
+ *
+ * Always a `div`, never sometimes a `button`. This used to switch element type
+ * with interactivity — a card in your hand was a button, and the moment you
+ * played it, it became a div. React sees a different type under the same key and
+ * unmounts the old node to mount a new one, which destroys the exact thing this
+ * layer exists to preserve: the card teleported to the table instead of
+ * travelling there. The keyboard handling a real button would have given us is
+ * here explicitly (see `onKeyDown`), because pointer-driven selection needed it
+ * anyway.
+ */
+const LayerCard = memo(function LayerCard({
+  id,
+  card,
+  faceUp,
+  className,
+  z,
+  x,
+  y,
+  rotate,
+  scale,
+  opacity,
+  fromX,
+  fromY,
+  fromRotate,
+  fromScale,
+  fromOpacity,
+  interactive,
+  label,
+  marked,
+  dragging,
+  instant,
+  reduced,
+  on,
+}: {
+  id: string;
+  card: Card | null;
+  faceUp: boolean;
+  className: string;
+  z: number;
+  x: number;
+  y: number;
+  rotate: number;
+  scale: number;
+  opacity: number;
+  fromX: number;
+  fromY: number;
+  fromRotate: number;
+  fromScale: number;
+  fromOpacity: number;
+  interactive: boolean;
+  label?: string | undefined;
+  marked: boolean;
+  dragging: boolean;
+  instant: boolean;
+  reduced: boolean;
+  on: CardHandlers;
+}) {
+  return (
+    <m.div
+      // Only a face-up card names itself in the page. A face-down one — an
+      // opponent's, or one in the discard pile — carries no identity at all.
+      data-id={faceUp ? id : undefined}
+      {...(interactive
+        ? // Pressed is picked: without it a screen reader could not tell which cards are selected.
+          { role: 'button' as const, tabIndex: 0, 'aria-label': label, 'aria-pressed': marked }
+        : { 'aria-hidden': true })}
+      className={className}
+      style={{ zIndex: z }}
+      onPointerDown={interactive ? (e: React.PointerEvent) => on.down(e, id) : undefined}
+      onPointerMove={interactive ? on.move : undefined}
+      onPointerUp={interactive ? (e: React.PointerEvent) => on.up(e, id) : undefined}
+      // Selection is driven entirely by pointer events, so a card was reachable
+      // by keyboard and did nothing when activated. Handled on keydown rather
+      // than through the button's native click so there is one path, not two:
+      // `preventDefault` suppresses the click the browser would synthesise,
+      // which would otherwise toggle the card straight back again.
+      onKeyDown={
+        interactive
+          ? (e: React.KeyboardEvent) => {
+              if (e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              on.activate(id);
+            }
+          : undefined
+      }
+      onPointerCancel={interactive ? on.cancel : undefined}
+      // Hover is a mouse's. A finger "enters" a card by pressing it, and
+      // treating that as hover left a lifted card behind after the tap.
+      onPointerEnter={interactive ? on.enter : undefined}
+      onPointerLeave={interactive ? on.leave : undefined}
+      initial={{ x: fromX, y: fromY, rotate: fromRotate, scale: fromScale, opacity: fromOpacity }}
+      animate={{ x, y, rotate, scale, opacity }}
+      // Cards leave the layer only when they stop existing on screen — reaching
+      // the discard pile, or a round ending. Everything else is a move.
+      exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.14 } }}
+      transition={
+        instant ? NONE : dragging ? { x: NONE, y: NONE, rotate: SETTLE, scale: SETTLE } : transition(reduced, SETTLE)
+      }
+    >
+      {faceUp && card ? <CardFace card={card} /> : <CardBack />}
+    </m.div>
+  );
+});
 
 /** Seconds a shadow takes to hand over between the shared group and a card's own. Matches the CSS. */
 const SHADOW_FADE_S = 0.18;

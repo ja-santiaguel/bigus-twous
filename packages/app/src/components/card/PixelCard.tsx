@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Card, Suit } from '@big-two/engine';
 import { CARD_BACK_RUNS, SUIT_RUNS } from '../../design/pixel.js';
 import { SUIT_IS_RED, cardSpoken } from '../../lib/format.js';
@@ -13,7 +14,14 @@ import { SUIT_IS_RED, cardSpoken } from '../../lib/format.js';
  * suit when the card sits alone on the table.
  */
 
-function Pip({ suit, className }: { suit: Suit; className?: string }) {
+/*
+ * Every card is drawn from rectangles — a rank, a pip of a dozen runs, a back
+ * of several dozen. Fifty-two of those redraw on every render of the layer,
+ * and the layer renders on every pointer move while a finger slides along the
+ * hand. None of it can change unless the card does, so none of it is rebuilt
+ * unless the card does.
+ */
+const Pip = memo(function Pip({ suit, className }: { suit: Suit; className?: string }) {
   return (
     <svg
       viewBox="0 0 9 9"
@@ -27,9 +35,9 @@ function Pip({ suit, className }: { suit: Suit; className?: string }) {
       ))}
     </svg>
   );
-}
+});
 
-export function CardFace({ card, dimmed = false }: { card: Card; dimmed?: boolean }) {
+export const CardFace = memo(function CardFace({ card, dimmed = false }: { card: Card; dimmed?: boolean }) {
   const tone = SUIT_IS_RED[card.suit] ? 'is-red' : 'is-black';
   return (
     <span className={`pcard pcard--face ${tone} ${dimmed ? 'is-dimmed' : ''}`}>
@@ -46,7 +54,7 @@ export function CardFace({ card, dimmed = false }: { card: Card; dimmed?: boolea
       <span className="sr-only">{cardSpoken(card)}</span>
     </span>
   );
-}
+});
 
 /**
  * A face-down card. It renders no rank or suit data at all — not hidden with
@@ -55,7 +63,7 @@ export function CardFace({ card, dimmed = false }: { card: Card; dimmed?: boolea
  * defeat that if the values were present in the DOM. The same discipline is
  * what keeps hidden information honest once real opponents exist.
  */
-export function CardBack({ className = '' }: { className?: string }) {
+export const CardBack = memo(function CardBack({ className = '' }: { className?: string }) {
   return (
     <span className={`pcard pcard--back ${className}`} aria-hidden="true">
       <svg viewBox="0 0 8 8" width="100%" height="100%" shapeRendering="crispEdges" focusable="false">
@@ -65,4 +73,4 @@ export function CardBack({ className = '' }: { className?: string }) {
       </svg>
     </span>
   );
-}
+});

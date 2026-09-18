@@ -165,6 +165,9 @@ body {
   /* Nothing on the page selects by dragging — see the input rule further on. */
   user-select: none;
   -webkit-user-select: none;
+  /* No pull-to-refresh and no rubber-banding: a game is dragged across with a
+     finger, and every one of those drags used to threaten to reload it. */
+  overscroll-behavior: none;
 }
 
 .sr-only {
@@ -423,8 +426,13 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  min-width: 0;
 }
 .seats__name {
+  /* A long name gives way rather than widening the row. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .seats__sit {
@@ -490,9 +498,9 @@ body {
     'hand hand   hand';
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-lg);
-  /* Perspective without tilt: cards gain depth when they lift, the plane does not. */
-  perspective: 1200px;
-  perspective-origin: 50% 50%;
+  /* No perspective and no 3D: every card transform is flat (x, y, rotate,
+     scale — see zoneGeometry), so a perspective scene bought nothing and cost a
+     3D rendering context per card, which phones paid for on every frame. */
 }
 
 .opp {
@@ -693,7 +701,6 @@ body {
   align-content: center;
   align-items: center;
   justify-items: center;
-  transform-style: preserve-3d;
 }
 .centre > .inplay {
   grid-column: 2;
@@ -800,10 +807,6 @@ body {
      Now that the cards are half again as large, that space has to grow with
      them or the proportion is lost. */
   padding-bottom: var(--space-xl);
-  /* Every element between .table (which owns the perspective) and a card must
-     preserve 3D, or the subtree is flattened and translateZ silently does
-     nothing — the card lifts on Y but never actually comes closer. */
-  transform-style: preserve-3d;
 }
 /* An anchor, not a container. It holds the space the fan occupies and is the
    surface a sweep starts on; the cards are drawn by the card layer. */
@@ -1031,6 +1034,8 @@ body {
   box-sizing: border-box;
   max-height: calc(100vh - 2 * var(--u) - var(--control-sm) - var(--u));
   overflow-y: auto;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
   background: var(--ink);
   border: var(--px) solid var(--table-hi);
   box-shadow: var(--px) var(--px) 0 var(--shade);
@@ -1205,6 +1210,10 @@ body {
   justify-items: center;
   gap: var(--space-sm);
   transition: opacity 200ms ease-out;
+  /* The stack, its button's padding and border, and nothing else. Taking a
+     pile swaps "Pile 2" for the name of whoever took it, and a column sized to
+     its contents shoved the other three piles sideways as it did. */
+  width: calc(var(--card-w) + 8 * var(--px));
 }
 .cpile.is-taken {
   opacity: 0.35;
@@ -1259,6 +1268,11 @@ body {
 .cpile__label {
   font-size: var(--text-sm);
   color: var(--dim);
+  /* One line, whatever the name: the row's height never changes either. */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .cpile.is-taken .cpile__label {
   color: var(--gold);
@@ -1297,7 +1311,6 @@ body {
      things that know what a click in their region means. */
   pointer-events: none;
   z-index: var(--layer-cards);
-  transform-style: preserve-3d;
 }
 .cardlayer__card {
   position: absolute;
@@ -1331,10 +1344,6 @@ body {
   /* One opacity for the group, so where shadows overlap they do not add up.
      The --shade alpha, so a held card's shadow is as dark as any other. */
   opacity: 0.55;
-  /* Half an art pixel of blur: a card this close to the felt throws a crisp
-     shadow with just a soft edge. Fully hard, it read as a black outline drawn
-     on the art; blurred by a pixel and a half, as a haze under the cards. */
-  filter: blur(calc(0.5 * var(--px)));
 }
 .cardlayer__shadow {
   position: absolute;
@@ -1346,7 +1355,11 @@ body {
   margin-top: calc(var(--card-h) / -2);
   transform-origin: 50% 50%;
   background: rgb(8, 12, 11);
-  will-change: transform;
+  /* Half an art pixel of soft edge: a card this close to the felt throws a
+     crisp shadow. Blurred on each shadow rather than over the group — one
+     filter across a layer of fifty-odd moving shapes is an offscreen buffer
+     redrawn every frame, and phones felt it. */
+  box-shadow: 0 0 var(--px) var(--px) rgb(8, 12, 11);
 }
 .cardlayer__card.is-raised .pcard,
 .cardlayer__card.is-dragging .pcard {
@@ -1418,7 +1431,6 @@ body {
   top: 0;
   transform-origin: 50% 50%;
   background: var(--scrim);
-  backdrop-filter: blur(2px);
   border: var(--px) solid var(--table-hi);
   box-shadow: 0 calc(3 * var(--px)) 0 var(--shade-soft);
   pointer-events: none;
@@ -2107,13 +2119,19 @@ textarea {
   place-items: center;
   padding: var(--space-sm);
   background: var(--scrim-strong);
+  /* A phone browser's `fixed` box is the *large* viewport — the one with the
+     toolbars hidden — so a sheet sized to it hides its own bottom edge behind
+     the toolbar that is actually on screen. `svh` is the viewport with the
+     toolbars showing: the sheet always fits, toolbars or not. */
+  height: 100vh;
+  height: 100svh;
 }
 .rules__box {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   width: min(640px, 100%);
-  max-height: calc(100vh - 2 * var(--u));
+  max-height: 100%;
   background: var(--table-lo);
   border: var(--px) solid var(--table-hi);
   box-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--shade-soft);
@@ -2132,6 +2150,9 @@ textarea {
 }
 .rules__body {
   overflow-y: auto;
+  /* Scrollable by a finger even where the board below it takes no touches. */
+  touch-action: pan-y;
+  overscroll-behavior: contain;
   padding: var(--space-sm) var(--space-md) var(--space-md);
 }
 /* A section the table sent you to: a gold edge and a wash, not a louder font —
@@ -2698,9 +2719,20 @@ textarea {
    hand with its controls at the bottom. Text keeps to three sizes. */
 @media (max-width: 720px) {
   .screen--table {
-    height: 100dvh;
+    /* The viewport with the browser's toolbars showing, so Pass and Play cards
+       are on screen whether the toolbar is out or not — `dvh` shrinks and grows
+       as it slides, which moved the buttons under the reader's thumb. */
+    height: 100vh;
+    height: 100svh;
     min-height: 0;
     overflow: hidden;
+    overscroll-behavior: none;
+  }
+  /* The board is a board, not a page: a finger dragging across it picks cards,
+     and must never pull the page about or bounce it. Only the board — the
+     things that open over it, the log and the rules sheet, still scroll. */
+  .screen--table > .table {
+    touch-action: none;
   }
   .table {
     max-width: none;
@@ -2733,6 +2765,18 @@ textarea {
   /* A third of a phone is not wide enough for "Seat 2 (CPU)" on one line, so
      the bracket takes a line of its own under the name, a size smaller. The
      line is kept for a person's seat too, so every fan starts level. */
+  /* A seat row cannot hold a name and three difficulty chips side by side on a
+     phone: the chips will not shrink, so the row pushed the page wider than the
+     screen. The detail drops to a line of its own under the name instead. */
+  .seats__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xs);
+  }
+  .seats__diff {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
   .opp__name {
     flex-wrap: wrap;
     justify-content: center;

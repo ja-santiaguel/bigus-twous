@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cardInColumn, classifyTouch, nearestCentre, scrubSelection } from './handGestures.js';
 import type { Rect } from './zoneGeometry.js';
 
@@ -137,10 +137,32 @@ export function useTableDrag({
   /** The card a mouse press picked, by column, which may not be the element it landed on. */
   const pressed = useRef<string | null>(null);
 
+  /** A scheduled render of the live state, so a burst of moves draws once. */
+  const frame = useRef(0);
+
+  /*
+   * The decision data is written straight to the ref; the render it causes is
+   * scheduled for the next frame. A finger sliding along the hand delivers
+   * pointer moves faster than the screen redraws, and each one used to re-render
+   * the whole card layer — fifty-two cards and their shadows — several times per
+   * frame, for one picture. Nothing reads the *state* to decide anything (see
+   * `live`), so batching the render changes nothing but the work.
+   */
   const commit = useCallback((next: TableDragState) => {
     live.current = next;
-    setState(next);
+    if (frame.current !== 0) return;
+    frame.current = requestAnimationFrame(() => {
+      frame.current = 0;
+      setState(live.current);
+    });
   }, []);
+
+  useEffect(
+    () => () => {
+      if (frame.current !== 0) cancelAnimationFrame(frame.current);
+    },
+    [],
+  );
 
   /** The card whose visible strip is under a finger at this x: a fingertip covers the rest of it. */
   const cardUnder = useCallback(

@@ -443,6 +443,9 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 - **Your name** appears in both lobbies, above the seed.
 - **The pile ceremony**: each pile's box holds the cards, their lean and their
   shadow, so the shadow sits inside the pile's outline rather than across it.
+  A pile's column is the width of that box and nothing else, and its label is
+  one line whatever it says, so taking a pile — which swaps "Pile 2" for the
+  name of whoever took it — never moves the other three.
   The stack casts one shadow as a single block — a drop shadow of the whole
   stack's outline, two pixels straight down with the same soft edge as the
   table's cards — rather than the bottom card's own, which stuck out from
@@ -530,6 +533,40 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     button. One way to share, shown once — the code to say aloud or type, the
     link to send in a message. There is no separate invite-link field.
   - Shared tables only: taking a seat, your name, the table code and its link.
+
+## 10a. Performance
+
+The table draws fifty-two cards and their shadows, and it redraws while a finger
+is moving. A phone is the machine to design for.
+
+- **Size to the visible screen, not the layout one.** A phone browser's `fixed`
+  box and `100vh` are the viewport with the toolbars *hidden*, so anything
+  sized that way hides its own bottom edge behind the toolbar actually on
+  screen. The table and the rules sheet use `100svh` (with `100vh` as the
+  fallback for older browsers), so their bottom rows — Pass, Play cards, Close —
+  are always reachable. `dvh` is the wrong tool here: it changes as the toolbar
+  slides, which moves buttons under a reader's thumb.
+- **The board takes no page gestures.** `touch-action: none` on the table and
+  `overscroll-behavior: none` on the page: a drag across the board picks cards
+  and can never scroll, bounce or pull-to-refresh the page. What opens *over*
+  the board — the log, the rules sheet — still scrolls by finger
+  (`touch-action: pan-y`, `overscroll-behavior: contain`).
+- **No 3D.** Every card transform is flat (x, y, rotate, scale), so the table
+  has no `perspective` and nothing sets `transform-style: preserve-3d`: both
+  cost a 3D rendering context per card and bought nothing.
+- **One render per frame.** Pointer moves arrive faster than the screen
+  redraws; a drag writes its state to a ref and schedules a single render on the
+  next frame (`useTableDrag`).
+- **Draw a card only when that card changes.** Cards are memoised on primitive
+  props and their handlers are a bundle made once, so a gesture re-renders the
+  cards it touched rather than all fifty-two; the pixel art of a face and a back
+  is memoised too.
+- **Blur costs a frame.** A filter over a layer of moving shapes is an offscreen
+  buffer redrawn every frame: shadows blur per shadow, and the opened trick's
+  plate is a flat scrim rather than a backdrop blur.
+- **Measure before and after**, throttled: the phone-sized table went from 36fps
+  (20 slow frames in 2.5s) to ~52fps (5) while dragging along the hand, at 4x
+  CPU throttling.
 
 ## 11. Seeds
 
