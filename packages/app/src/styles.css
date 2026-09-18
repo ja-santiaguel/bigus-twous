@@ -120,10 +120,10 @@
   --space-lg: calc(var(--u) * 3); /* 12: between sections */
   --space-xl: calc(var(--u) * 5); /* 20: breathing room around the hand */
   /* Between separate groups — a lobby's seats, its fields, its start; a menu's
-     title, its ways in, its join form. A role, not a size: it steps down a
-     notch on a phone and another on a small one, as the controls and the type
-     do, so every screen keeps the same rhythm at every width. */
-  --space-group: var(--space-xl);
+     title, its ways in, its join form. A role, not a size: it steps down on a
+     tablet and again on a phone, as the controls and the type do, so every
+     screen keeps the same rhythm at every width. */
+  --space-group: var(--space-lg);
 
   /* Card art is 22x31 pixels; the mini and tray variants are the same drawing
      at smaller whole-number sizes. */
@@ -2250,11 +2250,18 @@ textarea {
   color: var(--bone);
 }
 
-/* ── The bomb moment ─────────────────────────────────────────────────────
-   One flash, a shake of a couple of art pixels, and the words. Stepped, like
-   every other motion here; under reduced motion the words simply appear. */
-.table.is-shaking {
+/* ── Big plays ───────────────────────────────────────────────────────────
+   A flash, a shake and the name of the play, in three levels by how rare and
+   decisive the play is (see BombMoment): 1 a 2 laid down or a short straight,
+   2 a chop or a pair of 2s, 3 the plays that happen once in many games. Each
+   level answers harder — more flash, more shake, a bigger name held longer.
+   Stepped, like every other motion here; under reduced motion the words simply
+   appear. */
+.table.is-shaking--l2 {
   animation: table-shake 360ms steps(1, end);
+}
+.table.is-shaking--l3 {
+  animation: table-shake-hard 560ms steps(1, end);
 }
 @keyframes table-shake {
   0% {
@@ -2279,6 +2286,35 @@ textarea {
     transform: translate(0, 0);
   }
 }
+@keyframes table-shake-hard {
+  0% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(calc(3 * var(--px)), calc(-2 * var(--px)));
+  }
+  20% {
+    transform: translate(calc(-3 * var(--px)), calc(2 * var(--px)));
+  }
+  30% {
+    transform: translate(calc(2 * var(--px)), var(--px));
+  }
+  45% {
+    transform: translate(calc(-2 * var(--px)), calc(-1 * var(--px)));
+  }
+  60% {
+    transform: translate(var(--px), calc(2 * var(--px)));
+  }
+  75% {
+    transform: translate(calc(-1 * var(--px)), 0);
+  }
+  90% {
+    transform: translate(var(--px), calc(-1 * var(--px)));
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
 .bomb-flash {
   position: absolute;
   inset: 0;
@@ -2288,11 +2324,42 @@ textarea {
   opacity: 0;
   animation: bomb-flash 300ms steps(3, end);
 }
+/* Level 1: a glance of light, half the strength, one step. */
+.bomb-flash--l1 {
+  animation: bomb-flash-soft 200ms steps(2, end);
+}
+/* Level 3: a card-face flash, not a gold one, and it comes twice. */
+.bomb-flash--l3 {
+  background: rgba(230, 220, 199, 0.16);
+  animation: bomb-flash-double 560ms steps(6, end);
+}
 @keyframes bomb-flash {
   from {
     opacity: 1;
   }
   to {
+    opacity: 0;
+  }
+}
+@keyframes bomb-flash-soft {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes bomb-flash-double {
+  0% {
+    opacity: 1;
+  }
+  33% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
     opacity: 0;
   }
 }
@@ -2303,10 +2370,15 @@ textarea {
   z-index: calc(var(--layer-readout) + 1);
   display: grid;
   justify-items: center;
-  gap: var(--space-sm);
   pointer-events: none;
   transform: translate(-50%, -50%);
-  animation: bomb-hold 1800ms steps(1, end) both;
+  animation: bomb-hold 1600ms steps(1, end) both;
+}
+.bomb--l1 {
+  animation-duration: 1100ms;
+}
+.bomb--l3 {
+  animation-duration: 2200ms;
 }
 .bomb__title {
   font-size: calc(var(--text-lg) * 2);
@@ -2317,19 +2389,20 @@ textarea {
   text-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--ink);
   animation: bomb-pop 240ms steps(3, end) both;
 }
-/* Four 2s is not a bomb landing on something — it is the ceiling of the game.
-   Bone, the colour of a card face, rather than the gold of a standing play. */
-.bomb--ceiling .bomb__title {
-  color: var(--bone);
+.bomb--l1 .bomb__title {
+  font-size: calc(var(--text-lg) * 1.25);
+  text-shadow: var(--px) var(--px) 0 var(--ink);
+  animation-name: bomb-pop-soft;
 }
-.bomb__detail {
-  padding: var(--space-xs) var(--space-sm);
-  background: var(--ink);
-  border: var(--px) solid var(--gold);
-  box-shadow: var(--px) var(--px) 0 var(--shade);
-  font-size: var(--text-sm);
-  white-space: nowrap;
+/* The rarest plays in the colour of a card face rather than the gold of a
+   standing play, the largest and held longest. */
+.bomb--l3 .bomb__title {
+  font-size: calc(var(--text-lg) * 2.5);
   color: var(--bone);
+  text-shadow:
+    calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--ink),
+    calc(4 * var(--px)) calc(4 * var(--px)) 0 var(--gold);
+  animation-duration: 320ms;
 }
 @keyframes bomb-pop {
   0% {
@@ -2347,6 +2420,19 @@ textarea {
     transform: scale(1);
   }
 }
+@keyframes bomb-pop-soft {
+  0% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 @keyframes bomb-hold {
   0%,
   88% {
@@ -2356,9 +2442,17 @@ textarea {
     opacity: 0;
   }
 }
+/* A phone's names come down with its type, and each level keeps its step above
+   the one before, as wide as the narrowest screen allows. */
 @media (max-width: 720px) {
-  .bomb__title {
+  .bomb--l1 .bomb__title {
     font-size: var(--text-lg);
+  }
+  .bomb--l2 .bomb__title {
+    font-size: calc(var(--text-lg) * 1.3);
+  }
+  .bomb--l3 .bomb__title {
+    font-size: calc(var(--text-lg) * 1.6);
   }
 }
 
@@ -2643,21 +2737,22 @@ textarea {
    pixel grid holds. Mouse sizes are unchanged. */
 @media (pointer: coarse) {
   :root {
-    /* Above a phone, every control a finger presses stands a finger tall —
-       buttons, fields and chips alike. Phones step down from here (see
-       "Responsive tiers"). */
+    /* On a desktop touch screen every control a finger presses stands a
+       finger tall — buttons, fields and chips alike. Tablets and phones step
+       down from here (see "Responsive tiers"). */
     --control-md: max(44px, calc(15 * var(--px)));
     --control-sm: 44px;
   }
   /* A button on its own is not a chip in a list, whatever height token it
-     borrows: the corner controls and Sit here stay a finger tall. */
+     borrows: the corner controls stay a finger tall. (Sit here lives in a seat
+     row, so it takes the row's chip height on every tier, like the chips
+     beside it.) */
   :root {
     --corner: max(44px, calc(15 * var(--px)));
   }
   .log__toggle,
   .tablemenu__toggle,
-  .helpbtn,
-  .seats__sit {
+  .helpbtn {
     min-height: var(--corner);
   }
   .helpbtn {
@@ -2673,16 +2768,26 @@ textarea {
 
 /* ── Responsive tiers ────────────────────────────────────────────────────
    Three bands, and every size that should respond to the screen responds in
-   the same steps: a wide screen (over 720px), a phone (381–720px) and a small
-   phone (380px and under — a 360 or 375 wide handset). Each band sets the type
-   scale, the spacer between groups and, on touch, the three control heights;
-   nothing else is resized per band, and no element picks a smaller role to fit
-   a phone — the roles themselves come down.
+   the same steps: desktop (over 1024px), tablet (721–1024px) and phone (720px
+   and under). Each band sets the type scale, the spacer between groups and, on
+   touch, the three control heights; nothing else is resized per band, and no
+   element picks a smaller role to fit a phone — the roles themselves come down.
+
+   The group spacer lands at 36, 30 and 24px on the three (desktop and phone
+   share the token; the phone's --scale makes it smaller), always a whole number
+   of art pixels.
 
    Controls come down against the padding beside their labels, not on their
    own: a control reads as a clumsy slab when it is tall and tight, however easy
    it is to hit. Side padding runs a little under half the height. The action a
    screen is for (--control-lg) holds a finger's 44px in every band. */
+@media (max-width: 1024px) {
+  :root {
+    --text-md: 15px;
+    --text-lg: 22px;
+    --space-group: calc(var(--u) * 2.5);
+  }
+}
 @media (max-width: 720px) {
   :root {
     --text-xs: 12px;
@@ -2692,26 +2797,17 @@ textarea {
     --space-group: var(--space-lg);
   }
 }
-@media (max-width: 380px) {
+@media (pointer: coarse) and (max-width: 1024px) {
   :root {
-    --text-xs: 11px;
-    --text-sm: 12px;
-    --text-md: 13px;
-    --text-lg: 18px;
-    --space-group: var(--space-md);
+    --control-lg: 44px;
+    --control-md: 40px;
+    --control-sm: 32px;
   }
 }
 @media (pointer: coarse) and (max-width: 720px) {
   :root {
-    --control-lg: 44px;
     --control-md: 36px;
     --control-sm: 28px;
-  }
-}
-@media (pointer: coarse) and (max-width: 380px) {
-  :root {
-    --control-md: 32px;
-    --control-sm: 26px;
   }
 }
 

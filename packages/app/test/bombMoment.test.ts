@@ -3,11 +3,13 @@ import { detectCombo, type Card, type Combo, type GameEvent } from '@big-two/eng
 import { readMoment } from '../src/components/board/BombMoment.js';
 
 /**
- * Which plays get the bomb moment.
+ * Which plays get a moment, and how big a one.
  *
- * The moment is only worth anything if it is rare: a bomb landing on a 2, a
- * bomb answering a bomb, and four 2s. Everything else — including a bomb led
- * onto an empty table — is an ordinary play and must stay one.
+ * Three levels, by how rare and how decisive the play is. Level 1 is a 2 laid
+ * down or a short straight; level 2 a chop, a pair of 2s or a longer straight;
+ * level 3 the plays that happen once in many games. Everything else —
+ * including a bomb led onto an empty table — is an ordinary play and must stay
+ * one. The callout names the kind of play and nothing else.
  */
 
 const c = (rank: Card['rank'], suit: Card['suit']): Card => ({ rank, suit });
@@ -21,56 +23,69 @@ const played = (playerId: string, cards: Card[]): GameEvent => ({
   playerId,
   combo: combo(cards),
 });
-const label = (id: string) => (id === 'seat-2' ? 'Mia' : id);
 
 const QUAD_SEVENS = [c('7', 'SPADE'), c('7', 'CLUB'), c('7', 'DIAMOND'), c('7', 'HEART')];
+const PAIR_OF_TWOS = [c('2', 'SPADE'), c('2', 'HEART')];
+const FOUR_PAIR_CHAIN = [
+  c('3', 'SPADE'),
+  c('3', 'CLUB'),
+  c('4', 'SPADE'),
+  c('4', 'CLUB'),
+  c('5', 'SPADE'),
+  c('5', 'CLUB'),
+  c('6', 'SPADE'),
+  c('6', 'CLUB'),
+];
+const run = (length: number): Card[] => {
+  const ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'] as const;
+  return ranks.slice(0, length).map((rank, i) => c(rank, i % 2 ? 'CLUB' : 'SPADE'));
+};
 
-describe('the bomb moment', () => {
-  it('calls a bomb on a 2 a chop, and says who did it', () => {
-    const history = [played('seat-1', [c('2', 'HEART')]), played('seat-2', QUAD_SEVENS)];
-    expect(readMoment(history, 1, 'seat-1', label)).toMatchObject({
-      tone: 'chop',
-      title: 'Chopped!',
-      detail: 'Mia bombs a 2',
-    });
+describe('big plays', () => {
+  it('names the play and nothing else', () => {
+    const cue = readMoment([played('seat-1', [c('2', 'HEART')]), played('seat-2', QUAD_SEVENS)], 1)!;
+    expect(Object.keys(cue).sort()).toEqual(['key', 'level', 'title']);
+    expect(cue.title).toBe('Chopped!');
   });
 
-  it('speaks to you when the bomb is yours', () => {
-    const history = [played('seat-2', [c('2', 'HEART')]), played('seat-1', QUAD_SEVENS)];
-    expect(readMoment(history, 1, 'seat-1', label)?.detail).toBe('You bomb a 2');
+  it('gives a single 2 the first level', () => {
+    expect(readMoment([played('seat-2', [c('2', 'SPADE')])], 0)).toMatchObject({ level: 1, title: 'A 2!' });
   });
 
-  it('calls a bomb on a bomb a counter-bomb', () => {
+  it('raises a pair of 2s to the second, and three 2s to the third', () => {
+    expect(readMoment([played('seat-2', PAIR_OF_TWOS)], 0)).toMatchObject({ level: 2, title: 'Pair of 2s!' });
+    const three = [c('2', 'SPADE'), c('2', 'CLUB'), c('2', 'HEART')];
+    expect(readMoment([played('seat-2', three)], 0)).toMatchObject({ level: 3, title: 'Three 2s!' });
+  });
+
+  it('makes a chop of a single 2 level two, and of a pair of 2s level three', () => {
+    const chopOne = [played('seat-1', [c('2', 'HEART')]), played('seat-2', QUAD_SEVENS)];
+    expect(readMoment(chopOne, 1)).toMatchObject({ level: 2, title: 'Chopped!' });
+    const chopPair = [played('seat-1', PAIR_OF_TWOS), played('seat-2', FOUR_PAIR_CHAIN)];
+    expect(readMoment(chopPair, 1)).toMatchObject({ level: 3, title: 'Chopped!' });
+  });
+
+  it('makes a bomb on a bomb level three', () => {
     const quadEights = [c('8', 'SPADE'), c('8', 'CLUB'), c('8', 'DIAMOND'), c('8', 'HEART')];
     const history = [played('seat-1', QUAD_SEVENS), played('seat-2', quadEights)];
-    expect(readMoment(history, 1, 'seat-1', label)).toMatchObject({ tone: 'counter', title: 'Counter-bomb!' });
+    expect(readMoment(history, 1)).toMatchObject({ level: 3, title: 'Counter-bomb!' });
   });
 
-  it('celebrates a straight of five or more, led or answered', () => {
-    const five = [c('3', 'SPADE'), c('4', 'CLUB'), c('5', 'HEART'), c('6', 'SPADE'), c('7', 'DIAMOND')];
-    expect(readMoment([played('seat-2', five)], 0, 'seat-1', label)).toMatchObject({
-      tone: 'straight',
-      title: 'Straight of 5!',
-      detail: 'Mia runs 3 to 7',
-    });
-    const seven = [...five, c('8', 'CLUB'), c('9', 'HEART')];
-    expect(readMoment([played('seat-1', seven)], 0, 'seat-1', label)).toMatchObject({
-      title: 'Straight of 7!',
-      detail: 'You run 3 to 9',
-    });
+  it('makes four 2s level three', () => {
+    const twos = [c('2', 'SPADE'), c('2', 'CLUB'), c('2', 'DIAMOND'), c('2', 'HEART')];
+    expect(readMoment([played('seat-2', twos)], 0)).toMatchObject({ level: 3, title: 'Four 2s!' });
+  });
+
+  it('grades a straight by its length: five or six, seven to nine, ten or more', () => {
+    expect(readMoment([played('seat-2', run(5))], 0)).toMatchObject({ level: 1, title: 'Straight of 5!' });
+    expect(readMoment([played('seat-2', run(6))], 0)?.level).toBe(1);
+    expect(readMoment([played('seat-2', run(7))], 0)).toMatchObject({ level: 2, title: 'Straight of 7!' });
+    expect(readMoment([played('seat-2', run(9))], 0)?.level).toBe(2);
+    expect(readMoment([played('seat-2', run(10))], 0)).toMatchObject({ level: 3, title: 'Straight of 10!' });
   });
 
   it('leaves a straight shorter than five alone', () => {
-    const four = [c('3', 'SPADE'), c('4', 'CLUB'), c('5', 'HEART'), c('6', 'SPADE')];
-    expect(readMoment([played('seat-2', four)], 0, 'seat-1', label)).toBeNull();
-  });
-
-  it('gives four 2s its own moment', () => {
-    const twos = [c('2', 'SPADE'), c('2', 'CLUB'), c('2', 'DIAMOND'), c('2', 'HEART')];
-    expect(readMoment([played('seat-2', twos)], 0, 'seat-1', label)).toMatchObject({
-      tone: 'ceiling',
-      title: 'Four 2s!',
-    });
+    expect(readMoment([played('seat-2', run(4))], 0)).toBeNull();
   });
 
   it('leaves a bomb led onto a clear table, and ordinary plays, alone', () => {
@@ -79,7 +94,8 @@ describe('the bomb moment', () => {
       { type: 'TRICK_RESET', leader: 'seat-2', wonBy: 'seat-1' },
       played('seat-2', QUAD_SEVENS),
     ];
-    expect(readMoment(cleared, 2, 'seat-1', label)).toBeNull();
-    expect(readMoment([played('seat-1', [c('9', 'CLUB')])], 0, 'seat-1', label)).toBeNull();
+    expect(readMoment(cleared, 2)).toBeNull();
+    expect(readMoment([played('seat-1', [c('9', 'CLUB')])], 0)).toBeNull();
+    expect(readMoment([played('seat-1', [c('K', 'CLUB'), c('K', 'SPADE')])], 0)).toBeNull();
   });
 });

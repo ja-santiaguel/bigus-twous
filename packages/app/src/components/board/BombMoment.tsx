@@ -1,47 +1,50 @@
 import { useEffect, useRef, useState } from 'react';
-import { cardValue, isBombType, type Combo, type GameEvent, type PlayerId } from '@big-two/engine';
+import { isBombType, type Combo, type GameEvent } from '@big-two/engine';
 
 /**
- * The bomb, celebrated.
+ * The big plays, celebrated — in proportion.
  *
- * Chopping a 2 is the moment Tiến Lên is built around — the highest card in the
- * game, answered by a hand saved for exactly this — and it used to land looking
- * like any other play with a "Four of a kind" caption. Now the table flashes,
- * shakes by a couple of art pixels, and says what happened in words.
+ * Chopping a 2 is the moment Tiến Lên is built around, and it used to land
+ * looking like any other play with a "Four of a kind" caption. Now the table
+ * answers the play with a flash, a shake and its name — and how hard it answers
+ * depends on how rare and how decisive the play is, in three levels:
+ *
+ *   1  A 2 laid down, a straight of five or six. Strong, and seen most rounds:
+ *      the name, a light flash, no shake.
+ *   2  A chop (a bomb on a single 2), a pair of 2s, a straight of seven to
+ *      nine. A turn that swings the round: flash, a short shake, the name large.
+ *   3  A bomb on a pair or three of 2s, a bomb answering a bomb, four 2s, three
+ *      2s, a straight of ten or more. Once in many games: the strongest flash, a
+ *      longer shake, the name largest and held longest.
+ *
+ * Only the kind of play is named. Who made it is already on the table — the
+ * cards are in front of their seat, and the log says it in words — and the
+ * callout is read in a glance, not a sentence.
  *
  * Read from the event log, like every other animation cue: the moment reacts to
  * what the table already decided, so it is identical whether the play came from
- * this tab or across a socket, and it can never hold the game up.
- *
- * Only moments that matter get one — a bomb on a 2, a bomb answering a bomb,
- * four 2s, the hand nothing beats, and a straight of five cards or more, which
- * empties a big part of somebody's hand at once. A bomb simply led onto an
- * empty table is a strong play, not an event.
+ * this tab or across a socket, and it can never hold the game up. A bomb led
+ * onto an empty table is a strong play, not an event.
  */
+
+export type MomentLevel = 1 | 2 | 3;
 
 export interface BombMomentCue {
   /** The event index. A new one remounts the callout, restarting its animation. */
   key: number;
-  tone: 'chop' | 'counter' | 'ceiling' | 'straight';
+  level: MomentLevel;
   title: string;
-  detail: string;
 }
 
-/** How long the callout stays up, and how long the table shakes. */
-const HOLD_MS = 1_800;
-const SHAKE_MS = 360;
+/** How long the callout stays up, and how long the table shakes, by level. */
+const HOLD_MS: Record<MomentLevel, number> = { 1: 1_100, 2: 1_600, 3: 2_200 };
+const SHAKE_MS: Record<MomentLevel, number> = { 1: 0, 2: 360, 3: 560 };
 
-export function useBombMoment(
-  history: GameEvent[],
-  youId: PlayerId,
-  labelFor: (id: PlayerId) => string,
-): { moment: BombMomentCue | null; shaking: boolean } {
+export function useBombMoment(history: GameEvent[]): { moment: BombMomentCue | null; shaking: MomentLevel | null } {
   const [moment, setMoment] = useState<BombMomentCue | null>(null);
-  const [shaking, setShaking] = useState(false);
+  const [shaking, setShaking] = useState<MomentLevel | null>(null);
   /** How much of the log has been looked at. Null until the first look. */
   const seen = useRef<number | null>(null);
-  const label = useRef(labelFor);
-  label.current = labelFor;
   // Timers live in refs, not in the effect's cleanup: the log changes again on
   // the very next turn, and cleaning up then would strand the callout on screen.
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -53,20 +56,24 @@ export function useBombMoment(
     // five minutes ago is not news. A shorter log is a new round.
     if (from === null || history.length < from) return;
 
+    // Several plays can arrive at once; the biggest of them is the one shown.
     let found: BombMomentCue | null = null;
     for (let i = from; i < history.length; i++) {
-      found = readMoment(history, i, youId, label.current) ?? found;
+      const cue = readMoment(history, i);
+      if (cue && (!found || cue.level >= found.level)) found = cue;
     }
     if (!found) return;
 
     const cue = found;
     setMoment(cue);
-    setShaking(true);
+    if (SHAKE_MS[cue.level] > 0) {
+      setShaking(cue.level);
+      timers.current.push(setTimeout(() => setShaking(null), SHAKE_MS[cue.level]));
+    }
     timers.current.push(
-      setTimeout(() => setShaking(false), SHAKE_MS),
-      setTimeout(() => setMoment((current) => (current?.key === cue.key ? null : current)), HOLD_MS),
+      setTimeout(() => setMoment((current) => (current?.key === cue.key ? null : current)), HOLD_MS[cue.level]),
     );
-  }, [history, youId]);
+  }, [history]);
 
   useEffect(
     () => () => {
@@ -78,70 +85,60 @@ export function useBombMoment(
   return { moment, shaking };
 }
 
-/** The shortest straight that gets a moment. */
+/** The shortest straight that gets a moment, and where the next levels start. */
 export const MOMENT_STRAIGHT_LENGTH = 5;
+const STRAIGHT_LEVEL_2 = 7;
+const STRAIGHT_LEVEL_3 = 10;
 
 /** Exported for tests: the moment, if any, that the play at `index` deserves. */
-export function readMoment(
-  history: GameEvent[],
-  index: number,
-  youId: PlayerId,
-  labelFor: (id: PlayerId) => string,
-): BombMomentCue | null {
+export function readMoment(history: GameEvent[], index: number): BombMomentCue | null {
   const event = history[index];
   if (!event || event.type !== 'CARDS_PLAYED') return null;
-
-  const you = event.playerId === youId;
-  const who = you ? 'You' : labelFor(event.playerId);
-  const verb = (plain: string, third: string) => (you ? plain : third);
-
   const { combo } = event;
+  const moment = (level: MomentLevel, title: string): BombMomentCue => ({ key: index, level, title });
+
   if (combo.type === 'STRAIGHT' && combo.cards.length >= MOMENT_STRAIGHT_LENGTH) {
-    const ordered = [...combo.cards].sort((a, b) => cardValue(a) - cardValue(b));
-    return {
-      key: index,
-      tone: 'straight',
-      title: `Straight of ${combo.cards.length}!`,
-      detail: `${who} ${verb('run', 'runs')} ${ordered[0]!.rank} to ${ordered[ordered.length - 1]!.rank}`,
-    };
-  }
-  if (!isBombType(combo.type)) return null;
-
-  // What it landed on: the last play since the table last cleared.
-  let beaten: Combo | null = null;
-  for (let j = index - 1; j >= 0; j--) {
-    const earlier = history[j]!;
-    if (earlier.type === 'TRICK_RESET' || earlier.type === 'ROUND_ENDED') break;
-    if (earlier.type === 'CARDS_PLAYED') {
-      beaten = earlier.combo;
-      break;
-    }
+    const length = combo.cards.length;
+    return moment(length >= STRAIGHT_LEVEL_3 ? 3 : length >= STRAIGHT_LEVEL_2 ? 2 : 1, `Straight of ${length}!`);
   }
 
-  if (event.combo.type === 'FOUR_OF_A_KIND' && event.combo.cards[0]?.rank === '2') {
-    return {
-      key: index,
-      tone: 'ceiling',
-      title: 'Four 2s!',
-      detail: `${who} ${verb('play', 'plays')} the hand nothing beats`,
-    };
+  const allTwos = combo.cards.every((card) => card.rank === '2');
+  if (combo.type === 'FOUR_OF_A_KIND' && allTwos) return moment(3, 'Four 2s!');
+
+  if (isBombType(combo.type)) {
+    const beaten = lastPlayBefore(history, index);
+    if (!beaten) return null;
+    const twos = twoCount(beaten);
+    // A bomb on one 2 is the chop the game is built around; on two or three
+    // it takes a bigger bomb, and a bigger bomb is rarer.
+    if (twos === 1) return moment(2, 'Chopped!');
+    if (twos > 1) return moment(3, 'Chopped!');
+    if (isBombType(beaten.type)) return moment(3, 'Counter-bomb!');
+    return null;
   }
-  const two = beaten ? twoName(beaten) : null;
-  if (two) {
-    return { key: index, tone: 'chop', title: 'Chopped!', detail: `${who} ${verb('bomb', 'bombs')} ${two}` };
-  }
-  if (beaten && isBombType(beaten.type)) {
-    return { key: index, tone: 'counter', title: 'Counter-bomb!', detail: `${who} ${verb('beat', 'beats')} the bomb` };
+
+  if (allTwos) {
+    if (combo.type === 'SINGLE') return moment(1, 'A 2!');
+    if (combo.type === 'PAIR') return moment(2, 'Pair of 2s!');
+    if (combo.type === 'TRIPLE') return moment(3, 'Three 2s!');
   }
   return null;
 }
 
-function twoName(combo: Combo): string | null {
-  if (!combo.cards.every((card) => card.rank === '2')) return null;
-  if (combo.type === 'SINGLE') return 'a 2';
-  if (combo.type === 'PAIR') return 'a pair of 2s';
-  if (combo.type === 'TRIPLE') return 'three 2s';
+/** What a play landed on: the last play since the table last cleared. */
+function lastPlayBefore(history: GameEvent[], index: number): Combo | null {
+  for (let j = index - 1; j >= 0; j--) {
+    const earlier = history[j]!;
+    if (earlier.type === 'TRICK_RESET' || earlier.type === 'ROUND_ENDED') return null;
+    if (earlier.type === 'CARDS_PLAYED') return earlier.combo;
+  }
   return null;
+}
+
+/** How many 2s a single, pair or three of 2s holds; zero for anything else. */
+function twoCount(combo: Combo): number {
+  if (!combo.cards.every((card) => card.rank === '2')) return 0;
+  return combo.type === 'SINGLE' || combo.type === 'PAIR' || combo.type === 'TRIPLE' ? combo.cards.length : 0;
 }
 
 /**
@@ -152,10 +149,14 @@ export function BombCallout({ moment }: { moment: BombMomentCue | null }) {
   if (!moment) return null;
   return (
     <>
-      <span key={`flash-${moment.key}`} className="bomb-flash" aria-hidden="true" />
-      <div key={`callout-${moment.key}`} className={`bomb bomb--${moment.tone}`} role="status" aria-live="assertive">
+      <span key={`flash-${moment.key}`} className={`bomb-flash bomb-flash--l${moment.level}`} aria-hidden="true" />
+      <div
+        key={`callout-${moment.key}`}
+        className={`bomb bomb--l${moment.level}`}
+        role="status"
+        aria-live={moment.level === 1 ? 'polite' : 'assertive'}
+      >
         <span className="bomb__title">{moment.title}</span>
-        <span className="bomb__detail">{moment.detail}</span>
       </div>
     </>
   );

@@ -108,7 +108,7 @@ export function Table() {
   };
   const seatNames = useSeatNames();
   const labelFor = (id: string | null) => (id ? personName(SEAT_IDS.indexOf(id), humanSeat, seatNames) : 'Nobody');
-  const bomb = useBombMoment(playerView?.history ?? NO_HISTORY, HUMAN_ID, labelFor);
+  const bomb = useBombMoment(playerView?.history ?? NO_HISTORY);
   // A pass changes nothing in the middle of the table, so the announcement of
   // plays there never mentioned it. Said separately, for screen readers.
   const lastEvent = (playerView?.history ?? NO_HISTORY).at(-1);
@@ -472,7 +472,11 @@ export function Table() {
         </div>
       )}
 
-      <div className={`table ${bomb.shaking ? 'is-shaking' : ''}`} ref={zones.anchor('layer')} {...sweepHandlers}>
+      <div
+        className={`table ${bomb.shaking ? `is-shaking is-shaking--l${bomb.shaking}` : ''}`}
+        ref={zones.anchor('layer')}
+        {...sweepHandlers}
+      >
         {self.opponents.map((opponent) => (
           <OpponentSeat
             key={opponent.id}

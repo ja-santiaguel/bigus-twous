@@ -13,7 +13,8 @@ const FADE_MS = 260;
  * with a `data-hint` attribute; this is mounted once at the root.
  *
  * Found from the pointer's position rather than from events on the button,
- * because browsers do not deliver pointer events to disabled controls. A mouse
+ * because browsers do not deliver pointer events to disabled controls — the
+ * topmost element there, so a control covered by a popup stays quiet. A mouse
  * only: a finger pressing a dead button gets the read-out and the rules sheet,
  * not a label that would sit under the fingertip.
  */
@@ -48,9 +49,12 @@ export function DisabledHint() {
       position.current = { x: event.clientX, y: event.clientY };
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const under = document
-          .elementsFromPoint(event.clientX, event.clientY)
-          .find((el): el is HTMLElement => el instanceof HTMLElement && el.matches(':disabled[data-hint]'));
+        // Only what is actually on top: a button behind an open dialog, a
+        // menu or the rules sheet is not what the pointer is on, so it says
+        // nothing. (Every element under the point, which this used to read,
+        // included the whole table behind the leave confirmation.)
+        const top = document.elementFromPoint(event.clientX, event.clientY);
+        const under = top?.closest<HTMLElement>(':disabled[data-hint]') ?? undefined;
         const text = under?.dataset['hint'];
         const current = shown.current;
         if (text) {

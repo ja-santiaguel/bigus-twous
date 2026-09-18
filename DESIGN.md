@@ -140,24 +140,25 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
 - **Nothing that follows the pointer leaves the screen.** The copy toast and the
   disabled-button hint slide back to stay 8px inside every edge.
 - Floating controls sit `--u` in from the viewport edge, never flush against it.
-- **Responsive tiers.** Three bands — a wide screen (over 720px), a phone
-  (381–720px) and a small phone (380px and under) — and everything that should
-  respond to the screen responds in the same steps. Each band sets the type
+- **Responsive tiers.** Three bands — desktop (over 1024px), tablet
+  (721–1024px) and phone (720px and under) — and everything that should respond
+  to the screen responds in the same steps. Each band sets the type
   scale, the spacer between groups and, on touch, the control heights. An
   element asks for a *role* (`--text-md`, `--space-group`, `--control-sm`) and
   never a smaller role to fit a phone: the roles themselves come down.
 
-  | | Wide | Phone | Small phone |
+  | | Desktop | Tablet | Phone |
   |---|---|---|---|
-  | Type xs / sm / md / lg | 12 / 14 / 16 / 24 | 12 / 13 / 14 / 20 | 11 / 12 / 13 / 18 |
-  | `--space-group` | `--space-xl` | `--space-lg` | `--space-md` |
-  | Touch lg / md / sm | 44 / 44 / 44 | 44 / 36 / 28 | 44 / 32 / 26 |
+  | Type xs / sm / md / lg | 12 / 14 / 16 / 24 | 12 / 14 / 15 / 22 | 12 / 13 / 14 / 20 |
+  | `--space-group` | `--space-lg` (36px) | 10 art px (30px) | `--space-lg` at the phone's scale (24px) |
+  | Touch lg / md / sm | 44 / 44 / 44 | 44 / 40 / 32 | 44 / 36 / 28 |
 
   `--control-lg` is the action a screen exists for (Start game, Ready up, Pass,
   Play cards) — the same as any button on a wide screen, and the height that
   holds at a finger's 44px as the others come down. `--control-md` is every other
   button and every field; `--control-sm` a chip or tag inside a list — a
-  difficulty, a match length, a ready state, the sit button. A mouse gets the
+  difficulty, a match length, a ready state, and Sit here, which takes its row's
+  chip height on every tier so the seat rows stay even. A mouse gets the
   pixel-exact art heights on every band. The spacing *scale* (`--space-xs` to
   `--space-xl`) is in art pixels and follows `--scale`; `--space-group` is the
   role that steps. The art never changes size; the box around it does.
@@ -341,14 +342,22 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   seconds of a turn, 5 and 2½ of a pile pick.
 - One pulse per urgent state (turn marker, a clock's last sixth), stepped, and off
   under `prefers-reduced-motion`.
-- **The bomb moment** is the one celebration during play: a gold flash across
-  the table (3 steps), a shake of one or two art pixels (360ms), and a callout
-  over the middle — "Chopped!", "Counter-bomb!", "Four 2s!" (bone) or
-  "Straight of N!" at twice `--text-lg`, popping in over 3 steps, with a line
-  saying who did it ("Mia runs 3 to 7"). It holds for 1.8s. Only for a bomb on
-  a 2, a bomb on a bomb, four 2s, and a straight of five cards or more, led or
-  answered; read from the event log, never replayed on arrival. Reduced motion
-  keeps the words only.
+- **Big plays** are the one celebration during play, and they answer in
+  proportion — three levels, by how rare and how decisive the play is:
+
+  | Level | Plays | The table answers with |
+  |---|---|---|
+  | 1 | A single 2; a straight of 5 or 6 | A half-strength flash, no shake; the name at 1.25× `--text-lg`, held 1.1s |
+  | 2 | A chop (a bomb on one 2); a pair of 2s; a straight of 7–9 | A gold flash in 3 steps, a 1–2 art pixel shake (360ms); the name at 2×, held 1.6s |
+  | 3 | A bomb on a pair or three of 2s; a bomb on a bomb; three 2s; four 2s; a straight of 10 or more | A card-face flash that comes twice, a 2–3 pixel shake (560ms); the name at 2.5× in bone on a gold shadow, held 2.2s |
+
+  Only the kind of play is named — "A 2!", "Chopped!", "Counter-bomb!",
+  "Straight of 8!" — never who made it: their cards are already in front of
+  their seat, and the log says it in words. On a phone the names come down with
+  the type (1×, 1.3×, 1.6× `--text-lg`) and still fit a 360px screen. When
+  several plays arrive at once, the biggest is shown. Read from the event log,
+  never replayed on arrival; a bomb led onto an empty table is not an event.
+  Reduced motion keeps the words only.
 
 ## 10. Layout
 
@@ -530,6 +539,9 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   saying what would enable it: "Wait for your turn", "Pick cards to play",
   "No cards picked", "Only the host can change this", "Not connected to the
   table". Mouse only — a finger has the read-out and the rules sheet.
+  Only the control actually on top of the pointer answers: one behind an open
+  dialog, menu or the rules sheet stays quiet.
+
 - **The trick has no zoom cursor.** Pointing at it opens it, so a magnifier
   promised a click that does nothing more; a scrollable opened trick shows the
   grab hand.
