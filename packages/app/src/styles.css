@@ -83,6 +83,9 @@
      buttons beside inputs are md; chips, seat buttons, the sort control and
      small controls in tight rows are sm. See DESIGN.md. */
   --control-sm: calc(11 * var(--px));
+  /* The action a screen exists for — Start game, Ready up, Pass, Play cards —
+     stands taller than the buttons around it. */
+  --control-lg: calc(19 * var(--px));
   /* The height of the corner controls (Log, Menu, How to play): the table's
      top padding is measured from them, so it follows them. */
   --corner: var(--control-sm);
@@ -709,12 +712,13 @@ body {
   grid-column: 2;
   grid-row: 1;
 }
+/* Just clear of the play area, not at arm's length from it: on a phone the old
+   gap pushed the pile and its count off the right of the screen. */
 .centre > .mound {
   grid-column: 3;
   grid-row: 1;
   justify-self: start;
-  /* Fixed clearance from the in-play zone, so the two never crowd each other. */
-  margin-left: var(--space-lg);
+  margin-left: var(--space-md);
 }
 /* The combo type, stated once under the trick instead of once per group. */
 .centre__read {
@@ -1138,6 +1142,14 @@ body {
 
   .centre {
     gap: var(--space-md);
+    /* The side columns come in on a phone, and the pile sits centred in its
+       own: at a desktop's two card widths the pile and its count ran off the
+       right of the screen. */
+    --centre-side: calc(var(--card-w) * 1.4);
+  }
+  .centre > .mound {
+    justify-self: center;
+    margin-left: 0;
   }
 
   .menu {
@@ -1868,6 +1880,13 @@ textarea {
   height: var(--control-md);
   padding: 0 var(--space-md);
 }
+/* The action the screen is for: a full-width start, and the table's Pass and
+   Play cards. Taller than the buttons beside them, and the only heights a
+   phone does not step down. */
+.btn--wide,
+.actionbar--primary > .btn {
+  height: var(--control-lg);
+}
 .btn--small,
 .chip,
 .seats__sit {
@@ -2349,12 +2368,16 @@ textarea {
 .optionset {
   border: var(--px) solid var(--table-hi);
 }
+/* The row's name takes the width it needs, and never less than six units, so
+   "Rounds" keeps its distance from the first chip instead of running into it;
+   the rows still line up, because the two names are near enough the same
+   length. */
 .optionset__row {
   display: grid;
-  grid-template-columns: calc(var(--u) * 6) 1fr;
+  grid-template-columns: minmax(calc(var(--u) * 6), max-content) 1fr;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-sm);
+  gap: var(--space-md);
+  padding: var(--space-sm);
 }
 .optionset__row + .optionset__row {
   border-top: var(--px) solid var(--table-hi);
@@ -2606,6 +2629,7 @@ textarea {
    pixel grid holds. Mouse sizes are unchanged. */
 @media (pointer: coarse) {
   :root {
+    --control-lg: max(48px, calc(19 * var(--px)));
     /* Anything a finger presses to *do* something — every button, every field —
        stands a finger tall. */
     --control-md: max(44px, calc(15 * var(--px)));
@@ -2633,6 +2657,19 @@ textarea {
     :root {
       --control-md: max(round(up, 44px, var(--px)), calc(15 * var(--px)));
       --control-sm: max(round(up, 34px, var(--px)), calc(11 * var(--px)));
+      --control-lg: max(round(up, 48px, var(--px)), calc(19 * var(--px)));
+    }
+  }
+
+  /* A phone is held in one hand and read at arm's length, so its controls come
+     down a step from a tablet's: the action a screen is for stays a finger
+     tall, ordinary buttons and fields lose a few pixels, and the chips inside a
+     list come down furthest. Heights, not art: the drawing never changes. */
+  @media (max-width: 720px) {
+    :root {
+      --control-lg: max(44px, calc(19 * var(--px)));
+      --control-md: max(40px, calc(15 * var(--px)));
+      --control-sm: max(30px, calc(11 * var(--px)));
     }
   }
 }
@@ -2821,6 +2858,18 @@ textarea {
     flex-wrap: nowrap;
     gap: var(--px);
   }
+  /* The chair, square and at the row's full height: the row is narrow and an
+     icon says "sit here" in a fifth of the width. */
+  /* A chair, as wide as a phone's buttons and as tall as the chips it shares
+     the row with — every seat row is then the same height, and the target is
+     wider than the difficulties beside it. */
+  .seats__sit--icon {
+    width: var(--control-md);
+    height: var(--control-sm);
+    min-height: var(--control-sm);
+    padding: 0;
+    justify-content: center;
+  }
   .seats__diff .chip,
   .seats__sit,
   .seats__ready,
@@ -2840,10 +2889,25 @@ textarea {
   .optionset__row {
     padding: var(--space-xs) var(--space-sm);
   }
-  /* Fields sit a step closer together: the labels are small and the controls
-     are short, so --space-md between them read as a gap between sections. */
+  /* One spacer between every group, so a lobby reads as a stack of blocks: the
+     seats, your name, the match, the seed, the start. Inside a group things sit
+     --space-xs to --space-sm apart — a title and the line describing it, a
+     label and its field. */
+  .panel__title {
+    margin-bottom: var(--space-xs);
+  }
+  .seats {
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-xl);
+  }
   .field {
-    margin-bottom: var(--space-sm);
+    margin-bottom: var(--space-xl);
+  }
+  .field:last-of-type {
+    margin-bottom: 0;
+  }
+  .panel__start {
+    margin-top: var(--space-xl);
   }
   .opp__name {
     flex-wrap: wrap;
@@ -2899,10 +2963,10 @@ textarea {
   /* Room above the flat row for a card to lift, and to rise clear of a finger. */
   .hand {
     height: calc(var(--card-h) * 4 / 3 + 34 * var(--px));
-    /* The actions stand off the hand by as much as the seats stand off the Log
-       and Menu buttons — --space-xl, counting the row gap already between them.
-       The board then reads as three bands with the same air around each. */
-    margin-bottom: calc(var(--space-xl) - var(--space-md));
+    /* The actions stand clear of the hand without drifting to the bottom of the
+       screen: the hand's own box already leaves room under the cards for one to
+       lift, and this takes a step back off it. */
+    margin-bottom: calc(-1 * var(--space-sm));
   }
 }
 

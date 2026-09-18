@@ -140,14 +140,14 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
 - **Nothing that follows the pointer leaves the screen.** The copy toast and the
   disabled-button hint slide back to stay 8px inside every edge.
 - Floating controls sit `--u` in from the viewport edge, never flush against it.
-- **On a touch screen (`pointer: coarse`) a button stands 44px tall**, rounded
-  up to a whole art pixel — every `--control-md` control, and the buttons that
-  borrow the smaller height too (Log, Menu, How to play, Sit here). The art does
-  not grow; the button does. **Chips and tags** — a difficulty, a match length, a
-  ready state — take `--control-sm` at 34px instead: they sit inside a list, and
-  they are wide, which is most of what makes a target easy to hit. Four rows of
-  44px controls filled a phone's lobby on their own. A mouse keeps the
-  pixel-exact heights.
+- **Three heights, and they step down on a phone.** `--control-lg` is the
+  action a screen exists for (Start game, Ready up, Pass, Play cards);
+  `--control-md` is every other button and every field; `--control-sm` is a chip
+  or tag inside a list — a difficulty, a match length, a ready state, the seat
+  chair. A mouse gets the pixel-exact art heights. A touch screen gets
+  48 / 44 / 34, and a phone (720px and under) 44 / 40 / 30: held in one hand,
+  read closer, and four rows of finger-tall controls filled a lobby on their
+  own. The art never changes size; the box around it does.
 - `--corner` is the height of the table's corner controls, and the table's top
   padding is measured from it, so the seats keep their distance from Log and
   Menu whatever those measure.
@@ -360,6 +360,9 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   clear of it: two pixels square with a mouse, three on a phone. The button is
   always as wide as its longest label (all labels share one cell, the others
   hidden), so the pips never move as it cycles.
+- **The discard pile sits `--space-md` from the play area**, and on a phone it
+  is centred in a side column narrowed to 1.4 card widths: at a desktop's two,
+  the pile and its count ran off the right of the screen.
 - **Dropping to play** takes the whole middle band of the table, between the
   seats and your controls, not just the trick's box. While a card is dragged
   over it, it lights exactly as your hand does — a dashed gold ring and gold
@@ -409,10 +412,10 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     `--space-xl` clear at its foot for the captions that hang below the cards),
     so the trick sits between the seats and the hand's group, not on top of the
     read-out.
-  - The hand stands off the actions below it by `--space-xl`, the same as the
-    seats stand off the corner buttons above them, so the board reads as three
-    bands with equal air around each. A short screen scales that down in step
-    with the top gap.
+  - The hand stands off the actions below it by about half the gap the seats
+    keep from the corner buttons: the hand's own box already holds room under
+    the cards for one to lift, so the measured air is even. A short screen
+    scales it down in step with the top gap.
   - Below the hand, two rows: Sort
     and Clear, then Pass and Play cards at half the width each, Play on the
     right where a right thumb rests. Touch buttons stand `--space-md` apart,
@@ -528,11 +531,19 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   the gap either side.
 - **A lobby's seat row stays one line on a phone** by getting smaller, not by
   wrapping: the seat and the name read a size down, the chips take `--text-xs`
-  and tighter padding, and "Sit here" says "Sit" (it is still announced in
-  full). The row keeps "(CPU)" — which seat a computer holds is worth the
-  width. What gives way as the row tightens is the player's name on the right,
-  never the seat it belongs to. A row is as tall as its controls and no
-  taller.
+  and tighter padding, and **Sit here becomes the chair icon** — square, as wide
+  as a phone's buttons and as tall as the chips it shares the row with, and
+  still announced as "Sit at Seat 3". The row keeps "(CPU)" — which seat a
+  computer holds is worth the width. What gives way as the row tightens is the
+  player's name on the right, never the seat it belongs to. A row is as tall as
+  its controls and no taller.
+- **A phone's lobby is a stack of blocks**, one `--space-xl` apart: the seats
+  (their title and the line describing it `--space-xs` apart, as one thing), your
+  name, the match length, the seed, the start group. Inside a block, `--space-xs`
+  to `--space-sm`.
+- **An option set's row name takes the width it needs** (never less than six
+  units) with `--space-md` to its chips, so "Rounds" keeps clear of the first
+  option instead of touching it.
 - **Lobbies share one frame** (`LobbyLayout`): Leave top left, the seats, the
   options common to both modes, the options unique to one, then the full-width
   primary action. Only mode-unique options differ in layout.

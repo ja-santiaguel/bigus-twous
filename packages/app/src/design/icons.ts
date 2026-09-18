@@ -22,6 +22,9 @@ const REFRESH: Bitmap = ['..###.#', '.#...##', '#...###', '#......', '#.....#', 
 /** The tick in the copy toast. */
 const CHECK: Bitmap = ['.......', '......#', '.....##', '#...##.', '##.##..', '.###...', '..#....'];
 
+/** A chair seen from the front — the empty seat you can take. */
+const SEAT: Bitmap = ['.#####.', '.#...#.', '.#...#.', '#######', '#.....#', '#.....#', '.......'];
+
 /** A question mark — how to play. */
 const HELP: Bitmap = ['.#####.', '##...##', '.....##', '...###.', '...#...', '.......', '...#...'];
 
@@ -30,6 +33,7 @@ export const ICON_RUNS = {
   refresh: toRuns(REFRESH),
   check: toRuns(CHECK),
   help: toRuns(HELP),
+  seat: toRuns(SEAT),
 } as const;
 
 export type IconName = keyof typeof ICON_RUNS;

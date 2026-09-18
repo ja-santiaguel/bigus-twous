@@ -1,6 +1,7 @@
 import { DIFFICULTIES } from '@big-two/ai';
 import { useGameStore } from '../store/gameStore.js';
 import { COMPACT_QUERY, useMediaQuery } from '../lib/useMediaQuery.js';
+import { PixelIcon } from '../components/PixelIcon.js';
 import { joinLinkFor } from '../lib/joinLink.js';
 import { seatName } from '../lib/format.js';
 import { Copyable } from '../components/Copyable.js';
@@ -154,16 +155,17 @@ export function WaitingRoom() {
               // still clear, so a friend who has gone home is not a seat lost.
               cpu ? (
                 <button
-                  className="seats__sit"
+                  className={`seats__sit ${compact ? 'seats__sit--icon' : ''}`}
                   aria-label={`Sit at ${seatName(seat.seat)}`}
                   onClick={() => takeSeat(seat.seat)}
                   disabled={!connected}
                   data-hint="Not connected to the table"
                 >
-                  {/* A phone's seat row also carries the seat, who holds it and
-                      three difficulties. The label gives up a word there; what
-                      it does is unchanged, and so is how it is announced. */}
-                  {compact ? 'Sit' : 'Sit here'}
+                  {/* A phone's seat row also carries the seat, who holds it
+                      and three difficulties. There the button is the chair
+                      itself; what it does is unchanged, and so is how it is
+                      announced — the label above carries the words. */}
+                  {compact ? <PixelIcon name="seat" /> : 'Sit here'}
                 </button>
               ) : iAmHost && !mine ? (
                 <button
