@@ -49,20 +49,20 @@ describe('big plays', () => {
   });
 
   it('gives a single 2 the first level', () => {
-    expect(readMoment([played('seat-2', [c('2', 'SPADE')])], 0)).toMatchObject({ level: 1, title: 'A 2!' });
+    expect(readMoment([played('seat-2', [c('2', 'SPADE')])], 0)).toMatchObject({ level: 1, title: 'Big Two!' });
   });
 
   it('raises a pair of 2s to the second, and three 2s to the third', () => {
-    expect(readMoment([played('seat-2', PAIR_OF_TWOS)], 0)).toMatchObject({ level: 2, title: 'Pair of 2s!' });
+    expect(readMoment([played('seat-2', PAIR_OF_TWOS)], 0)).toMatchObject({ level: 2, title: 'Pair of Twos!' });
     const three = [c('2', 'SPADE'), c('2', 'CLUB'), c('2', 'HEART')];
-    expect(readMoment([played('seat-2', three)], 0)).toMatchObject({ level: 3, title: 'Three 2s!' });
+    expect(readMoment([played('seat-2', three)], 0)).toMatchObject({ level: 3, title: 'Three Twos!' });
   });
 
   it('makes a chop of a single 2 level two, and of a pair of 2s level three', () => {
     const chopOne = [played('seat-1', [c('2', 'HEART')]), played('seat-2', QUAD_SEVENS)];
     expect(readMoment(chopOne, 1)).toMatchObject({ level: 2, title: 'Chopped!' });
     const chopPair = [played('seat-1', PAIR_OF_TWOS), played('seat-2', FOUR_PAIR_CHAIN)];
-    expect(readMoment(chopPair, 1)).toMatchObject({ level: 3, title: 'Chopped!' });
+    expect(readMoment(chopPair, 1)).toMatchObject({ level: 3, title: 'Double chop!' });
   });
 
   it('makes a bomb on a bomb level three', () => {
@@ -73,7 +73,7 @@ describe('big plays', () => {
 
   it('makes four 2s level three', () => {
     const twos = [c('2', 'SPADE'), c('2', 'CLUB'), c('2', 'DIAMOND'), c('2', 'HEART')];
-    expect(readMoment([played('seat-2', twos)], 0)).toMatchObject({ level: 3, title: 'Four 2s!' });
+    expect(readMoment([played('seat-2', twos)], 0)).toMatchObject({ level: 3, title: 'Four Twos!' });
   });
 
   it('grades a straight by how often a hand holds one: four or five, six or seven, eight or more', () => {
@@ -82,7 +82,17 @@ describe('big plays', () => {
     expect(readMoment([played('seat-2', run(6))], 0)).toMatchObject({ level: 2, title: 'Straight of 6!' });
     expect(readMoment([played('seat-2', run(7))], 0)?.level).toBe(2);
     expect(readMoment([played('seat-2', run(8))], 0)).toMatchObject({ level: 3, title: 'Straight of 8!' });
-    expect(readMoment([played('seat-2', run(12))], 0)?.level).toBe(3);
+    expect(readMoment([played('seat-2', run(12))], 0)).toMatchObject({ level: 3, title: 'Dragon!' });
+  });
+
+  it('spells twos out, so no "2" ever sits beside an "S" in the pixel face', () => {
+    const titles = [
+      readMoment([played('seat-2', [c('2', 'SPADE')])], 0)!.title,
+      readMoment([played('seat-2', PAIR_OF_TWOS)], 0)!.title,
+      readMoment([played('seat-2', [c('2', 'SPADE'), c('2', 'CLUB'), c('2', 'HEART')])], 0)!.title,
+      readMoment([played('seat-2', [c('2', 'SPADE'), c('2', 'CLUB'), c('2', 'DIAMOND'), c('2', 'HEART')])], 0)!.title,
+    ];
+    for (const title of titles) expect(title).not.toMatch(/\d/);
   });
 
   it('leaves a straight of three alone: nearly every hand holds one', () => {

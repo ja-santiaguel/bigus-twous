@@ -364,9 +364,27 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   nearest in rarity; a straight of 3 (95%) is commoner than any of them and is
   not a moment.
 
-  Only the kind of play is named — "A 2!", "Chopped!", "Counter-bomb!",
-  "Straight of 8!" — never who made it: their cards are already in front of
-  their seat, and the log says it in words. On a phone the names come down with
+  Only the kind of play is named, never who made it — their cards are already
+  in front of their seat, and the log says it in words:
+
+  | Play | Name |
+  |---|---|
+  | A single 2 | Big Two! (the card the game is named for) |
+  | A pair / three / four 2s | Pair of Twos! · Three Twos! · Four Twos! |
+  | A bomb on one / two / three 2s | Chopped! · Double chop! · Triple chop! |
+  | A bomb on a bomb | Counter-bomb! |
+  | A straight of 4–11 | Straight of N! |
+  | A straight of all twelve ranks, 3 to the ace | Dragon! |
+
+  **Twos are spelled out, never "2s".** In the pixel face a "2" beside an "S"
+  reads as one smudged glyph, and a word carries more weight in a shout.
+
+  **The name sits on a band.** An ink band (95%) runs across the whole table
+  behind it, opening from its centre line before the name pops in, so the name
+  has one dark ground wherever it lands — over the trick, the seats or the
+  felt. The letters carry a one-pixel ink outline on all four sides as well as
+  their drop shadow. The band's edges say the level: `--table-hi` at 1, gold at
+  2, card-face bone with gold inside them and a thicker band at 3. On a phone the names come down with
   the type (1×, 1.3×, 1.6× `--text-lg`) and still fit a 360px screen. When
   several plays arrive at once, the biggest is shown. Read from the event log,
   never replayed on arrival; a bomb led onto an empty table is not an event.

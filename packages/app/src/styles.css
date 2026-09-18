@@ -2364,21 +2364,49 @@ textarea {
   }
 }
 .bomb {
+  /* A band of ink across the whole table, not bare words: the name lands on the
+     cards, the trick and the seats, and over any of them outlined pixel type on
+     its own was often unreadable. The band gives it one dark ground to sit on
+     wherever it lands, and edges that say how big the play was. */
   position: absolute;
-  left: 50%;
+  left: 0;
+  right: 0;
   top: 40%;
   z-index: calc(var(--layer-readout) + 1);
   display: grid;
   justify-items: center;
+  padding: var(--space-md) var(--space-sm);
   pointer-events: none;
-  transform: translate(-50%, -50%);
-  animation: bomb-hold 1600ms steps(1, end) both;
+  background: rgba(27, 31, 36, 0.95);
+  border-block: var(--px) solid var(--table-hi);
+  box-shadow: 0 calc(2 * var(--px)) 0 var(--shade);
+  transform: translateY(-50%);
+  transform-origin: 50% 50%;
+  animation:
+    bomb-band 120ms steps(2, end) both,
+    bomb-hold 1600ms steps(1, end) both;
 }
 .bomb--l1 {
-  animation-duration: 1100ms;
+  padding-block: var(--space-sm);
+  animation:
+    bomb-band 120ms steps(2, end) both,
+    bomb-hold 1100ms steps(1, end) both;
 }
+/* A chop, a pair of Twos, a long straight: the band takes gold edges. */
+.bomb--l2 {
+  border-color: var(--gold);
+}
+/* The rarest plays: a thicker band, card-face edges with gold inside them. */
 .bomb--l3 {
-  animation-duration: 2200ms;
+  padding-block: var(--space-lg);
+  border-block: calc(2 * var(--px)) solid var(--bone);
+  box-shadow:
+    inset 0 var(--px) 0 var(--gold),
+    inset 0 calc(-1 * var(--px)) 0 var(--gold),
+    0 calc(3 * var(--px)) 0 var(--shade);
+  animation:
+    bomb-band 160ms steps(2, end) both,
+    bomb-hold 2200ms steps(1, end) both;
 }
 .bomb__title {
   font-size: calc(var(--text-lg) * 2);
@@ -2386,23 +2414,40 @@ textarea {
   letter-spacing: var(--px);
   white-space: nowrap;
   color: var(--gold);
-  text-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--ink);
+  /* A full one-pixel outline in ink, then the drop shadow: every glyph keeps
+     a dark edge on all four sides, whatever colour is behind it. */
+  text-shadow:
+    var(--px) 0 0 var(--ink),
+    calc(-1 * var(--px)) 0 0 var(--ink),
+    0 var(--px) 0 var(--ink),
+    0 calc(-1 * var(--px)) 0 var(--ink),
+    calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--ink);
   animation: bomb-pop 240ms steps(3, end) both;
 }
 .bomb--l1 .bomb__title {
   font-size: calc(var(--text-lg) * 1.25);
-  text-shadow: var(--px) var(--px) 0 var(--ink);
   animation-name: bomb-pop-soft;
 }
-/* The rarest plays in the colour of a card face rather than the gold of a
-   standing play, the largest and held longest. */
+/* The rarest plays in the colour of a card face, largest and held longest. */
 .bomb--l3 .bomb__title {
   font-size: calc(var(--text-lg) * 2.5);
   color: var(--bone);
   text-shadow:
-    calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--ink),
-    calc(4 * var(--px)) calc(4 * var(--px)) 0 var(--gold);
+    var(--px) 0 0 var(--ink),
+    calc(-1 * var(--px)) 0 0 var(--ink),
+    0 var(--px) 0 var(--ink),
+    0 calc(-1 * var(--px)) 0 var(--ink),
+    calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--gold);
   animation-duration: 320ms;
+}
+/* The band opens from its centre line before the name arrives. */
+@keyframes bomb-band {
+  from {
+    transform: translateY(-50%) scaleY(0);
+  }
+  to {
+    transform: translateY(-50%) scaleY(1);
+  }
 }
 @keyframes bomb-pop {
   0% {

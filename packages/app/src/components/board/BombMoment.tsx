@@ -26,7 +26,11 @@ import { isBombType, type Combo, type GameEvent } from '@big-two/engine';
  *
  * Only the kind of play is named. Who made it is already on the table — the
  * cards are in front of their seat, and the log says it in words — and the
- * callout is read in a glance, not a sentence.
+ * callout is read in a glance, not a sentence. Twos are spelled out: in the
+ * pixel face a "2" beside an "S" reads as one smudged glyph ("THREE 2S"), and
+ * a word carries more weight in a shout anyway. A 2 laid down is "Big Two!",
+ * the card the game is named for; a straight from 3 to the ace is a Dragon, as
+ * the players call it.
  *
  * Read from the event log, like every other animation cue: the moment reacts to
  * what the table already decided, so it is identical whether the play came from
@@ -96,6 +100,8 @@ export function useBombMoment(history: GameEvent[]): { moment: BombMomentCue | n
 export const MOMENT_STRAIGHT_LENGTH = 4;
 const STRAIGHT_LEVEL_2 = 6;
 const STRAIGHT_LEVEL_3 = 8;
+/** Every rank a straight can use, 3 to the ace: the Dragon. */
+const DRAGON_LENGTH = 12;
 
 /** Exported for tests: the moment, if any, that the play at `index` deserves. */
 export function readMoment(history: GameEvent[], index: number): BombMomentCue | null {
@@ -106,11 +112,12 @@ export function readMoment(history: GameEvent[], index: number): BombMomentCue |
 
   if (combo.type === 'STRAIGHT' && combo.cards.length >= MOMENT_STRAIGHT_LENGTH) {
     const length = combo.cards.length;
-    return moment(length >= STRAIGHT_LEVEL_3 ? 3 : length >= STRAIGHT_LEVEL_2 ? 2 : 1, `Straight of ${length}!`);
+    const level = length >= STRAIGHT_LEVEL_3 ? 3 : length >= STRAIGHT_LEVEL_2 ? 2 : 1;
+    return moment(level, length === DRAGON_LENGTH ? 'Dragon!' : `Straight of ${length}!`);
   }
 
   const allTwos = combo.cards.every((card) => card.rank === '2');
-  if (combo.type === 'FOUR_OF_A_KIND' && allTwos) return moment(3, 'Four 2s!');
+  if (combo.type === 'FOUR_OF_A_KIND' && allTwos) return moment(3, 'Four Twos!');
 
   if (isBombType(combo.type)) {
     const beaten = lastPlayBefore(history, index);
@@ -119,15 +126,16 @@ export function readMoment(history: GameEvent[], index: number): BombMomentCue |
     // A bomb on one 2 is the chop the game is built around; on two or three
     // it takes a bigger bomb, and a bigger bomb is rarer.
     if (twos === 1) return moment(2, 'Chopped!');
-    if (twos > 1) return moment(3, 'Chopped!');
+    if (twos === 2) return moment(3, 'Double chop!');
+    if (twos === 3) return moment(3, 'Triple chop!');
     if (isBombType(beaten.type)) return moment(3, 'Counter-bomb!');
     return null;
   }
 
   if (allTwos) {
-    if (combo.type === 'SINGLE') return moment(1, 'A 2!');
-    if (combo.type === 'PAIR') return moment(2, 'Pair of 2s!');
-    if (combo.type === 'TRIPLE') return moment(3, 'Three 2s!');
+    if (combo.type === 'SINGLE') return moment(1, 'Big Two!');
+    if (combo.type === 'PAIR') return moment(2, 'Pair of Twos!');
+    if (combo.type === 'TRIPLE') return moment(3, 'Three Twos!');
   }
   return null;
 }
