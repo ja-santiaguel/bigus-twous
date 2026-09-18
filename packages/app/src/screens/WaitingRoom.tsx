@@ -1,5 +1,6 @@
 import { DIFFICULTIES } from '@big-two/ai';
 import { useGameStore } from '../store/gameStore.js';
+import { COMPACT_QUERY, useMediaQuery } from '../lib/useMediaQuery.js';
 import { joinLinkFor } from '../lib/joinLink.js';
 import { seatName } from '../lib/format.js';
 import { Copyable } from '../components/Copyable.js';
@@ -45,6 +46,7 @@ export function WaitingRoom() {
   const setPlayerName = useGameStore((s) => s.setPlayerName);
   const leaveTable = useGameStore((s) => s.leaveTable);
   const error = useGameStore((s) => s.error);
+  const compact = useMediaQuery(COMPACT_QUERY);
 
   // The site's own address, subfolder included: on a GitHub project site the
   // game lives at /<repository>/, and a link to the bare domain finds nothing.
@@ -158,7 +160,10 @@ export function WaitingRoom() {
                   disabled={!connected}
                   data-hint="Not connected to the table"
                 >
-                  Sit here
+                  {/* A phone's seat row also carries the seat, who holds it and
+                      three difficulties. The label gives up a word there; what
+                      it does is unchanged, and so is how it is announced. */}
+                  {compact ? 'Sit' : 'Sit here'}
                 </button>
               ) : iAmHost && !mine ? (
                 <button

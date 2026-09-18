@@ -140,9 +140,17 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
 - **Nothing that follows the pointer leaves the screen.** The copy toast and the
   disabled-button hint slide back to stay 8px inside every edge.
 - Floating controls sit `--u` in from the viewport edge, never flush against it.
-- **On a touch screen (`pointer: coarse`) both control heights are at least
-  44px**, rounded up to a whole art pixel. The art does not grow; the button
-  does. A mouse keeps the pixel-exact heights.
+- **On a touch screen (`pointer: coarse`) a button stands 44px tall**, rounded
+  up to a whole art pixel — every `--control-md` control, and the buttons that
+  borrow the smaller height too (Log, Menu, How to play, Sit here). The art does
+  not grow; the button does. **Chips and tags** — a difficulty, a match length, a
+  ready state — take `--control-sm` at 34px instead: they sit inside a list, and
+  they are wide, which is most of what makes a target easy to hit. Four rows of
+  44px controls filled a phone's lobby on their own. A mouse keeps the
+  pixel-exact heights.
+- `--corner` is the height of the table's corner controls, and the table's top
+  padding is measured from it, so the seats keep their distance from Log and
+  Menu whatever those measure.
 
 ## 5. Buttons
 
@@ -401,6 +409,10 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     `--space-xl` clear at its foot for the captions that hang below the cards),
     so the trick sits between the seats and the hand's group, not on top of the
     read-out.
+  - The hand stands off the actions below it by `--space-xl`, the same as the
+    seats stand off the corner buttons above them, so the board reads as three
+    bands with equal air around each. A short screen scales that down in step
+    with the top gap.
   - Below the hand, two rows: Sort
     and Clear, then Pass and Play cards at half the width each, Play on the
     right where a right thumb rests. Touch buttons stand `--space-md` apart,
@@ -515,10 +527,12 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   the top seat is offset toward the centre so the gap above the trick matches
   the gap either side.
 - **A lobby's seat row stays one line on a phone** by getting smaller, not by
-  wrapping: the chips take `--text-xs` and tighter padding, and the bracket
-  after the seat name goes (the tag beside it and the name after it say the
-  same thing). What gives way as the row tightens is the player's name on the
-  right, never the seat it belongs to.
+  wrapping: the seat and the name read a size down, the chips take `--text-xs`
+  and tighter padding, and "Sit here" says "Sit" (it is still announced in
+  full). The row keeps "(CPU)" — which seat a computer holds is worth the
+  width. What gives way as the row tightens is the player's name on the right,
+  never the seat it belongs to. A row is as tall as its controls and no
+  taller.
 - **Lobbies share one frame** (`LobbyLayout`): Leave top left, the seats, the
   options common to both modes, the options unique to one, then the full-width
   primary action. Only mode-unique options differ in layout.
@@ -560,7 +574,8 @@ is moving. A phone is the machine to design for.
   seats' fans, the room a card lifts into and the gaps between rows — in that
   order — so the hand keeps its cards and Pass and Play cards keep their reach.
   Sizes stay put; spacing gives. Below 600px the seats drop the `(CPU)` line
-  and Sort's pips sit beside their button, the one place they do.
+  (the table's seats only — a lobby keeps it) and Sort's pips sit beside their
+  button, the one place they do.
 - **The board takes no page gestures.** `touch-action: none` on the table and
   `overscroll-behavior: none` on the page: a drag across the board picks cards
   and can never scroll, bounce or pull-to-refresh the page. What opens *over*
