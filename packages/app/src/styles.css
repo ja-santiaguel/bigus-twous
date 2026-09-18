@@ -2368,13 +2368,12 @@ textarea {
 .optionset {
   border: var(--px) solid var(--table-hi);
 }
-/* The row's name takes the width it needs, and never less than six units, so
-   "Rounds" keeps its distance from the first chip instead of running into it;
-   the rows still line up, because the two names are near enough the same
-   length. */
+/* One column for the row names, wide enough for the longest of them, so every
+   row's options start on the same left edge — and far enough from the name that
+   "Rounds" does not touch the first of them. */
 .optionset__row {
   display: grid;
-  grid-template-columns: minmax(calc(var(--u) * 6), max-content) 1fr;
+  grid-template-columns: calc(var(--u) * 9) 1fr;
   align-items: center;
   gap: var(--space-md);
   padding: var(--space-sm);
@@ -2389,7 +2388,8 @@ textarea {
 .optionset__choices {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--px);
+  justify-content: flex-start;
+  gap: var(--space-xs);
 }
 .optionset__choices .chip {
   margin-left: 0;
@@ -2664,12 +2664,17 @@ textarea {
   /* A phone is held in one hand and read at arm's length, so its controls come
      down a step from a tablet's: the action a screen is for stays a finger
      tall, ordinary buttons and fields lose a few pixels, and the chips inside a
-     list come down furthest. Heights, not art: the drawing never changes. */
+     list come down furthest. Heights, not art: the drawing never changes.
+
+     The heights are picked against the padding beside the label, not on their
+     own — a control reads as square-ish and clumsy when it is tall and tight,
+     however easy it is to hit. Roughly: side padding is a little under half the
+     height (36 with --space-md either side, 28 with --space-sm). */
   @media (max-width: 720px) {
     :root {
       --control-lg: max(44px, calc(19 * var(--px)));
-      --control-md: max(40px, calc(15 * var(--px)));
-      --control-sm: max(30px, calc(11 * var(--px)));
+      --control-md: max(36px, calc(15 * var(--px)));
+      --control-sm: max(28px, calc(11 * var(--px)));
     }
   }
 }
@@ -2838,9 +2843,10 @@ textarea {
        row read "Seat 1 (…". */
     grid-template-columns: auto minmax(0, 1fr);
     gap: var(--space-xs) var(--space-sm);
-    /* A row is its controls and a hair, not its controls plus a margin: four
-       of them at a finger's height each filled a phone screen on their own. */
-    padding: var(--px) 0;
+    /* Air around the controls, not a margin: enough that one row reads apart
+       from the next, well short of the finger-tall rows that filled a phone
+       screen on their own. */
+    padding: var(--space-sm) 0;
   }
   /* The seat and who holds it read a size down on a phone, which is what buys
      the row the width to keep "(CPU)" and three difficulties on one line. */
@@ -2875,13 +2881,7 @@ textarea {
   .seats__ready,
   .optionset__choices .chip {
     font-size: var(--text-xs);
-    padding: 0 var(--space-xs);
     margin-left: 0;
-  }
-  /* The narrowest phones: the three difficulties close up further rather than
-     landing on the seat beside them. */
-  .seats__diff .chip {
-    padding: 0 var(--px);
   }
   .optionset__choices .chip {
     min-width: var(--control-sm);
@@ -2890,24 +2890,26 @@ textarea {
     padding: var(--space-xs) var(--space-sm);
   }
   /* One spacer between every group, so a lobby reads as a stack of blocks: the
-     seats, your name, the match, the seed, the start. Inside a group things sit
+     seats, your name, the match, the seed, the start. --space-lg, half a step
+     down from the --space-xl a wide screen uses: a phone's blocks are shorter,
+     so they need less between them to read apart. Inside a group things sit
      --space-xs to --space-sm apart — a title and the line describing it, a
      label and its field. */
   .panel__title {
     margin-bottom: var(--space-xs);
   }
   .seats {
-    margin-top: var(--space-xl);
-    margin-bottom: var(--space-xl);
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-lg);
   }
   .field {
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-lg);
   }
   .field:last-of-type {
     margin-bottom: 0;
   }
   .panel__start {
-    margin-top: var(--space-xl);
+    margin-top: var(--space-lg);
   }
   .opp__name {
     flex-wrap: wrap;

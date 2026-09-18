@@ -143,11 +143,18 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
 - **Three heights, and they step down on a phone.** `--control-lg` is the
   action a screen exists for (Start game, Ready up, Pass, Play cards);
   `--control-md` is every other button and every field; `--control-sm` is a chip
-  or tag inside a list — a difficulty, a match length, a ready state, the seat
-  chair. A mouse gets the pixel-exact art heights. A touch screen gets
-  48 / 44 / 34, and a phone (720px and under) 44 / 40 / 30: held in one hand,
+  or tag inside a list — a difficulty, a match length, a ready state, the sit
+  button. A mouse gets the pixel-exact art heights. A touch screen gets
+  48 / 44 / 34, and a phone (720px and under) 44 / 36 / 28: held in one hand,
   read closer, and four rows of finger-tall controls filled a lobby on their
   own. The art never changes size; the box around it does.
+- **A height is chosen against the padding beside the label, never on its own.**
+  Side padding runs a little under half the height — `--space-md` either side of
+  a 36px button, `--space-sm` of a 28px chip — so a control reads as a control
+  rather than a tall, tight slab. When a height comes down, check the padding
+  still holds that proportion; when a label will not fit, shorten the label
+  (Medium is "Med" on every screen, spoken in full) rather than squeezing the
+  padding away.
 - `--corner` is the height of the table's corner controls, and the table's top
   padding is measured from it, so the seats keep their distance from Log and
   Menu whatever those measure.
@@ -537,13 +544,16 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   computer holds is worth the width. What gives way as the row tightens is the
   player's name on the right, never the seat it belongs to. A row is as tall as
   its controls and no taller.
-- **A phone's lobby is a stack of blocks**, one `--space-xl` apart: the seats
-  (their title and the line describing it `--space-xs` apart, as one thing), your
-  name, the match length, the seed, the start group. Inside a block, `--space-xs`
-  to `--space-sm`.
-- **An option set's row name takes the width it needs** (never less than six
-  units) with `--space-md` to its chips, so "Rounds" keeps clear of the first
-  option instead of touching it.
+- **A phone's lobby is a stack of blocks**, one `--space-lg` apart — half a step
+  down from a wide screen's `--space-xl`, because a phone's blocks are shorter
+  and need less between them to read apart: the seats (their title and the line
+  describing it `--space-xs` apart, as one thing), your name, the match length,
+  the seed, the start group. Inside a block, `--space-xs` to `--space-sm`, and
+  `--space-sm` above and below each seat row so one row reads clear of the
+  next.
+- **An option set's rows share one name column** (nine units) with `--space-md`
+  to the options, so "Points" and "Rounds" keep clear of their chips and every
+  row's options start on the same left edge.
 - **Lobbies share one frame** (`LobbyLayout`): Leave top left, the seats, the
   options common to both modes, the options unique to one, then the full-width
   primary action. Only mode-unique options differ in layout.

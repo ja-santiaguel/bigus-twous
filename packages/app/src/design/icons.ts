@@ -22,8 +22,15 @@ const REFRESH: Bitmap = ['..###.#', '.#...##', '#...###', '#......', '#.....#', 
 /** The tick in the copy toast. */
 const CHECK: Bitmap = ['.......', '......#', '.....##', '#...##.', '##.##..', '.###...', '..#....'];
 
-/** A chair seen from the front — the empty seat you can take. */
-const SEAT: Bitmap = ['.#####.', '.#...#.', '.#...#.', '#######', '#.....#', '#.....#', '.......'];
+/**
+ * A plus — "take this seat".
+ *
+ * Not a chair and not a person: at seven pixels square a chair reads as a
+ * bracket and a person reads as a profile picture, and neither says what
+ * pressing it does. A plus in a seat's row says you are about to be added to
+ * it, and the button's label says the rest.
+ */
+const SIT: Bitmap = ['...#...', '...#...', '...#...', '#######', '...#...', '...#...', '...#...'];
 
 /** A question mark — how to play. */
 const HELP: Bitmap = ['.#####.', '##...##', '.....##', '...###.', '...#...', '.......', '...#...'];
@@ -33,7 +40,7 @@ export const ICON_RUNS = {
   refresh: toRuns(REFRESH),
   check: toRuns(CHECK),
   help: toRuns(HELP),
-  seat: toRuns(SEAT),
+  sit: toRuns(SIT),
 } as const;
 
 export type IconName = keyof typeof ICON_RUNS;

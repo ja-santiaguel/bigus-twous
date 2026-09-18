@@ -80,7 +80,7 @@ const ROLE_LABELS: Record<SeatRole, string> = { you: 'You', cpu: 'CPU', host: 'H
 /**
  * One seat. The same row in both lobbies, always in the same order:
  *
- *   Seat 2 (CPU)   [Sit here]              [Easy][Medium][Hard]
+ *   Seat 2 (CPU)   [Sit here]              [Easy][Med][Hard]
  *   Seat 3 (You)                                          Jason
  *
  * The seat and who holds it, said the same quiet way for everyone; what you can

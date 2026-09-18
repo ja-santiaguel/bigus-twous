@@ -5,9 +5,22 @@ import { LobbyLayout, SeatRow } from '../components/LobbyLayout.js';
 import { MatchField } from '../components/MatchField.js';
 import { SeedField } from '../components/SeedField.js';
 
-export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+/**
+ * How each difficulty is announced.
+ *
+ * The chips carry the short label — three of them sit in a seat's row beside
+ * the seat, who holds it and a button, and "Medium" is the word that made that
+ * row too wide on a phone. A screen reader is told the whole word.
+ */
+export const DIFFICULTY_SPOKEN: Record<Difficulty, string> = {
   easy: 'Easy',
   medium: 'Medium',
+  hard: 'Hard',
+};
+
+export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+  easy: 'Easy',
+  medium: 'Med',
   hard: 'Hard',
 };
 
@@ -57,7 +70,7 @@ export function Lobby() {
                       key={d}
                       className="chip"
                       aria-pressed={seat.difficulty === d}
-                      aria-label={`${seatName(seat.seat)} difficulty: ${DIFFICULTY_LABELS[d]}`}
+                      aria-label={`${seatName(seat.seat)} difficulty: ${DIFFICULTY_SPOKEN[d]}`}
                       onClick={() => setSeatDifficulty(seat.seat, d)}
                     >
                       {DIFFICULTY_LABELS[d]}

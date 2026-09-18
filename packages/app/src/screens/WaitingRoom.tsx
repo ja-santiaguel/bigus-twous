@@ -10,7 +10,7 @@ import { HostOnly } from '../components/HostOnly.js';
 import { LobbyLayout, SeatRow } from '../components/LobbyLayout.js';
 import { MatchField } from '../components/MatchField.js';
 import { SeedField } from '../components/SeedField.js';
-import { DIFFICULTY_LABELS } from './Lobby.js';
+import { DIFFICULTY_LABELS, DIFFICULTY_SPOKEN } from './Lobby.js';
 
 /**
  * A shared table before it deals.
@@ -165,7 +165,7 @@ export function WaitingRoom() {
                       and three difficulties. There the button is the chair
                       itself; what it does is unchanged, and so is how it is
                       announced — the label above carries the words. */}
-                  {compact ? <PixelIcon name="seat" /> : 'Sit here'}
+                  {compact ? <PixelIcon name="sit" /> : 'Sit here'}
                 </button>
               ) : iAmHost && !mine ? (
                 <button
@@ -186,7 +186,7 @@ export function WaitingRoom() {
                     key={d}
                     className="chip"
                     aria-pressed={seat.difficulty === d}
-                    aria-label={`${seatName(seat.seat)} difficulty: ${DIFFICULTY_LABELS[d]}`}
+                    aria-label={`${seatName(seat.seat)} difficulty: ${DIFFICULTY_SPOKEN[d]}`}
                     onClick={() => setSeatDifficulty(seat.seat, d)}
                     disabled={!canSet}
                     data-hint={iAmHost ? 'Not connected to the table' : 'Only the host can change this'}
