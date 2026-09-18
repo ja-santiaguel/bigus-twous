@@ -431,6 +431,15 @@ export function Table() {
       dropActive={drag.over === 'hand'}
     />
   );
+  /* Your running score, said the way each seat's is under its fan. Every other
+     seat's points were on the table and yours were nowhere until the round
+     ended. */
+  const myPoints = points[HUMAN_ID] ?? 0;
+  const myScore = (
+    <span className="myscore">
+      You · <span className="myscore__points">{myPoints}</span> {myPoints === 1 ? 'pt' : 'pts'}
+    </span>
+  );
   /* The round and the seed that dealt it, as one line of text: the seed reads
      the same whether this table is yours alone or shared, so a deal can be
      carried from one to the other. */
@@ -562,7 +571,8 @@ export function Table() {
               {handElement}
               <div className="actionbar">
                 <SortControl mode={sortMode} onCycle={cycleSort} />
-                <span className="actionbar__spacer" />
+                {/* Between Sort and Clear, in the row's own gap. */}
+                <span className="actionbar__spacer">{myScore}</span>
                 {clearButton}
               </div>
               <div className="actionbar actionbar--primary">
@@ -600,7 +610,9 @@ export function Table() {
 
               <div className="utility">
                 <SortControl mode={sortMode} onCycle={cycleSort} />
-                <span className="utility__seed">{gameInfo}</span>
+                <span className="utility__seed">
+                  {myScore} · {gameInfo}
+                </span>
                 <button className="btn btn--quiet" onClick={() => setConfirmLeave(true)}>
                   Leave table
                 </button>

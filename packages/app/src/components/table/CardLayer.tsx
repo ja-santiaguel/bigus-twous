@@ -478,14 +478,28 @@ const LayerShadow = memo(function LayerShadow({
       // (.cardlayer__card .pcard), so lifting a card hands its shadow over in
       // one smooth change instead of a blink.
       exit={{ opacity: 0, transition: { duration: reduced ? 0 : SHADOW_FADE_S, ease: 'easeOut' } }}
+      // A shadow that appears — a card played from your hand, a card coming to
+      // rest — waits for its card's flight before fading in. It is placed where
+      // the card is going, so fading in at once drew a shadow on the table
+      // before the card had arrived to cast it.
       transition={
         instant
           ? NONE
-          : { ...transition(reduced, SETTLE), opacity: { duration: reduced ? 0 : SHADOW_FADE_S, ease: 'easeOut' } }
+          : {
+              ...transition(reduced, SETTLE),
+              opacity: {
+                duration: reduced ? 0 : SHADOW_FADE_S,
+                delay: reduced ? 0 : CARD_FLIGHT_S,
+                ease: 'easeOut',
+              },
+            }
       }
     />
   );
 });
+
+/** How long a card takes to travel: SETTLE's duration. A shadow that appears waits this long. */
+const CARD_FLIGHT_S = typeof SETTLE.duration === 'number' ? SETTLE.duration : 0.22;
 
 /** Seconds a shadow takes to hand over between the shared group and a card's own. Matches the CSS. */
 const SHADOW_FADE_S = 0.18;

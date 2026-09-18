@@ -2382,15 +2382,19 @@ textarea {
   box-shadow: 0 calc(2 * var(--px)) 0 var(--shade);
   transform: translateY(-50%);
   transform-origin: 50% 50%;
+  /* In: the band sweeps open sideways from the centre of the table. Out: once
+     the name has lifted away, it folds shut onto its centre line — the same
+     line it opened along — instead of vanishing in a single frame. --exit-at
+     is when the way out starts: the callout's hold (BombMoment's HOLD_MS)
+     less the 220ms it takes to leave, so it has finished just as it unmounts. */
+  --exit-at: 1380ms;
   animation:
-    bomb-band 120ms steps(2, end) both,
-    bomb-hold 1600ms steps(1, end) both;
+    bomb-band-in 180ms steps(3, end) both,
+    bomb-band-out 220ms steps(4, jump-none) var(--exit-at) forwards;
 }
 .bomb--l1 {
   padding-block: var(--space-sm);
-  animation:
-    bomb-band 120ms steps(2, end) both,
-    bomb-hold 1100ms steps(1, end) both;
+  --exit-at: 880ms;
 }
 /* A chop, a pair of Twos, a long straight: the band takes gold edges. */
 .bomb--l2 {
@@ -2404,9 +2408,7 @@ textarea {
     inset 0 var(--px) 0 var(--gold),
     inset 0 calc(-1 * var(--px)) 0 var(--gold),
     0 calc(3 * var(--px)) 0 var(--shade);
-  animation:
-    bomb-band 160ms steps(2, end) both,
-    bomb-hold 2200ms steps(1, end) both;
+  --exit-at: 1980ms;
 }
 .bomb__title {
   font-size: calc(var(--text-lg) * 2);
@@ -2422,11 +2424,18 @@ textarea {
     0 var(--px) 0 var(--ink),
     0 calc(-1 * var(--px)) 0 var(--ink),
     calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--ink);
-  animation: bomb-pop 240ms steps(3, end) both;
+  /* The name arrives once the band is open, and leaves first, lifting a little
+     as it fades, before the band closes behind it. The ways out step with
+     jump-none, which always lands on the last frame: steps(n, end) can stop a
+     frame short when the clock ends a hair under 100%, and left the name
+     frozen at half opacity. */
+  animation:
+    bomb-pop 240ms steps(3, end) 120ms both,
+    bomb-title-out 160ms steps(3, jump-none) var(--exit-at) forwards;
 }
 .bomb--l1 .bomb__title {
   font-size: calc(var(--text-lg) * 1.25);
-  animation-name: bomb-pop-soft;
+  animation-name: bomb-pop-soft, bomb-title-out;
 }
 /* The rarest plays in the colour of a card face, largest and held longest. */
 .bomb--l3 .bomb__title {
@@ -2438,15 +2447,34 @@ textarea {
     0 var(--px) 0 var(--ink),
     0 calc(-1 * var(--px)) 0 var(--ink),
     calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--gold);
-  animation-duration: 320ms;
+  animation-duration: 320ms, 160ms;
 }
-/* The band opens from its centre line before the name arrives. */
-@keyframes bomb-band {
+@keyframes bomb-band-in {
   from {
-    transform: translateY(-50%) scaleY(0);
+    transform: translateY(-50%) scaleX(0);
   }
   to {
+    transform: translateY(-50%) scaleX(1);
+  }
+}
+@keyframes bomb-band-out {
+  from {
     transform: translateY(-50%) scaleY(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-50%) scaleY(0);
+    opacity: 0;
+  }
+}
+@keyframes bomb-title-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(calc(-3 * var(--px)));
+    opacity: 0;
   }
 }
 @keyframes bomb-pop {
@@ -2476,15 +2504,6 @@ textarea {
   }
   100% {
     transform: scale(1);
-  }
-}
-@keyframes bomb-hold {
-  0%,
-  88% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
   }
 }
 /* A phone's names come down with its type, and each level keeps its step above
@@ -2913,20 +2932,26 @@ textarea {
 .controls--compact {
   position: relative;
   width: 100%;
-  min-height: calc(2 * 1.35 * var(--text-sm));
-  /* The sentence's last line sits on the bottom of the row, so it is the same
-     distance from the cards whether the message runs to one line or two; the
-     row keeps two lines of height, so a longer message grows upward, into the
-     table's open space, not down into the hand. */
-  align-items: flex-end;
+  /* One line tall, always. The sentence hangs from the bottom of the row (see
+     below), so a message that runs to two lines grows upward into the play
+     area's open space — nothing in the row, and nothing above or below it,
+     moves. Sized to the content instead, a two-line message on a short phone
+     pushed the whole board up the screen. */
+  height: calc(1.35 * var(--text-sm));
+  min-height: 0;
+  align-items: center;
   /* Close over the hand's lift room, so the sentence reads as belonging to the
      cards under it rather than floating between them and the table. */
   margin-bottom: calc(-1 * (var(--space-md) + var(--space-sm)));
 }
 
-/* The pip stays centred on the sentence's last line. */
-.controls--compact > .turndot {
-  margin-bottom: calc((1.35 * var(--text-sm) - 5 * var(--px)) / 2);
+/* The sentence, out of the row's flow and anchored to its bottom: its last line
+   sits on the row, beside the pip, and any earlier line stacks above it. */
+.controls--compact .controls__read {
+  position: absolute;
+  left: calc(5 * var(--px) + var(--space-sm));
+  right: 0;
+  bottom: 0;
 }
 /* Touch buttons stand --space-md apart, a step wider than a mouse's --space-sm:
    a fingertip is less exact than a pointer, and Pass beside Play is the one
@@ -2947,6 +2972,34 @@ textarea {
 }
 .actionbar__spacer {
   flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+/* Your points: the seats' "0 pts" in the same quiet colour, the number itself
+   in bone so it is the part the eye lands on. */
+.myscore {
+  font-size: var(--text-sm);
+  color: var(--dim);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.myscore__points {
+  color: var(--bone);
+}
+/* Between two buttons on a narrow phone it is incidental meta, a size down,
+   and it gives way before the row does: at 360px it and the buttons beside it
+   were a few pixels wider than the screen. */
+.actionbar .myscore {
+  font-size: var(--text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.actionbar__spacer {
+  overflow: hidden;
+}
+.handzone {
+  min-width: 0;
 }
 .actionbar--primary > .btn {
   flex: 1;
@@ -3139,11 +3192,11 @@ textarea {
     margin-bottom: calc(var(--space-md) - var(--space-sm));
   }
   .controls--compact {
-    min-height: calc(1.35 * var(--text-sm));
     margin-bottom: calc(-1 * var(--space-sm));
   }
   .centre {
-    margin-bottom: var(--space-sm);
+    /* Room for the read-out's second line, which grows upward into it. */
+    margin-bottom: calc(1.35 * var(--text-sm) + var(--space-xs));
   }
 }
 

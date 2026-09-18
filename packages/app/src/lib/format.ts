@@ -31,7 +31,7 @@ export function cardsLabel(cards: Card[]): string {
   return cards.map(cardLabel).join(' ');
 }
 
-const SUIT_NAME: Record<Suit, string> = { SPADE: 'spades', CLUB: 'clubs', DIAMOND: 'diamonds', HEART: 'hearts' };
+export const SUIT_NAME: Record<Suit, string> = { SPADE: 'spades', CLUB: 'clubs', DIAMOND: 'diamonds', HEART: 'hearts' };
 const RANK_NAME: Partial<Record<Card['rank'], string>> = { J: 'jack', Q: 'queen', K: 'king', A: 'ace' };
 
 /**

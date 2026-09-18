@@ -348,6 +348,12 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   Every card's 220ms flight still lands before the next one leaves, so nothing
   is ever drawn mid-air, and the spread keeps four computers from ticking like a
   clock. A shared table keeps one pace for everybody watching.
+- **Your points are on the table**, said the way each seat's are under its fan:
+  "You · 12 pts", the number in bone. On a phone they sit between Sort and
+  Clear; on a wide screen they lead the round line in the bottom row.
+- **A shadow never arrives before its card.** A shadow that appears — a card
+  played from your hand, a card coming to rest — waits for its card's 220ms
+  flight before fading in, since it is placed where the card is going.
 - **Big plays** are the one celebration during play, and they answer in
   proportion — three levels, by how rare and how decisive the play is:
 
@@ -369,20 +375,25 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 
   | Play | Name |
   |---|---|
-  | A single 2 | Big Two! (the card the game is named for) |
+  | A single 2 | 2 of Spades! (the card itself: which 2 it is matters) |
   | A pair / three / four 2s | Pair of Twos! · Three Twos! · Four Twos! |
   | A bomb on one / two / three 2s | Chopped! · Double chop! · Triple chop! |
   | A bomb on a bomb | Counter-bomb! |
   | A straight of 4–11 | Straight of N! |
   | A straight of all twelve ranks, 3 to the ace | Dragon! |
 
-  **Twos are spelled out, never "2s".** In the pixel face a "2" beside an "S"
-  reads as one smudged glyph, and a word carries more weight in a shout.
+  **A "2" never sits directly beside an "S".** In the pixel face the two run
+  together into one smudged glyph, so several Twos are spelled out; "2 of
+  Spades" is fine, with a word between them.
 
   **The name sits on a band.** An ink band (95%) runs across the whole table
-  behind it, opening from its centre line before the name pops in, so the name
-  has one dark ground wherever it lands — over the trick, the seats or the
-  felt. The letters carry a one-pixel ink outline on all four sides as well as
+  behind it, so the name has one dark ground wherever it lands — over the
+  trick, the seats or the felt. **In:** the band sweeps open sideways from the
+  centre of the table (180ms, 3 steps), and the name pops in once it is open.
+  **Out:** the name lifts three pixels as it fades (160ms), then the band folds
+  shut onto its centre line (220ms), finishing just as the callout unmounts —
+  never a one-frame disappearance. Exits step with `jump-none`, which always
+  lands on the last frame. The letters carry a one-pixel ink outline on all four sides as well as
   their drop shadow. The band's edges say the level: `--table-hi` at 1, gold at
   2, card-face bone with gold inside them and a thicker band at 3. On a phone the names come down with
   the type (1×, 1.3×, 1.6× `--text-lg`) and still fit a 360px screen. When
@@ -463,9 +474,12 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     sits top left. "Menu" is a place, not an action — the one exception to
     labels leading with a verb.
   - Above your hand: the turn marker, what to do, and your clock, on one line,
-    the sentence beside the marker. Its last line sits `--space-lg` above the
-    cards whether it runs to one line or two — a longer message grows upward,
-    into the table — so it reads as belonging to the hand. The pip centres on
+    the sentence beside the marker. The row is one line tall, always; the
+    sentence hangs from its bottom, out of flow, so a two-line message grows
+    upward into the play area's open space and nothing on the board moves —
+    sized to its content, a second line pushed the whole board up a short
+    phone. Its last line sits `--space-lg` above the cards, so it reads as
+    belonging to the hand. The pip centres on
     that last line. A picked card rises 18px on a phone (26 with a mouse), clear
     of the text.
   - The trick and its captions are centred together in the play area (it keeps

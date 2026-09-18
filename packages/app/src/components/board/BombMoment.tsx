@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { isBombType, type Combo, type GameEvent } from '@big-two/engine';
+import { SUIT_NAME } from '../../lib/format.js';
 
 /**
  * The big plays, celebrated — in proportion.
@@ -26,11 +27,11 @@ import { isBombType, type Combo, type GameEvent } from '@big-two/engine';
  *
  * Only the kind of play is named. Who made it is already on the table — the
  * cards are in front of their seat, and the log says it in words — and the
- * callout is read in a glance, not a sentence. Twos are spelled out: in the
- * pixel face a "2" beside an "S" reads as one smudged glyph ("THREE 2S"), and
- * a word carries more weight in a shout anyway. A 2 laid down is "Big Two!",
- * the card the game is named for; a straight from 3 to the ace is a Dragon, as
- * the players call it.
+ * callout is read in a glance, not a sentence. A single 2 names the card —
+ * "2 of Spades!" — because which 2 it is matters: the 2 of Hearts beats every
+ * other card in the deck. Several Twos are spelled out: in the pixel face a
+ * "2" directly beside an "S" reads as one smudged glyph ("THREE 2S"). A
+ * straight from 3 to the ace is a Dragon, as the players call it.
  *
  * Read from the event log, like every other animation cue: the moment reacts to
  * what the table already decided, so it is identical whether the play came from
@@ -133,12 +134,14 @@ export function readMoment(history: GameEvent[], index: number): BombMomentCue |
   }
 
   if (allTwos) {
-    if (combo.type === 'SINGLE') return moment(1, 'Big Two!');
+    if (combo.type === 'SINGLE') return moment(1, `2 of ${capitalise(SUIT_NAME[combo.cards[0]!.suit])}!`);
     if (combo.type === 'PAIR') return moment(2, 'Pair of Twos!');
     if (combo.type === 'TRIPLE') return moment(3, 'Three Twos!');
   }
   return null;
 }
+
+const capitalise = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
 /** What a play landed on: the last play since the table last cleared. */
 function lastPlayBefore(history: GameEvent[], index: number): Combo | null {
