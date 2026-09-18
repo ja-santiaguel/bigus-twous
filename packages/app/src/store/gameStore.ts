@@ -1,3 +1,4 @@
+import { devPace } from '../lib/devFlags.js';
 import { create } from 'zustand';
 import {
   cardId,
@@ -92,6 +93,17 @@ export { SEAT_IDS };
  * has to agree on.
  */
 export const DEFAULT_HUMAN_SEAT = 0;
+
+/**
+ * Alone at the table, and already out of the round: only computers are left to
+ * play, so the rest of the round plays out at the `fast` pace.
+ *
+ * Alone only. A shared table paces itself for everybody watching, and a
+ * person still in the round there is deciding something worth the wait.
+ */
+export function playsOutWithoutYou(state: { online: boolean; view: PlayerView | null }): boolean {
+  return !state.online && state.view !== null && state.view.finishOrder.includes(state.view.selfId);
+}
 
 function defaultSeats(humanSeat = DEFAULT_HUMAN_SEAT): SeatConfig[] {
   return SEAT_IDS.map((id, seat) => ({
@@ -353,7 +365,15 @@ export const useGameStore = create<GameStore>((set, get) => {
   // One pace, everywhere. Computers always take a natural moment to decide:
   // the same experience alone at a table as with three friends at one, and no
   // setting whose only effect is to make turns go past unseen.
-  const pacer = makePacer({ speed: () => 'normal', paced: () => get().paced });
+  //
+  // With one exception: playing alone, once you have gone out, nobody at the
+  // table is deciding anything worth watching — three computers are settling
+  // who comes second. The rest of the round plays out fast, not instantly:
+  // every card still lands before the next one leaves (see `fast` in pacing).
+  const pacer = makePacer({
+    speed: () => devPace ?? (playsOutWithoutYou(get()) ? 'fast' : 'normal'),
+    paced: () => get().paced,
+  });
 
   /** Keep the latest save of a match played alone, so a reload loses nothing. */
   function persistSolo(you: PlayerId, seats: SessionSeat[], save: SessionSave | null) {

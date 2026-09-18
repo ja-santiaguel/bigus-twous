@@ -342,14 +342,27 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   seconds of a turn, 5 and 2½ of a pile pick.
 - One pulse per urgent state (turn marker, a clock's last sixth), stepped, and off
   under `prefers-reduced-motion`.
+- **Once you are out, the round plays out fast.** Playing alone, from the moment
+  you finish — first, second or third — the computers left in the round move at
+  the `fast` pace: 320–460ms a play, 380–520ms a pass, against 0.9–2.8s normally.
+  Every card's 220ms flight still lands before the next one leaves, so nothing
+  is ever drawn mid-air, and the spread keeps four computers from ticking like a
+  clock. A shared table keeps one pace for everybody watching.
 - **Big plays** are the one celebration during play, and they answer in
   proportion — three levels, by how rare and how decisive the play is:
 
   | Level | Plays | The table answers with |
   |---|---|---|
-  | 1 | A single 2; a straight of 5 or 6 | A half-strength flash, no shake; the name at 1.25× `--text-lg`, held 1.1s |
-  | 2 | A chop (a bomb on one 2); a pair of 2s; a straight of 7–9 | A gold flash in 3 steps, a 1–2 art pixel shake (360ms); the name at 2×, held 1.6s |
-  | 3 | A bomb on a pair or three of 2s; a bomb on a bomb; three 2s; four 2s; a straight of 10 or more | A card-face flash that comes twice, a 2–3 pixel shake (560ms); the name at 2.5× in bone on a gold shadow, held 2.2s |
+  | 1 | A single 2; a straight of 4 or 5 | A half-strength flash, no shake; the name at 1.25× `--text-lg`, held 1.1s |
+  | 2 | A chop (a bomb on one 2); a pair of 2s; a straight of 6 or 7 | A gold flash in 3 steps, a 1–2 art pixel shake (360ms); the name at 2×, held 1.6s |
+  | 3 | A bomb on a pair or three of 2s; a bomb on a bomb; three 2s; four 2s; a straight of 8 or more | A card-face flash that comes twice, a 2–3 pixel shake (560ms); the name at 2.5× in bone on a gold shadow, held 2.2s |
+
+  Straights sit where their odds put them. Over 400,000 simulated deals a
+  thirteen-card hand holds a 2 70% of the time, two 2s 26%, three 2s 4.4% —
+  the anchors of the three levels — and a straight of 4 74%, 5 47%, 6 27%,
+  7 14%, 8 7%, 9 3%, 10 1%. Each length takes the level whose anchor it is
+  nearest in rarity; a straight of 3 (95%) is commoner than any of them and is
+  not a moment.
 
   Only the kind of play is named — "A 2!", "Chopped!", "Counter-bomb!",
   "Straight of 8!" — never who made it: their cards are already in front of

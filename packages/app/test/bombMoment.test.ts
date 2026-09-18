@@ -76,16 +76,17 @@ describe('big plays', () => {
     expect(readMoment([played('seat-2', twos)], 0)).toMatchObject({ level: 3, title: 'Four 2s!' });
   });
 
-  it('grades a straight by its length: five or six, seven to nine, ten or more', () => {
-    expect(readMoment([played('seat-2', run(5))], 0)).toMatchObject({ level: 1, title: 'Straight of 5!' });
-    expect(readMoment([played('seat-2', run(6))], 0)?.level).toBe(1);
-    expect(readMoment([played('seat-2', run(7))], 0)).toMatchObject({ level: 2, title: 'Straight of 7!' });
-    expect(readMoment([played('seat-2', run(9))], 0)?.level).toBe(2);
-    expect(readMoment([played('seat-2', run(10))], 0)).toMatchObject({ level: 3, title: 'Straight of 10!' });
+  it('grades a straight by how often a hand holds one: four or five, six or seven, eight or more', () => {
+    expect(readMoment([played('seat-2', run(4))], 0)).toMatchObject({ level: 1, title: 'Straight of 4!' });
+    expect(readMoment([played('seat-2', run(5))], 0)?.level).toBe(1);
+    expect(readMoment([played('seat-2', run(6))], 0)).toMatchObject({ level: 2, title: 'Straight of 6!' });
+    expect(readMoment([played('seat-2', run(7))], 0)?.level).toBe(2);
+    expect(readMoment([played('seat-2', run(8))], 0)).toMatchObject({ level: 3, title: 'Straight of 8!' });
+    expect(readMoment([played('seat-2', run(12))], 0)?.level).toBe(3);
   });
 
-  it('leaves a straight shorter than five alone', () => {
-    expect(readMoment([played('seat-2', run(4))], 0)).toBeNull();
+  it('leaves a straight of three alone: nearly every hand holds one', () => {
+    expect(readMoment([played('seat-2', run(3))], 0)).toBeNull();
   });
 
   it('leaves a bomb led onto a clear table, and ordinary plays, alone', () => {

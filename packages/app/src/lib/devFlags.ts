@@ -6,6 +6,7 @@
  *
  *   ?demo=table          start a game on your own straight away
  *   ?seed=ABCD-2345      ...dealt from this seed, so a layout can be looked at on the same deal each time
+ *   ?pace=fast           computers play at the fast pace all round — how a round plays out once you are out
  */
 
 function param(name: string): string | null {
@@ -15,3 +16,4 @@ function param(name: string): string | null {
 
 export const devDemo = param('demo');
 export const devSeed = param('seed');
+export const devPace: 'fast' | null = param('pace') === 'fast' ? 'fast' : null;

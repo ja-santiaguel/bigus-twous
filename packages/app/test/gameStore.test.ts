@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { cardId } from '@big-two/engine';
-import { DEFAULT_HUMAN_SEAT, SEAT_IDS, useGameStore } from '../src/store/gameStore.js';
+import { DEFAULT_HUMAN_SEAT, playsOutWithoutYou, SEAT_IDS, useGameStore } from '../src/store/gameStore.js';
 
 /**
  * Store tests.
@@ -179,5 +179,34 @@ describe('leaving', () => {
     await new Promise((r) => setTimeout(r, 150));
     expect(store.getState().view).toBeNull();
     expect(store.getState().error).toBeNull();
+  });
+});
+
+describe('playing a round out once you are out', () => {
+  const view = (finishOrder: string[]) => ({ ...store.getState().view!, finishOrder });
+
+  beforeEach(freshTable);
+
+  it('speeds up alone, once you have gone out, and not before', async () => {
+    store.getState().startMatch();
+    await waitForDeal();
+    const self = store.getState().view!.selfId;
+
+    expect(playsOutWithoutYou({ online: false, view: view([]) })).toBe(false);
+    expect(playsOutWithoutYou({ online: false, view: view(['seat-3']) })).toBe(false);
+    expect(playsOutWithoutYou({ online: false, view: view([self]) })).toBe(true);
+    // Finishing second counts too: only computers are left either way.
+    expect(playsOutWithoutYou({ online: false, view: view(['seat-3', self]) })).toBe(true);
+  });
+
+  it('never speeds up a shared table, which paces itself for everyone', async () => {
+    store.getState().startMatch();
+    await waitForDeal();
+    const self = store.getState().view!.selfId;
+    expect(playsOutWithoutYou({ online: true, view: view([self]) })).toBe(false);
+  });
+
+  it('is not playing anything out before there is a round', () => {
+    expect(playsOutWithoutYou({ online: false, view: null })).toBe(false);
   });
 });

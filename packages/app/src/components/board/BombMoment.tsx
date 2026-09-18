@@ -9,13 +9,20 @@ import { isBombType, type Combo, type GameEvent } from '@big-two/engine';
  * answers the play with a flash, a shake and its name — and how hard it answers
  * depends on how rare and how decisive the play is, in three levels:
  *
- *   1  A 2 laid down, a straight of five or six. Strong, and seen most rounds:
+ *   1  A 2 laid down, a straight of four or five. Strong, and seen most rounds:
  *      the name, a light flash, no shake.
- *   2  A chop (a bomb on a single 2), a pair of 2s, a straight of seven to
- *      nine. A turn that swings the round: flash, a short shake, the name large.
- *   3  A bomb on a pair or three of 2s, a bomb answering a bomb, four 2s, three
- *      2s, a straight of ten or more. Once in many games: the strongest flash, a
- *      longer shake, the name largest and held longest.
+ *   2  A chop (a bomb on a single 2), a pair of 2s, a straight of six or seven.
+ *      A turn that swings the round: flash, a short shake, the name large.
+ *   3  A bomb on a pair or three of 2s, a bomb answering a bomb, three or four
+ *      2s, a straight of eight or more. Once in many games: the strongest flash,
+ *      a longer shake, the name largest and held longest.
+ *
+ * Straights are placed by how often a thirteen-card hand holds one, against
+ * the 2s that anchor each level (400,000 simulated deals): a hand holds a 2
+ * 70% of the time, two 2s 26%, three 2s 4.4%. A straight of four is held 74% of
+ * the time and five 47% — a single 2's company; six 27% and seven 14% — a pair
+ * of 2s'; eight 7%, nine 3%, ten 1% — three 2s' and rarer. A straight of three,
+ * held 95% of the time, is commoner than anything here and is not a moment.
  *
  * Only the kind of play is named. Who made it is already on the table — the
  * cards are in front of their seat, and the log says it in words — and the
@@ -86,9 +93,9 @@ export function useBombMoment(history: GameEvent[]): { moment: BombMomentCue | n
 }
 
 /** The shortest straight that gets a moment, and where the next levels start. */
-export const MOMENT_STRAIGHT_LENGTH = 5;
-const STRAIGHT_LEVEL_2 = 7;
-const STRAIGHT_LEVEL_3 = 10;
+export const MOMENT_STRAIGHT_LENGTH = 4;
+const STRAIGHT_LEVEL_2 = 6;
+const STRAIGHT_LEVEL_3 = 8;
 
 /** Exported for tests: the moment, if any, that the play at `index` deserves. */
 export function readMoment(history: GameEvent[], index: number): BombMomentCue | null {

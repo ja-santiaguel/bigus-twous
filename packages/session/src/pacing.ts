@@ -13,9 +13,9 @@
  * waits.
  */
 
-export type Speed = 'instant' | 'normal';
+export type Speed = 'instant' | 'fast' | 'normal';
 
-export const SPEEDS: Speed[] = ['instant', 'normal'];
+export const SPEEDS: Speed[] = ['instant', 'fast', 'normal'];
 
 /**
  * How long a resolved CPU turn is left on screen before the next one starts.
@@ -35,6 +35,12 @@ export const SPEEDS: Speed[] = ['instant', 'normal'];
  * at half this it was legible but hurried, and a trick could go round before
  * you had finished reading the play that started it.
  *
+ * **Fast is for a round nobody at the table is playing any more** — you have
+ * gone out, and the computers finish between themselves. It is as quick as a
+ * turn can be while every card still lands before the next one leaves: a
+ * card's flight is 220ms, so a play waits a little over that and a pass a
+ * little more, with a small spread so four computers do not tick like a clock.
+ *
  * **A pass takes longer than a play, at every speed.** Two reasons, and they
  * point the same way. Deciding you have nothing is not a quicker decision than
  * finding something — you only know once you have looked at everything and
@@ -50,6 +56,10 @@ const PACING: Record<Speed, Record<MoveKind, { min: number; max: number }>> = {
     play: { min: 160, max: 160 },
     pass: { min: 260, max: 260 },
   },
+  fast: {
+    play: { min: 320, max: 460 },
+    pass: { min: 380, max: 520 },
+  },
   normal: {
     play: { min: 900, max: 2400 },
     pass: { min: 1200, max: 2800 },
@@ -58,6 +68,7 @@ const PACING: Record<Speed, Record<MoveKind, { min: number; max: number }>> = {
 
 export const SPEED_LABELS: Record<Speed, string> = {
   instant: 'Instant',
+  fast: 'Fast',
   normal: 'Normal',
 };
 

@@ -8,9 +8,9 @@ import { cpuTurnDelay, SPEEDS, SPEED_LABELS } from '../src/pacing.js';
  * only be caught by watching the table.
  */
 describe('cpu pacing', () => {
-  it('offers exactly two speeds', () => {
-    expect(SPEEDS).toEqual(['instant', 'normal']);
-    expect(Object.keys(SPEED_LABELS)).toEqual(['instant', 'normal']);
+  it('offers exactly three speeds', () => {
+    expect(SPEEDS).toEqual(['instant', 'fast', 'normal']);
+    expect(Object.keys(SPEED_LABELS)).toEqual(['instant', 'fast', 'normal']);
   });
 
   it('gives a pass more time than a play, at both speeds', () => {
@@ -37,6 +37,20 @@ describe('cpu pacing', () => {
     }
     // ...and it still has to feel instant.
     expect(cpuTurnDelay('instant', 'play')).toBeLessThan(250);
+  });
+
+  it('lets every card land before the next moves, at fast', () => {
+    // Fast plays a round out once you are no longer in it. A card's flight is
+    // 220ms; a turn sooner than that would start the next card moving while the
+    // last was still in the air.
+    const CARD_FLIGHT_MS = 220;
+    const plays = Array.from({ length: 400 }, () => cpuTurnDelay('fast', 'play'));
+    const passes = Array.from({ length: 400 }, () => cpuTurnDelay('fast', 'pass'));
+    expect(Math.min(...plays, ...passes)).toBeGreaterThan(CARD_FLIGHT_MS);
+    // ...and it is quick: well under the quickest normal turn.
+    expect(Math.max(...plays, ...passes)).toBeLessThan(900);
+    const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    expect(mean(passes)).toBeGreaterThan(mean(plays));
   });
 
   it('keeps normal inside a range you would sit through', () => {

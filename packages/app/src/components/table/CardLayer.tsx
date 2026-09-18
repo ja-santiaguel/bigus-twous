@@ -165,28 +165,20 @@ export function CardLayer({
             const from =
               entity.enterFrom && !known.current.has(entity.id) ? transformFor(entity.enterFrom, metrics) : null;
             const drop = (metrics.cardWidth / 22) * depth * to.scale;
+            const start = from ?? to;
             return (
-              <m.div
+              <LayerShadow
                 key={entity.id}
-                className="cardlayer__shadow"
-                initial={
-                  from
-                    ? { x: from.x, y: from.y + drop, rotate: from.rotate, scale: from.scale, opacity: 0 }
-                    : { x: to.x, y: to.y + drop, rotate: to.rotate, scale: to.scale, opacity: 0 }
-                }
-                animate={{ x: to.x, y: to.y + drop, rotate: to.rotate, scale: to.scale, opacity: 1 }}
-                // Fades at the pace the picked-up card's own shadow eases in
-                // (.cardlayer__card .pcard), so lifting a card hands its shadow
-                // over in one smooth change instead of a blink.
-                exit={{ opacity: 0, transition: { duration: reduced ? 0 : SHADOW_FADE_S, ease: 'easeOut' } }}
-                transition={
-                  instant
-                    ? NONE
-                    : {
-                        ...transition(reduced, SETTLE),
-                        opacity: { duration: reduced ? 0 : SHADOW_FADE_S, ease: 'easeOut' },
-                      }
-                }
+                x={to.x}
+                y={to.y + drop}
+                rotate={to.rotate}
+                scale={to.scale}
+                fromX={start.x}
+                fromY={start.y + drop}
+                fromRotate={start.rotate}
+                fromScale={start.scale}
+                instant={instant}
+                reduced={reduced}
               />
             );
           })}
@@ -443,6 +435,55 @@ const LayerCard = memo(function LayerCard({
     >
       {faceUp && card ? <CardFace card={card} /> : <CardBack />}
     </m.div>
+  );
+});
+
+/**
+ * One card's shadow in the shared group, redrawn only when that card moves.
+ *
+ * The same reason as `LayerCard`: every play and pass re-renders the layer, and
+ * fifty-odd animated shadows rebuilt each time was a good share of the frame a
+ * phone spent on it — the difference between a round playing out fast and one
+ * that stutters as it does.
+ */
+const LayerShadow = memo(function LayerShadow({
+  x,
+  y,
+  rotate,
+  scale,
+  fromX,
+  fromY,
+  fromRotate,
+  fromScale,
+  instant,
+  reduced,
+}: {
+  x: number;
+  y: number;
+  rotate: number;
+  scale: number;
+  fromX: number;
+  fromY: number;
+  fromRotate: number;
+  fromScale: number;
+  instant: boolean;
+  reduced: boolean;
+}) {
+  return (
+    <m.div
+      className="cardlayer__shadow"
+      initial={{ x: fromX, y: fromY, rotate: fromRotate, scale: fromScale, opacity: 0 }}
+      animate={{ x, y, rotate, scale, opacity: 1 }}
+      // Fades at the pace the picked-up card's own shadow eases in
+      // (.cardlayer__card .pcard), so lifting a card hands its shadow over in
+      // one smooth change instead of a blink.
+      exit={{ opacity: 0, transition: { duration: reduced ? 0 : SHADOW_FADE_S, ease: 'easeOut' } }}
+      transition={
+        instant
+          ? NONE
+          : { ...transition(reduced, SETTLE), opacity: { duration: reduced ? 0 : SHADOW_FADE_S, ease: 'easeOut' } }
+      }
+    />
   );
 });
 
