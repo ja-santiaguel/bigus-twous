@@ -382,8 +382,9 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     backs — a hand, not a number — closed up to fit its column; the count and
     points go on two lines beneath it.
   - A computer's seat reads "Seat 2 (CPU)", the bracket in `--dim` as in the
-    lobby. On a phone it takes its own `--text-xs` line under the name, and
-    every seat keeps that line — empty for a person — so the fans start level.
+    lobby. On a phone it takes its own `--text-xs` line tight under the name (a
+    pixel's gap: it belongs to the name, not to the fan below), and every seat
+    keeps that line — empty for a person — so the fans start level.
   - Top right, **Menu** (flat) opens a panel — `--table-lo`, like every other
     panel, so its buttons' ink borders and shadows show — with the round, match
     length and seed, How to play (raised) and Leave table (quiet), full width;
@@ -513,6 +514,11 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 - **The table:** the play area is centred on both axes. Seats sit around it;
   the top seat is offset toward the centre so the gap above the trick matches
   the gap either side.
+- **A lobby's seat row stays one line on a phone** by getting smaller, not by
+  wrapping: the chips take `--text-xs` and tighter padding, and the bracket
+  after the seat name goes (the tag beside it and the name after it say the
+  same thing). What gives way as the row tightens is the player's name on the
+  right, never the seat it belongs to.
 - **Lobbies share one frame** (`LobbyLayout`): Leave top left, the seats, the
   options common to both modes, the options unique to one, then the full-width
   primary action. Only mode-unique options differ in layout.
@@ -542,10 +548,19 @@ is moving. A phone is the machine to design for.
 - **Size to the visible screen, not the layout one.** A phone browser's `fixed`
   box and `100vh` are the viewport with the toolbars *hidden*, so anything
   sized that way hides its own bottom edge behind the toolbar actually on
-  screen. The table and the rules sheet use `100svh` (with `100vh` as the
-  fallback for older browsers), so their bottom rows — Pass, Play cards, Close —
-  are always reachable. `dvh` is the wrong tool here: it changes as the toolbar
-  slides, which moves buttons under a reader's thumb.
+  screen. The table is sized from `--vh`, measured off `visualViewport`
+  (`useViewportHeight`) and republished whenever the toolbars slide or the phone
+  turns; `100svh` then `100vh` are the fallbacks behind it, and the rules sheet
+  uses `svh`. Their bottom rows — Pass, Play cards, Close — are always
+  reachable. `dvh` is the wrong tool here: it changes as the toolbar slides,
+  which moves buttons under a reader's thumb.
+- **A short screen gives up air, never a control.** A phone browser leaves the
+  board 660px or less (an iPhone 12 in Safari: 664). Under 750px, and again
+  under 600px, the table spends less on the gap below the corner buttons, the
+  seats' fans, the room a card lifts into and the gaps between rows — in that
+  order — so the hand keeps its cards and Pass and Play cards keep their reach.
+  Sizes stay put; spacing gives. Below 600px the seats drop the `(CPU)` line
+  and Sort's pips sit beside their button, the one place they do.
 - **The board takes no page gestures.** `touch-action: none` on the table and
   `overscroll-behavior: none` on the page: a drag across the board picks cards
   and can never scroll, bounce or pull-to-refresh the page. What opens *over*

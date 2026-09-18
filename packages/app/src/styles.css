@@ -2719,11 +2719,14 @@ textarea {
    hand with its controls at the bottom. Text keeps to three sizes. */
 @media (max-width: 720px) {
   .screen--table {
-    /* The viewport with the browser's toolbars showing, so Pass and Play cards
-       are on screen whether the toolbar is out or not — `dvh` shrinks and grows
-       as it slides, which moved the buttons under the reader's thumb. */
+    /* The height a phone browser is *actually* showing. `100vh` is the viewport
+       with the toolbars hidden, so the bottom row sat behind the toolbar on
+       screen; `svh` is the right idea but iOS does not always agree with itself
+       about it. `--vh` is measured from `visualViewport` (see useViewportHeight)
+       and is exact; the others are the fallbacks until it is set. */
     height: 100vh;
     height: 100svh;
+    height: var(--vh, 100svh);
     min-height: 0;
     overflow: hidden;
     overscroll-behavior: none;
@@ -2765,22 +2768,47 @@ textarea {
   /* A third of a phone is not wide enough for "Seat 2 (CPU)" on one line, so
      the bracket takes a line of its own under the name, a size smaller. The
      line is kept for a person's seat too, so every fan starts level. */
-  /* A seat row cannot hold a name and three difficulty chips side by side on a
-     phone: the chips will not shrink, so the row pushed the page wider than the
-     screen. The detail drops to a line of its own under the name instead. */
+  /* A seat row holds a name and three difficulty chips side by side on a phone
+     by giving the chips less to take up — the label a size down, the padding a
+     step in — rather than by wrapping them onto a line of their own. The row
+     still gives way before the page does: the name truncates. */
   .seats__row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-xs);
+    /* The seat and its tag hold their width; what gives way on a narrow row is
+       the name of whoever is in it, on the right. The other way round, every
+       row read "Seat 1 (…". */
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-xs) var(--space-sm);
+  }
+  /* "(You)", "(CPU)", "(Player)": the tag beside it and the name after it say
+     the same thing, and a phone row has not the width for all three. */
+  .seats__role {
+    display: none;
+  }
+  .seats__player {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .seats__diff {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    gap: var(--space-xs);
+    flex-wrap: nowrap;
+    gap: var(--px);
+  }
+  .seats__diff .chip {
+    font-size: var(--text-xs);
+    padding: 0 var(--space-xs);
+    margin-left: 0;
+  }
+  .seats__sit {
+    font-size: var(--text-xs);
+    padding: 0 var(--space-xs);
   }
   .opp__name {
     flex-wrap: wrap;
     justify-content: center;
-    row-gap: var(--space-xs);
+    /* The bracket belongs to the name above it: closer to it than the name is
+       to anything else. */
+    row-gap: var(--px);
   }
   .opp__role,
   .opp__role:empty {
@@ -2829,5 +2857,74 @@ textarea {
   /* Room above the flat row for a card to lift, and to rise clear of a finger. */
   .hand {
     height: calc(var(--card-h) * 4 / 3 + 34 * var(--px));
+  }
+}
+
+/* ── Short phones ────────────────────────────────────────────────────────
+   A phone's browser keeps a toolbar at each end, so the table often has 660px
+   or less to work in — an iPhone 12 in Safari has 664. Everything the board
+   spends on air gives way before the row that plays a card does: the gap under
+   the corner buttons, the seats' fans, the room a card lifts into, the gaps
+   between the rows. Nothing changes size; the spacing does. */
+@media (max-width: 720px) and (max-height: 750px) {
+  .table {
+    padding-top: calc(var(--u) + var(--control-sm) + var(--space-md));
+    gap: var(--space-xs);
+  }
+  .opp {
+    gap: var(--space-xs);
+  }
+  /* Still tall enough to hold the fan it anchors: any shorter and the cards
+     hang over the count printed under them. */
+  .minifan,
+  .opp--left .minifan,
+  .opp--right .minifan {
+    height: calc(26 * var(--px));
+  }
+  .opp__status {
+    min-height: 0;
+  }
+  .handzone {
+    gap: var(--space-sm);
+  }
+  .hand {
+    height: calc(var(--card-h) * 4 / 3 + 14 * var(--px));
+  }
+  .controls--compact {
+    min-height: calc(1.35 * var(--text-sm));
+    margin-bottom: calc(-1 * var(--space-sm));
+  }
+  .centre {
+    margin-bottom: var(--space-sm);
+  }
+}
+
+/* Shorter still — a small phone with both toolbars out, around 550px of board.
+   The seats give up the bracket under their names and most of their fan's box;
+   the hand keeps its cards and the actions keep their reach. */
+@media (max-width: 720px) and (max-height: 600px) {
+  .table {
+    padding-top: calc(var(--u) + var(--control-sm) + var(--space-sm));
+  }
+  .opp__role {
+    display: none;
+  }
+  .minifan,
+  .opp--left .minifan,
+  .opp--right .minifan {
+    height: calc(20 * var(--px));
+  }
+  .hand {
+    height: calc(var(--card-h) * 4 / 3 + 6 * var(--px));
+  }
+  /* There is no room above the button left to hang the pips in — they would
+     sit on the cards — so here alone they go back beside its label. */
+  .actionbar .sort {
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  .actionbar .sort__pips {
+    position: static;
+    transform: none;
   }
 }

@@ -5,6 +5,7 @@ import { readJoinLink } from './lib/joinLink.js';
 import { MainMenu } from './screens/MainMenu.js';
 import { CopyToast } from './components/CopyToast.js';
 import { DisabledHint } from './components/DisabledHint.js';
+import { useViewportHeight } from './lib/useViewportHeight.js';
 import { devDemo, devSeed } from './lib/devFlags.js';
 
 /*
@@ -115,6 +116,7 @@ function useDevDemo() {
 }
 
 export function App() {
+  useViewportHeight();
   useJoinOnLoad();
   usePreloadScreens();
   useDevDemo();
