@@ -304,6 +304,10 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 - Stepped (`steps(2)`) for anything that is simply on or off: controls, markers,
   clock segments.
 - Short ease-out for anything that travels: cards, the trick opening.
+- **A held card trails the pointer a touch** (`FOLLOW`): dragging, it follows on
+  a critically damped spring — about 40ms behind, caught up within ~150ms of
+  the pointer stopping, never overshooting — so it has weight without wobble.
+  Under reduced motion it sits exactly under the pointer.
 - **Transient things leave with one fade:** `--fade-out` (260ms), eased out —
   smooth, not stepped, because a fade is something going away rather than
   something switching off — `@keyframes fade-out`. The copy toast and the inline help note both use it;

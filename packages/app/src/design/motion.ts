@@ -16,6 +16,16 @@ import type { Transition } from 'framer-motion';
 export const SNAP: Transition = { duration: 0.16, ease: 'easeOut' };
 export const SETTLE: Transition = { duration: 0.22, ease: 'easeOut' };
 
+/**
+ * A card you are holding, following the pointer. A little behind it, as a
+ * card held between the fingers trails the hand: a spring, but critically
+ * damped (damping = 2·√stiffness), so it closes the gap and stops without
+ * overshooting — the lag reads as weight, never as wobble. At this stiffness
+ * it trails by about 40ms and catches up within ~150ms of the pointer
+ * stopping.
+ */
+export const FOLLOW: Transition = { type: 'spring', stiffness: 600, damping: 49, mass: 1 };
+
 /** Cards dealing in, one after another. */
 export const DEAL_STAGGER_S = 0.04;
 

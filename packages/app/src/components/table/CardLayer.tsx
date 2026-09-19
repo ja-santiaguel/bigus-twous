@@ -3,7 +3,7 @@ import type { Card } from '@big-two/engine';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { CardBack, CardFace } from '../card/PixelCard.js';
-import { NONE, SETTLE, transition } from '../../design/motion.js';
+import { FOLLOW, NONE, SETTLE, transition } from '../../design/motion.js';
 import type { CardEntity, Placement } from '../../lib/cardScene.js';
 import {
   openTrickLayout,
@@ -473,7 +473,13 @@ const LayerCard = memo(function LayerCard({
       // the discard pile, or a round ending. Everything else is a move.
       exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.14 } }}
       transition={
-        instant ? NONE : dragging ? { x: NONE, y: NONE, rotate: SETTLE, scale: SETTLE } : transition(reduced, SETTLE)
+        instant
+          ? NONE
+          : dragging
+            ? // Held, it trails the pointer a touch rather than being pinned to
+              // it (FOLLOW); under reduced motion it goes exactly where you point.
+              { x: reduced ? NONE : FOLLOW, y: reduced ? NONE : FOLLOW, rotate: SETTLE, scale: SETTLE }
+            : transition(reduced, SETTLE)
       }
     >
       {faceUp && card ? <CardFace card={card} /> : <CardBack />}

@@ -296,6 +296,14 @@ body {
   color: var(--back-hi);
   overflow: hidden;
 }
+/* The face and the back stop at the inside of the border. Left to run under it
+   (the default), the bone showed through where a rotated or scaled card's
+   border is anti-aliased: a pale hairline between the card and its shadow.
+   After both rules above, whose `background` shorthand would reset it. */
+.pcard--face,
+.pcard--back {
+  background-clip: padding-box;
+}
 /* The lattice: a pixel-art asset masked over --back-hi, fitted to the card's
    width and centred, as the inline drawing it replaced was. */
 .pcard--back::before {
@@ -1097,7 +1105,11 @@ body {
   background: var(--scrim-strong);
 }
 .overlay__box {
-  min-width: 360px;
+  /* 360 wide where there is room, never wider than the screen less a gutter
+     each side: a phone's is narrower than that, and a box that could not
+     shrink spilled off both edges with its buttons. */
+  min-width: min(360px, calc(100vw - 2 * var(--space-sm)));
+  max-width: calc(100vw - 2 * var(--space-sm));
   padding: var(--space-lg);
   background: var(--table-lo);
   border: var(--px) solid var(--gold);
@@ -1106,6 +1118,8 @@ body {
 }
 .overlay__box h2 {
   margin: 0 0 var(--space-sm);
+  /* A long seat name breaks rather than widening the box. */
+  overflow-wrap: anywhere;
   font-size: var(--text-lg);
   color: var(--gold);
 }
@@ -1116,7 +1130,7 @@ body {
 }
 .overlay__scores li {
   display: grid;
-  grid-template-columns: calc(12 * var(--px)) 1fr auto auto;
+  grid-template-columns: calc(12 * var(--px)) minmax(0, 1fr) auto auto;
   gap: var(--space-md);
   align-items: baseline;
   padding: calc(var(--px)) 0;
@@ -1129,6 +1143,9 @@ body {
 }
 .overlay__actions {
   display: flex;
+  /* Side by side where they fit; on a narrow phone the second goes under the
+     first, centred, instead of pushing the box off the screen. */
+  flex-wrap: wrap;
   gap: var(--space-sm);
   justify-content: center;
 }
@@ -1337,8 +1354,11 @@ body {
   text-align: left;
 }
 /* The seat name column reads as a list, so it starts on a common left edge
-   rather than inheriting the box's centring. */
+   rather than inheriting the box's centring. It takes what the other columns
+   leave, and a long name wraps inside it. */
 .overlay__scores li > span:nth-child(2) {
+  min-width: 0;
+  overflow-wrap: anywhere;
   text-align: left;
 }
 .overlay__gain {
