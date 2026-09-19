@@ -308,6 +308,12 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   a critically damped spring — about 40ms behind, caught up within ~150ms of
   the pointer stopping, never overshooting — so it has weight without wobble.
   Under reduced motion it sits exactly under the pointer.
+- **...and swings a little about where you hold it** (`TILT_*`). The lean
+  follows the card's own horizontal speed and turns about the grip, as a card
+  held at one point does: held above its middle and carried right, it leans
+  clockwise; held below, the other way; held dead centre, not at all. 3–4° at
+  an ordinary pace, never more than 6°; it settles upright with one barely
+  visible swing back. None under reduced motion.
 - **Transient things leave with one fade:** `--fade-out` (260ms), eased out —
   smooth, not stepped, because a fade is something going away rather than
   something switching off — `@keyframes fade-out`. The copy toast and the inline help note both use it;
@@ -455,7 +461,13 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 - **Dropping to play** takes the whole middle band of the table, between the
   seats and your controls, not just the trick's box. While a card is dragged
   over it, it lights exactly as your hand does — a dashed gold ring and gold
-  wash — or with a solid `--alert` ring when those cards cannot play.
+  wash. The ring is drawn inside the band and pulled clear of anything that
+  reaches into it (the top seat's count, the read-out above your hand;
+  `dropOutline.ts`), measured once as it lights; the band still takes the
+  drop. When those cards cannot play it keeps the same dashed ring in
+  `--alert`, holds still instead of pulsing, is struck through with diagonal
+  hazard stripes (a pattern, so it reads without colour) and carries a tag
+  in its top-left corner saying why: "Not your turn" or "Can't play these".
 - **Table corners, every screen size:** Log top left; How to play (or, on a
   phone, Menu) top right.
   Written from Section 9 only. Opened from the table, it scrolls to and marks

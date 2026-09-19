@@ -314,7 +314,7 @@ export function Table() {
       interactive: true,
       marked: chosen,
       ...(entity.card ? { label: cardSpoken(entity.card) } : {}),
-      ...(dragging ? { dx: drag.dx, dy: drag.dy, z: DRAG_Z } : {}),
+      ...(dragging ? { dx: drag.dx, dy: drag.dy, z: DRAG_Z, grip: drag.grip } : {}),
       ...(hovered || previewed ? { z: HOVER_Z } : {}),
       ...(dragging || hovered || previewed ? { scale: CARD_SCALE.raised } : {}),
       // A picked card stands clear of the row; hovering nudges one that is
@@ -537,6 +537,8 @@ export function Table() {
           scrollStep={trickLayout.step}
           dropActive={drag.over === 'trick'}
           dropValid={dropValid}
+          // The two ways a drop is refused: the turn, or the cards.
+          dropRefusal={isMyTurn ? "Can't play these" : 'Not your turn'}
         />
 
         {/* Every card on the table, in one layer. Zones say where they are;

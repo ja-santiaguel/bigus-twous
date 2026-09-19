@@ -1,10 +1,11 @@
 import type React from 'react';
-import { memo, useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import type { PlayerId } from '@big-two/engine';
 import { cardsSpoken, comboLabel } from '../../lib/format.js';
 import { SNAP, transition } from '../../design/motion.js';
 import type { TrickPlay } from '../../lib/tableView.js';
+import { clearOf } from '../../lib/dropOutline.js';
 
 /** How far a finger or mouse moves before pressing the trick becomes scrolling it. */
 const SCROLL_SLOP_PX = 6;
@@ -40,6 +41,7 @@ export const TableCentre = memo(function TableCentre({
   scrollStep = 64,
   dropActive,
   dropValid,
+  dropRefusal = "Can't play these",
 }: {
   trickPlays: TrickPlay[];
   moundCount: number;
@@ -64,6 +66,8 @@ export const TableCentre = memo(function TableCentre({
   dropActive?: boolean;
   /** ...and the play it would make is legal. */
   dropValid?: boolean;
+  /** Why the table would refuse it, in a couple of words: shown on the refused outline. */
+  dropRefusal?: string;
 }) {
   const reduced = useReducedMotion() ?? false;
   const standing = trickPlays[trickPlays.length - 1];
@@ -86,6 +90,35 @@ export const TableCentre = memo(function TableCentre({
     },
     [trickRef],
   );
+
+  /*
+   * The lit outline stays clear of the seats and the read-out around the drop
+   * area (see `clearOf`). Measured once as it lights, not on every move: the
+   * neighbours do not move while a card is in the air.
+   */
+  const centre = useRef<HTMLDivElement | null>(null);
+  const setCentreNode = useCallback(
+    (el: HTMLDivElement | null) => {
+      centre.current = el;
+      dropRef?.(el);
+    },
+    [dropRef],
+  );
+  useLayoutEffect(() => {
+    const el = centre.current;
+    if (!el || !dropActive) return;
+    // Plain boxes: a DOMRect's sides are getters, which a spread does not copy.
+    const box = (n: Element) => {
+      const r = n.getBoundingClientRect();
+      return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    };
+    const neighbours = [...(el.closest('.table')?.querySelectorAll('.opp, .handzone, .controls__read') ?? [])].map(box);
+    const clear = clearOf(box(el), neighbours);
+    el.style.setProperty('--drop-top', `${clear.top}px`);
+    el.style.setProperty('--drop-right', `${clear.right}px`);
+    el.style.setProperty('--drop-bottom', `${clear.bottom}px`);
+    el.style.setProperty('--drop-left', `${clear.left}px`);
+  }, [dropActive]);
 
   // The wheel, attached natively: React's wheel listener is passive, and a
   // wheel that scrolls the trick must not also scroll the page behind it.
@@ -113,7 +146,11 @@ export const TableCentre = memo(function TableCentre({
   }, [open, onOpenChange]);
 
   return (
-    <div className={`centre ${dropActive ? (dropValid ? 'is-drop-target' : 'is-drop-blocked') : ''}`} ref={dropRef}>
+    <div
+      className={`centre ${dropActive ? (dropValid ? 'is-drop-target' : 'is-drop-blocked') : ''}`}
+      ref={setCentreNode}
+      data-refusal={dropActive && !dropValid ? dropRefusal : undefined}
+    >
       <div
         ref={setTrickNode}
         className={`inplay ${open ? 'is-open' : ''} ${open && onScroll ? 'is-scrollable' : ''}`}

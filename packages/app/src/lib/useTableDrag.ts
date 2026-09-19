@@ -50,6 +50,12 @@ export interface TableDragState {
   targetIndex: number;
   /** The card under a finger pressing the hand, shown enlarged because the finger hides it. */
   previewId: string | null;
+  /**
+   * Where on the grabbed card the pointer is holding it: the offset from the
+   * card's centre, in the card's own unscaled pixels. A held card swings about
+   * this point (see CardLayer's tilt).
+   */
+  grip: { x: number; y: number };
 }
 
 const IDLE: TableDragState = {
@@ -60,7 +66,17 @@ const IDLE: TableDragState = {
   over: null,
   targetIndex: 0,
   previewId: null,
+  grip: { x: 0, y: 0 },
 };
+
+/** Where on a card a point is, from the card's centre, undoing the scale it is drawn at. */
+function gripOn(id: string, x: number, y: number): { x: number; y: number } {
+  const el = document.querySelector<HTMLElement>(`.cardlayer__card[data-id="${CSS.escape(id)}"]`);
+  if (!el) return { x: 0, y: 0 };
+  const r = el.getBoundingClientRect();
+  const scale = el.offsetHeight > 0 ? r.height / el.offsetHeight : 1;
+  return { x: (x - (r.left + r.width / 2)) / scale, y: (y - (r.top + r.height / 2)) / scale };
+}
 
 export interface TableDragActions {
   onReorder(id: string, toIndex: number): void;
@@ -80,6 +96,8 @@ interface TouchPress {
   /** Whether sliding picks cards up (the first was not picked) or puts them back. */
   select: boolean;
   visited: Set<string>;
+  /** Where the finger came down on the card, taken before it lifted to be seen. */
+  grip: { x: number; y: number };
 }
 
 function inside(rect: Rect | null | undefined, x: number, y: number, pad = 0): boolean {
@@ -213,6 +231,7 @@ export function useTableDrag({
           baseline: new Set(selectedIds),
           select: !selectedIds.has(startId),
           visited: new Set([startId]),
+          grip: gripOn(startId, event.clientX, event.clientY),
         };
         commit({ ...IDLE, previewId: startId });
         return;
@@ -226,7 +245,12 @@ export function useTableDrag({
       // Grabbing a selected card drags the whole selection, so a combo you
       // have picked out moves as one thing.
       const group = selectedIds.has(target) ? handIds.filter((x) => selectedIds.has(x)) : [target];
-      commit({ ...IDLE, grabbedId: target, draggingIds: group.length > 0 ? group : [target] });
+      commit({
+        ...IDLE,
+        grabbedId: target,
+        draggingIds: group.length > 0 ? group : [target],
+        grip: gripOn(target, event.clientX, event.clientY),
+      });
     },
     [cardAt, cardUnder, commit, handIds, hoveredId, selectedIds],
   );
@@ -251,7 +275,7 @@ export function useTableDrag({
             const group = press.baseline.has(press.startId)
               ? handIds.filter((x) => press.baseline.has(x))
               : [press.startId];
-            live.current = { ...IDLE, grabbedId: press.startId, draggingIds: group };
+            live.current = { ...IDLE, grabbedId: press.startId, draggingIds: group, grip: press.grip };
           }
         }
         if (press.mode === 'scrub') {

@@ -1,9 +1,9 @@
 import type React from 'react';
 import type { Card } from '@big-two/engine';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useMotionValue, useReducedMotion, useSpring } from 'framer-motion';
 import { CardBack, CardFace } from '../card/PixelCard.js';
-import { FOLLOW, NONE, SETTLE, transition } from '../../design/motion.js';
+import { FOLLOW, NONE, SETTLE, TILT_MAX_DEG, TILT_PER_SPEED, TILT_SPRING, transition } from '../../design/motion.js';
 import type { CardEntity, Placement } from '../../lib/cardScene.js';
 import {
   openTrickLayout,
@@ -47,6 +47,8 @@ export interface CardVisual {
   z?: number;
   /** Picked up — hovered, touched or chosen — so it casts a deeper shadow. */
   raised?: boolean;
+  /** Where the pointer holds it while dragged, from its centre in unscaled pixels: the point it swings about. */
+  grip?: { x: number; y: number };
   marked?: boolean;
   /** Only interactive cards take pointer events or carry semantics. */
   interactive?: boolean;
@@ -246,6 +248,11 @@ export function CardLayer({
               label={v?.label}
               marked={v?.marked ?? false}
               dragging={dragging}
+              gripX={dragging ? (v?.grip?.x ?? 0) : 0}
+              gripY={dragging ? (v?.grip?.y ?? 0) : 0}
+              // How far from its middle it is held, -1 at the bottom edge to 1
+              // at the top: how hard it leans for a given speed (TILT_PER_SPEED).
+              lever={dragging ? clampUnit(-(v?.grip?.y ?? 0) / (metrics.cardHeight / 2)) : 0}
               instant={instant}
               reduced={reduced}
               on={on}
@@ -407,6 +414,9 @@ const LayerCard = memo(function LayerCard({
   label,
   marked,
   dragging,
+  gripX,
+  gripY,
+  lever,
   instant,
   reduced,
   on,
@@ -430,10 +440,50 @@ const LayerCard = memo(function LayerCard({
   label?: string | undefined;
   marked: boolean;
   dragging: boolean;
+  gripX: number;
+  gripY: number;
+  lever: number;
   instant: boolean;
   reduced: boolean;
   on: CardHandlers;
 }) {
+  /*
+   * The lean of a card being carried (see TILT_PER_SPEED). Read from the
+   * card's own movement each frame — after FOLLOW has smoothed the pointer — so
+   * it rises and falls with the card's real speed rather than the jitter of
+   * pointer events. Drawn on an inner box that turns about the grip, so the
+   * card swings about the point you are holding and stays under the pointer.
+   * Written straight to that box: a lean is a per-frame value, not a render.
+   */
+  const lean = useMotionValue(0);
+  const tilt = useSpring(lean, TILT_SPRING);
+  const tiltBox = useRef<HTMLSpanElement>(null);
+  const lastX = useRef<{ x: number; t: number } | null>(null);
+  useEffect(
+    () =>
+      tilt.on('change', (deg) => {
+        const el = tiltBox.current;
+        if (el) el.style.transform = Math.abs(deg) < 0.01 ? '' : `rotate(${deg}deg)`;
+      }),
+    [tilt],
+  );
+  useEffect(() => {
+    if (dragging) return;
+    lastX.current = null;
+    lean.set(0);
+  }, [dragging, lean]);
+  const carry = (latest: { x?: unknown }) => {
+    if (!dragging || reduced) return;
+    const x = typeof latest.x === 'number' ? latest.x : Number.parseFloat(String(latest.x));
+    if (!Number.isFinite(x)) return;
+    const t = performance.now();
+    const last = lastX.current;
+    lastX.current = { x, t };
+    if (!last || t <= last.t) return;
+    const speed = ((x - last.x) / (t - last.t)) * 1000;
+    lean.set(Math.max(-TILT_MAX_DEG, Math.min(TILT_MAX_DEG, speed * TILT_PER_SPEED * lever)));
+  };
+
   return (
     <m.div
       // Only a face-up card names itself in the page. A face-down one — an
@@ -472,6 +522,12 @@ const LayerCard = memo(function LayerCard({
       // Cards leave the layer only when they stop existing on screen — reaching
       // the discard pile, or a round ending. Everything else is a move.
       exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.14 } }}
+      onUpdate={carry}
+      // Come to rest, it hangs straight.
+      onAnimationComplete={() => {
+        lastX.current = null;
+        lean.set(0);
+      }}
       transition={
         instant
           ? NONE
@@ -482,7 +538,13 @@ const LayerCard = memo(function LayerCard({
             : transition(reduced, SETTLE)
       }
     >
-      {faceUp && card ? <CardFace card={card} /> : <CardBack />}
+      <span
+        ref={tiltBox}
+        className="cardlayer__tilt"
+        style={dragging ? { transformOrigin: `calc(50% + ${gripX}px) calc(50% + ${gripY}px)` } : undefined}
+      >
+        {faceUp && card ? <CardFace card={card} /> : <CardBack />}
+      </span>
     </m.div>
   );
 });
@@ -658,3 +720,5 @@ function trickBounds(entities: CardEntity[], metrics: SceneMetrics) {
     height: cards + pad * 2 + TRICK_LABEL_ROOM,
   };
 }
+
+const clampUnit = (n: number) => Math.max(-1, Math.min(1, n));

@@ -1401,6 +1401,10 @@ body {
 /* A card's shadow changes as the card goes up or down — hover, pick, drag,
    the trick opening — and it eases with the card's own move rather than
    snapping. `none` cannot be eased from, so resting is a zero shadow. */
+/* The box a carried card leans in, about the point it is held (CardLayer). */
+.cardlayer__tilt {
+  display: block;
+}
 .cardlayer__card .pcard {
   box-shadow: 0 0 0 transparent;
   transition: box-shadow 180ms ease-out;
@@ -1565,13 +1569,48 @@ body {
   background: var(--gold-wash);
   animation: dropglow 900ms ease-in-out infinite alternate;
 }
+/* The table's outline comes in from the edge of its box by --space-xs, and by
+   however much more keeps it clear of the seats and the read-out around it
+   (--drop-*, measured as it lights; see dropOutline.ts). The band itself still
+   takes the drop — only the drawing is pulled in. */
+.centre.is-drop-target::after,
+.centre.is-drop-blocked::after {
+  inset: calc(var(--drop-top, 0px) + var(--space-xs)) calc(var(--drop-right, 0px) + var(--space-xs))
+    calc(var(--drop-bottom, 0px) + var(--space-xs)) calc(var(--drop-left, 0px) + var(--space-xs));
+}
 /* Legal everywhere it lights up, except the table, which is the one zone that
-   can refuse what you are holding. */
+   can refuse what you are holding. Refused, it keeps the same dashed outline —
+   the zone is the same zone — and says no three ways at once, so no one of
+   them has to carry it alone: the outline turns red, the area is struck
+   through with hazard stripes (a pattern, so it reads without the colour), and
+   a tag in its corner says why. It holds still, where a legal target pulses. */
 .centre.is-drop-blocked::after {
   border-color: var(--alert);
-  border-style: solid;
-  background: var(--alert-wash);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(224, 102, 92, 0.18) 0 calc(2 * var(--px)),
+      transparent calc(2 * var(--px)) calc(7 * var(--px))
+    ),
+    rgba(224, 102, 92, 0.1);
   animation: none;
+}
+/* The reason, as a tag hung inside the outline's top-left corner: the one
+   place in the band nothing else is drawn — the trick sits in the middle, the
+   pile to its right, the combo's name under it. */
+.centre.is-drop-blocked::before {
+  content: attr(data-refusal);
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--drop-top, 0px) + var(--space-xs));
+  left: calc(var(--drop-left, 0px) + var(--space-xs));
+  padding: var(--px) var(--space-sm);
+  background: var(--alert);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
 }
 @keyframes dropglow {
   from {
