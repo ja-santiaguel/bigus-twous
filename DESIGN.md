@@ -351,9 +351,23 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 - **Your points are on the table**, said the way each seat's are under its fan:
   "You · 12 pts", the number in bone. On a phone they sit between Sort and
   Clear; on a wide screen they lead the round line in the bottom row.
-- **A shadow never arrives before its card.** A shadow that appears — a card
-  played from your hand, a card coming to rest — waits for its card's 220ms
-  flight before fading in, since it is placed where the card is going.
+- **A shadow never arrives before its card, and never resets.** Every resting
+  card keeps its place in the shared shadow group for as long as it is on the
+  table. Lifted — hovered, picked, dragged — its shadow there fades to nothing
+  while the card casts its own, and fades back when it comes down; it is never
+  taken out and rebuilt, which is what made the shadows under a hovered hand
+  reset. Only a shadow that has just appeared waits out its card's 220ms flight
+  before fading in. The combos beaten in a closed trick lie under the one that
+  stands: a one-pixel, 45%-strength shadow, so the combo on top reads as on
+  top.
+- **The game's line sits at the top of the screen**: the round, the match and
+  the seed or table code, centred between the corner buttons and level with
+  them, in `--text-xs` `--dim`. One line on a wide screen; on a phone the seed
+  or code takes a second line of its own rather than wrapping wherever the
+  text runs out. The Menu holds How to play and Leave table only.
+- **The rules sheet scrolls** within the visible height: its box is limited to
+  `--vh` less its margin, and its body may shrink below its content
+  (`min-height: 0`) so there is something to scroll.
 - **Big plays** are the one celebration during play, and they answer in
   proportion — three levels, by how rare and how decisive the play is:
 

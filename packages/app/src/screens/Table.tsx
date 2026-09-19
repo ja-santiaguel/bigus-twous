@@ -443,26 +443,37 @@ export function Table() {
   /* The round and the seed that dealt it, as one line of text: the seed reads
      the same whether this table is yours alone or shared, so a deal can be
      carried from one to the other. */
-  const gameInfo = (
+  /* Two parts: what the game is, and what identifies it. On a wide screen they
+     share one line; on a phone, where the bar between the corner buttons is too
+     narrow for one, the second takes a line of its own instead of wrapping
+     wherever the text happens to run out. */
+  const codes = (
     <>
-      Round {roundNumber}
-      {match.rule.kind === 'rounds' ? ` of ${match.rule.count}` : ` · first to ${match.rule.target}`}
       {/* At a shared table, the code to give somebody who wants in. */}
       {online && (
-        <>
-          {' · Table '}
-          <Copyable value={tableCode} message="Code copied" label="Table code" />
-        </>
+        <span className="gameinfo__part">
+          Table <Copyable value={tableCode} message="Code copied" label="Table code" />
+        </span>
       )}
+      {online && hosting !== 'browser' && <span className="gameinfo__sep"> · </span>}
       {/* A browser-hosted table deals from everyone's shuffle, so its seed
           would not repeat the deal and is not shown. */}
       {online && hosting === 'browser' ? null : (
-        <>
-          {' · '}
+        <span className="gameinfo__part">
           <Copyable value={seed} message="Seed copied" label="Seed" />
-        </>
+        </span>
       )}
     </>
+  );
+  const gameInfo = (
+    <span className="gameinfo">
+      <span className="gameinfo__line">
+        Round {roundNumber}
+        {match.rule.kind === 'rounds' ? ` of ${match.rule.count}` : ` · first to ${match.rule.target}`}
+      </span>
+      <span className="gameinfo__sep gameinfo__sep--lines"> · </span>
+      <span className="gameinfo__line">{codes}</span>
+    </span>
   );
 
   return (
@@ -610,9 +621,7 @@ export function Table() {
 
               <div className="utility">
                 <SortControl mode={sortMode} onCycle={cycleSort} />
-                <span className="utility__seed">
-                  {myScore} · {gameInfo}
-                </span>
+                <span className="utility__seed">{myScore}</span>
                 <button className="btn btn--quiet" onClick={() => setConfirmLeave(true)}>
                   Leave table
                 </button>
@@ -628,11 +637,17 @@ export function Table() {
 
       <EventLog history={self.history} />
 
+      {/* What this game is — the round, the match, and the seed or table code —
+          at the top of the screen, centred between the corner buttons, on
+          every screen. It is read at a glance and never acted on during a
+          turn, so it sits with the other chrome rather than beside the hand. */}
+      <div className="tablebar">{gameInfo}</div>
+
       {/* Top left, mirroring the log in the top right: reference you reach for,
           not part of playing a turn. On a phone the corner holds the menu, and
           How to play, the round and Leave table live inside it. */}
       {compact ? (
-        <TableMenu info={gameInfo} onRules={() => setRulesOpen(true)} onLeave={() => setConfirmLeave(true)} />
+        <TableMenu onRules={() => setRulesOpen(true)} onLeave={() => setConfirmLeave(true)} />
       ) : (
         <button
           type="button"

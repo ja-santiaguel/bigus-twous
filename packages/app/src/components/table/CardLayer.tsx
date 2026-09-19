@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { Card } from '@big-two/engine';
-import { memo, useLayoutEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { CardBack, CardFace } from '../card/PixelCard.js';
 import { NONE, SETTLE, transition } from '../../design/motion.js';
@@ -159,12 +159,12 @@ export function CardLayer({
       <div className="cardlayer__shadows">
         <AnimatePresence>
           {entities.map((entity) => {
-            const depth = restingDepth(entity, visuals?.get(entity.id), metrics);
-            if (depth === null) return null;
+            const cast = restingShadow(entity, visuals?.get(entity.id), metrics);
+            if (cast === null) return null;
             const to = transformFor(entity.placement, metrics);
             const from =
               entity.enterFrom && !known.current.has(entity.id) ? transformFor(entity.enterFrom, metrics) : null;
-            const drop = (metrics.cardWidth / 22) * depth * to.scale;
+            const drop = (metrics.cardWidth / 22) * cast.depth * to.scale;
             const start = from ?? to;
             return (
               <LayerShadow
@@ -173,6 +173,7 @@ export function CardLayer({
                 y={to.y + drop}
                 rotate={to.rotate}
                 scale={to.scale}
+                strength={cast.strength}
                 fromX={start.x}
                 fromY={start.y + drop}
                 fromRotate={start.rotate}
@@ -451,6 +452,7 @@ const LayerShadow = memo(function LayerShadow({
   y,
   rotate,
   scale,
+  strength,
   fromX,
   fromY,
   fromRotate,
@@ -462,6 +464,8 @@ const LayerShadow = memo(function LayerShadow({
   y: number;
   rotate: number;
   scale: number;
+  /** 1 for a full shadow, less for a card lying under others, 0 while its card casts its own. */
+  strength: number;
   fromX: number;
   fromY: number;
   fromRotate: number;
@@ -469,11 +473,19 @@ const LayerShadow = memo(function LayerShadow({
   instant: boolean;
   reduced: boolean;
 }) {
+  // Only a shadow that has just appeared waits for its card to land. After
+  // that it answers at once: a card lifted by a hover hands its shadow over
+  // and back without the resting shadow being rebuilt each time.
+  const settled = useRef(false);
+  useEffect(() => {
+    settled.current = true;
+  }, []);
+  const fadeDelay = reduced || settled.current ? 0 : CARD_FLIGHT_S;
   return (
     <m.div
       className="cardlayer__shadow"
       initial={{ x: fromX, y: fromY, rotate: fromRotate, scale: fromScale, opacity: 0 }}
-      animate={{ x, y, rotate, scale, opacity: 1 }}
+      animate={{ x, y, rotate, scale, opacity: strength }}
       // Fades at the pace the picked-up card's own shadow eases in
       // (.cardlayer__card .pcard), so lifting a card hands its shadow over in
       // one smooth change instead of a blink.
@@ -489,7 +501,7 @@ const LayerShadow = memo(function LayerShadow({
               ...transition(reduced, SETTLE),
               opacity: {
                 duration: reduced ? 0 : SHADOW_FADE_S,
-                delay: reduced ? 0 : CARD_FLIGHT_S,
+                delay: fadeDelay,
                 ease: 'easeOut',
               },
             }
@@ -505,23 +517,37 @@ const CARD_FLIGHT_S = typeof SETTLE.duration === 'number' ? SETTLE.duration : 0.
 const SHADOW_FADE_S = 0.18;
 
 /**
- * How far below a resting card its shadow falls, in art pixels — or null when
- * it casts none in the shared shadow group.
+ * How far below a resting card its shadow falls, in art pixels, and how dark it
+ * is — or null when it casts none in the shared shadow group.
  *
  * Played cards lie on the felt, two pixels up. Hands are held, three up. Only
  * the bottom card of the discard pile casts, a pixel, as the pile's floor. A
  * card that is picked up, dragged, or part of a trick opened for reading casts
  * its own shadow instead.
  */
-function restingDepth(entity: CardEntity, visual: CardVisual | undefined, metrics: SceneMetrics): number | null {
-  if (visual?.raised || (visual?.dx ?? 0) !== 0 || (visual?.dy ?? 0) !== 0) return null;
+function restingShadow(
+  entity: CardEntity,
+  visual: CardVisual | undefined,
+  metrics: SceneMetrics,
+): { depth: number; strength: number } | null {
+  // Lifted — hovered, picked, dragged — the card casts its own shadow, and its
+  // place in the group fades to nothing rather than leaving it: taken out and
+  // put back, the shadow under a hovered card was rebuilt every time the
+  // pointer moved on.
+  const lifted = visual?.raised === true || (visual?.dx ?? 0) !== 0 || (visual?.dy ?? 0) !== 0;
   switch (entity.placement.zone) {
     case 'hand':
-      return 3;
-    case 'trick':
-      return metrics.trickOpen ? null : 2;
+      return { depth: 3, strength: lifted ? 0 : 1 };
+    case 'trick': {
+      // Opened for reading, every trick card casts its own.
+      if (metrics.trickOpen) return { depth: 2, strength: 0 };
+      // The combos the standing one beat lie under it, flat on the felt: a
+      // shallower, fainter shadow, so the one on top reads as on top.
+      const standing = entity.placement.group === (entity.placement.groups ?? 1) - 1;
+      return standing ? { depth: 2, strength: 1 } : { depth: 1, strength: 0.45 };
+    }
     case 'discard':
-      return entity.placement.slot === 0 ? 1 : null;
+      return entity.placement.slot === 0 ? { depth: 1, strength: 1 } : null;
   }
 }
 

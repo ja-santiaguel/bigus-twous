@@ -1,24 +1,16 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 /**
  * The table's menu, on a phone.
  *
- * On a wide screen the round, the seed or table code, How to play and Leave
- * table each have room of their own. On a phone they wrapped into a five-line
- * block under the hand that pushed the table past the bottom of the screen, and
- * none of them is needed during a turn. So they live here, behind one button in
- * the corner — the same corner as How to play on a wide screen.
+ * On a wide screen How to play and Leave table each have room of their own. On
+ * a phone they wrapped into a block under the hand that pushed the table past
+ * the bottom of the screen, and neither is needed during a turn. So they live
+ * here, behind one button in the corner — the same corner as How to play on a
+ * wide screen. (The round and the seed sit at the top of the screen, between
+ * the corner buttons, on every screen.)
  */
-export function TableMenu({
-  info,
-  onRules,
-  onLeave,
-}: {
-  /** What this game is: the round, the match, and a code or seed to copy. */
-  info: ReactNode;
-  onRules: () => void;
-  onLeave: () => void;
-}) {
+export function TableMenu({ onRules, onLeave }: { onRules: () => void; onLeave: () => void }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -57,7 +49,6 @@ export function TableMenu({
       </button>
       {open && (
         <div className="tablemenu__panel" id={panelId}>
-          <p className="tablemenu__info">{info}</p>
           <button type="button" className="btn" onClick={choose(onRules)}>
             How to play
           </button>

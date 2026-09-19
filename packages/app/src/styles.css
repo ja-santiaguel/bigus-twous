@@ -2164,7 +2164,12 @@ textarea {
   display: flex;
   flex-direction: column;
   width: min(640px, 100%);
-  max-height: 100%;
+  /* The visible height, less the sheet's margin — stated outright. A
+     percentage here resolved against a grid row that grows with its content,
+     so the sheet stretched to the full length of the rules and never scrolled. */
+  max-height: calc(100vh - 2 * var(--space-sm));
+  max-height: calc(var(--vh, 100svh) - 2 * var(--space-sm));
+  overflow: hidden;
   background: var(--table-lo);
   border: var(--px) solid var(--table-hi);
   box-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 var(--shade-soft);
@@ -2183,6 +2188,9 @@ textarea {
 }
 .rules__body {
   overflow-y: auto;
+  /* A flex child shrinks below its content only if allowed to: without this it
+     took the whole length of the rules and there was nothing left to scroll. */
+  min-height: 0;
   /* Scrollable by a finger even where the board below it takes no touches. */
   touch-action: pan-y;
   overscroll-behavior: contain;
@@ -2919,10 +2927,37 @@ textarea {
   border: var(--px) solid var(--table-hi);
   box-shadow: var(--px) var(--px) 0 var(--shade);
 }
-.tablemenu__info {
-  margin: 0 0 var(--space-xs);
-  font-size: var(--text-sm);
+/* Each part keeps itself together; a line breaks only between them. */
+.gameinfo__line,
+.gameinfo__part {
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .gameinfo {
+    display: grid;
+    justify-items: center;
+  }
+  .gameinfo__sep--lines {
+    display: none;
+  }
+}
+/* The round, the match and the seed or table code, top centre between the Log
+   and the Menu or How to play buttons, level with them. Two lines where a phone
+   is too narrow for one; clear of both corners either way. */
+.tablebar {
+  position: fixed;
+  top: var(--u);
+  left: calc(var(--u) + 72px);
+  right: calc(var(--u) + 72px);
+  z-index: var(--layer-cards);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--corner);
+  font-size: var(--text-xs);
+  line-height: 1.35;
   color: var(--dim);
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 
