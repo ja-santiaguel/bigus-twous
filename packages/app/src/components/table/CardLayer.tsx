@@ -123,6 +123,14 @@ export function CardLayer({
   // with what it is behind.
   const backdrop = metrics.trickOpen ? trickBounds(entities, metrics) : null;
 
+  /*
+   * Every AnimatePresence here says its children's comings and goings do not
+   * affect layout — true, since nothing in the layer uses layout animation. Left
+   * at its default, AnimatePresence hands each child a brand-new context on
+   * every render so layout animations can notice, and that re-rendered all
+   * fifty-two cards and their shadows on every pointer move, straight through
+   * their memo. It was most of the work a phone did while you picked cards.
+   */
   return (
     <div className={`cardlayer ${metrics.trickOpen ? 'is-open' : ''}`} aria-hidden="true">
       {/* The plate the opened trick is read against. It grows out of the pile
@@ -131,7 +139,7 @@ export function CardLayer({
           the in-play zone. Animating `x`/`y` from Framer's unset default
           started every appearance at the layer's top-left corner, so the
           plate flew in diagonally across the whole table. */}
-      <AnimatePresence>
+      <AnimatePresence presenceAffectsLayout={false}>
         {backdrop && (
           <m.div
             className="cardlayer__backdrop"
@@ -157,7 +165,7 @@ export function CardLayer({
        * own (see .is-raised), because it is no longer at the height of the rest.
        */}
       <div className="cardlayer__shadows">
-        <AnimatePresence>
+        <AnimatePresence presenceAffectsLayout={false}>
           {entities.map((entity) => {
             const cast = restingShadow(entity, visuals?.get(entity.id), metrics);
             if (cast === null) return null;
@@ -186,7 +194,7 @@ export function CardLayer({
         </AnimatePresence>
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence presenceAffectsLayout={false}>
         {entities.map((entity) => {
           const to = transformFor(entity.placement, metrics);
           // An entity that did not exist a moment ago starts wherever its
@@ -246,7 +254,7 @@ export function CardLayer({
         })}
       </AnimatePresence>
 
-      <AnimatePresence>
+      <AnimatePresence presenceAffectsLayout={false}>
         {labels?.map((label) => {
           const at = transformFor(label.placement, metrics);
           return (
@@ -297,24 +305,58 @@ function pixelSnap({ x, y }: { x?: unknown; y?: unknown }): string {
  * A caption's text, centred on its anchor by a whole-pixel offset.
  *
  * `translateX(-50%)` centred it too, but half of an odd width is a half pixel,
- * which blurred the name under the combo that stands. Measured again once the
- * typeface has loaded, since the fallback font is a different width.
+ * which blurred the name under the combo that stands.
+ *
+ * The width is read by a resize observer, not by `offsetWidth` as the caption
+ * mounts. Reading it then forced the browser to lay out the whole table in the
+ * middle of a render — on every play, with the played cards just moved — and
+ * that was among the costliest single calls of a round. An observer is told the
+ * size after the browser's own layout, before the frame is painted, so the
+ * caption is still centred the first time it is seen; and it is told again if
+ * the width changes, which covers the typeface loading in (the fallback font
+ * is a different width) and a new name.
  */
 function LabelText({ text }: { text: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
-    const centre = () => {
-      const el = ref.current;
-      if (el) el.style.marginLeft = `${-Math.round(el.offsetWidth / 2)}px`;
-    };
-    centre();
-    void document.fonts?.ready.then(centre);
-  }, [text]);
+    const el = ref.current;
+    if (!el) return undefined;
+    const observer = labelObserver();
+    if (!observer) {
+      centreOn(el, el.offsetWidth);
+      return undefined;
+    }
+    observer.observe(el);
+    return () => observer.unobserve(el);
+  }, []);
   return (
     <span className="cardlayer__labeltext" ref={ref}>
       {text}
     </span>
   );
+}
+
+/** Offset by half the width, rounded as `offsetWidth` rounds it, then to a whole pixel. */
+function centreOn(el: HTMLElement, width: number) {
+  el.style.marginLeft = `${-Math.round(Math.round(width) / 2)}px`;
+}
+
+/** One observer for every caption, made on first use. Null where there is none (tests). */
+let captions: ResizeObserver | null | undefined;
+function labelObserver(): ResizeObserver | null {
+  if (captions === undefined) {
+    captions =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver((entries) => {
+            for (const entry of entries) {
+              const box = entry.borderBoxSize?.[0];
+              const el = entry.target as HTMLElement;
+              centreOn(el, box ? box.inlineSize : el.offsetWidth);
+            }
+          });
+  }
+  return captions;
 }
 
 interface CardHandlers {

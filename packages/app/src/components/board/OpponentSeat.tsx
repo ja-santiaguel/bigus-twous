@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { SNAP, transition } from '../../design/motion.js';
 import type { SeatPosition } from '../../lib/format.js';
@@ -13,7 +14,11 @@ import { PlaceBadge } from './PlaceBadge.js';
  * which is what lets a card travel from here to the table as one object
  * instead of being destroyed in this component and recreated in another.
  */
-export function OpponentSeat({
+/*
+ * Memoised: the table re-renders on every step of a finger sliding along your
+ * hand, and none of that changes a seat.
+ */
+export const OpponentSeat = memo(function OpponentSeat({
   name,
   position,
   cardCount,
@@ -109,4 +114,4 @@ export function OpponentSeat({
       {statusLine}
     </div>
   );
-}
+});

@@ -1,6 +1,5 @@
 import { memo } from 'react';
-import type { Card, Suit } from '@big-two/engine';
-import { CARD_BACK_RUNS, SUIT_RUNS } from '../../design/pixel.js';
+import type { Card } from '@big-two/engine';
 import { SUIT_IS_RED, cardSpoken } from '../../lib/format.js';
 
 /**
@@ -12,31 +11,15 @@ import { SUIT_IS_RED, cardSpoken } from '../../lib/format.js';
  * an upside-down 7 reads as a 2. The corner rank is what stays visible when
  * cards overlap in a fan, so it does the work; the centre pip identifies the
  * suit when the card sits alone on the table.
+ *
+ * The pip and the back's lattice are pixel-art assets (assets/cards), laid on
+ * as a CSS mask filled with the card's own colour. Drawn inline they were an
+ * SVG of a dozen to two dozen rects each — over a thousand elements across a
+ * table of cards, all restyled and re-laid out whenever a card moved. As a
+ * mask each is one box the browser rasterises once, and the colours still
+ * come from the palette, so a red suit and a dimmed card are CSS as before.
+ * Custom card art replaces these files, not this component.
  */
-
-/*
- * Every card is drawn from rectangles — a rank, a pip of a dozen runs, a back
- * of several dozen. Fifty-two of those redraw on every render of the layer,
- * and the layer renders on every pointer move while a finger slides along the
- * hand. None of it can change unless the card does, so none of it is rebuilt
- * unless the card does.
- */
-const Pip = memo(function Pip({ suit, className }: { suit: Suit; className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 9 9"
-      shapeRendering="crispEdges"
-      className={`pip ${className ?? ''}`}
-      aria-hidden="true"
-      focusable="false"
-    >
-      {SUIT_RUNS[suit].map((run, i) => (
-        <rect key={i} x={run.x} y={run.y} width={run.w} height={1} fill="currentColor" />
-      ))}
-    </svg>
-  );
-});
-
 export const CardFace = memo(function CardFace({ card, dimmed = false }: { card: Card; dimmed?: boolean }) {
   const tone = SUIT_IS_RED[card.suit] ? 'is-red' : 'is-black';
   return (
@@ -49,7 +32,7 @@ export const CardFace = memo(function CardFace({ card, dimmed = false }: { card:
         {card.rank}
       </span>
       <span className="pcard__centre" aria-hidden="true">
-        <Pip suit={card.suit} className="pip--large" />
+        <span className={`pip pip--large pip--${card.suit.toLowerCase()}`} />
       </span>
       <span className="sr-only">{cardSpoken(card)}</span>
     </span>
@@ -64,13 +47,5 @@ export const CardFace = memo(function CardFace({ card, dimmed = false }: { card:
  * what keeps hidden information honest once real opponents exist.
  */
 export const CardBack = memo(function CardBack({ className = '' }: { className?: string }) {
-  return (
-    <span className={`pcard pcard--back ${className}`} aria-hidden="true">
-      <svg viewBox="0 0 8 8" width="100%" height="100%" shapeRendering="crispEdges" focusable="false">
-        {CARD_BACK_RUNS.map((run, i) => (
-          <rect key={i} x={run.x} y={run.y} width={run.w} height={1} fill="currentColor" />
-        ))}
-      </svg>
-    </span>
-  );
+  return <span className={`pcard pcard--back ${className}`} aria-hidden="true" />;
 });

@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useRef } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import type { PlayerId } from '@big-two/engine';
 import { cardsSpoken, comboLabel } from '../../lib/format.js';
@@ -23,7 +23,11 @@ const SCROLL_SLOP_PX = 6;
  * a long trick scrolls inside its window by wheel, by dragging or swiping, or
  * with the arrow keys once it has focus.
  */
-export function TableCentre({
+/*
+ * Memoised, as the seats are: a finger sliding along your hand re-renders the
+ * table on every card it crosses, and nothing here depends on what is picked.
+ */
+export const TableCentre = memo(function TableCentre({
   trickPlays,
   moundCount,
   labelFor,
@@ -210,7 +214,7 @@ export function TableCentre({
       <MoundStack count={moundCount} reduced={reduced} stackRef={discardRef} />
     </div>
   );
-}
+});
 
 function trickAria(plays: TrickPlay[], labelFor: (id: PlayerId) => string): string {
   if (plays.length === 0) return 'Table is clear';

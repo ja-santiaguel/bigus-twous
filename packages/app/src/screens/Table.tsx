@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { cardId, PLACEMENT_POINTS, type Card, type Combo, type GameEvent, type TurnConstraint } from '@big-two/engine';
 import { useGameStore, SEAT_IDS } from '../store/gameStore.js';
@@ -107,7 +107,13 @@ export function Table() {
     return seat ? seat.occupant === 'cpu' : !online && id !== HUMAN_ID;
   };
   const seatNames = useSeatNames();
-  const labelFor = (id: string | null) => (id ? personName(SEAT_IDS.indexOf(id), humanSeat, seatNames) : 'Nobody');
+  // Stable, like the view below, so the seats and the middle of the table can
+  // skip the renders a finger sliding along the hand causes: those change what
+  // is picked, never who is sitting where.
+  const labelFor = useCallback(
+    (id: string | null) => (id ? personName(SEAT_IDS.indexOf(id), humanSeat, seatNames) : 'Nobody'),
+    [humanSeat, seatNames],
+  );
   const bomb = useBombMoment(playerView?.history ?? NO_HISTORY);
   // A pass changes nothing in the middle of the table, so the announcement of
   // plays there never mentioned it. Said separately, for screen readers.
@@ -118,7 +124,7 @@ export function Table() {
       : '';
   // Derived before any hook reads it, so the hook order never depends on
   // whether a round happens to exist yet.
-  const view = playerView ? buildTableView(playerView) : null;
+  const view = useMemo(() => (playerView ? buildTableView(playerView) : null), [playerView]);
   const self = view?.self ?? null;
   const isMyTurn = awaitingHuman && !(view?.isRoundOver ?? true);
   // The engine hands back a rank-sorted hand; the player's own arrangement
@@ -140,6 +146,12 @@ export function Table() {
   const [trickScroll, setTrickScroll] = useState(0);
   // Every opening, and every new trick, starts at the newest plays.
   useEffect(() => setTrickScroll(0), [trickOpen, view?.trickId]);
+  /** How far the opened trick can scroll: set once the layout is known, below. */
+  const maxTrickScroll = useRef(0);
+  const scrollTrick = useCallback(
+    (by: number) => setTrickScroll((current) => Math.min(Math.max(current + by, 0), maxTrickScroll.current)),
+    [],
+  );
   /** The phone layout: a few controls are arranged differently there, not only styled differently. */
   const compact = useMediaQuery(COMPACT_QUERY);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -268,8 +280,7 @@ export function Table() {
   // knows whether there is anything to scroll before it is opened.
   const trickCardCount = view.trickPlays.reduce((n, play) => n + play.combo.cards.length, 0);
   const trickLayout = openTrickLayout(trickCardCount, view.trickPlays.length, { ...metrics, trickOpen: true });
-  const scrollTrick = (by: number) =>
-    setTrickScroll((current) => Math.min(Math.max(current + by, 0), trickLayout.maxScroll));
+  maxTrickScroll.current = trickLayout.maxScroll;
 
   /**
    * What the drop under the pointer would do, and whether the table would

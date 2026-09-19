@@ -254,8 +254,26 @@ body {
   left: var(--px);
   letter-spacing: calc(-1 * var(--px));
 }
+/* A suit pip: the suit's pixel-art asset as a mask over the card's colour, so
+   red and black stay palette colours and a dimmed card dims its pip with it.
+   One box instead of an SVG of a dozen rects (see PixelCard). */
 .pip {
   display: block;
+  background: currentColor;
+  -webkit-mask: var(--pip-art) center / contain no-repeat;
+  mask: var(--pip-art) center / contain no-repeat;
+}
+.pip--heart {
+  --pip-art: url('./assets/cards/heart.svg');
+}
+.pip--diamond {
+  --pip-art: url('./assets/cards/diamond.svg');
+}
+.pip--spade {
+  --pip-art: url('./assets/cards/spade.svg');
+}
+.pip--club {
+  --pip-art: url('./assets/cards/club.svg');
 }
 .pip--small {
   width: var(--pip-small);
@@ -278,10 +296,15 @@ body {
   color: var(--back-hi);
   overflow: hidden;
 }
-.pcard--back svg {
-  display: block;
-  width: 100%;
-  height: 100%;
+/* The lattice: a pixel-art asset masked over --back-hi, fitted to the card's
+   width and centred, as the inline drawing it replaced was. */
+.pcard--back::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  -webkit-mask: url('./assets/cards/back.svg') center / contain no-repeat;
+  mask: url('./assets/cards/back.svg') center / contain no-repeat;
 }
 
 /* ── Layout shell ────────────────────────────────────────────────────── */

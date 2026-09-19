@@ -59,7 +59,9 @@ export function useBombMoment(history: GameEvent[]): { moment: BombMomentCue | n
   const seen = useRef<number | null>(null);
   // Timers live in refs, not in the effect's cleanup: the log changes again on
   // the very next turn, and cleaning up then would strand the callout on screen.
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Each one takes itself out when it fires, so a long match does not keep a
+  // list of every big play it ever had.
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
 
   useEffect(() => {
     const from = seen.current;
@@ -76,15 +78,20 @@ export function useBombMoment(history: GameEvent[]): { moment: BombMomentCue | n
     }
     if (!found) return;
 
+    const later = (run: () => void, ms: number) => {
+      const timer = setTimeout(() => {
+        timers.current.delete(timer);
+        run();
+      }, ms);
+      timers.current.add(timer);
+    };
     const cue = found;
     setMoment(cue);
     if (SHAKE_MS[cue.level] > 0) {
       setShaking(cue.level);
-      timers.current.push(setTimeout(() => setShaking(null), SHAKE_MS[cue.level]));
+      later(() => setShaking(null), SHAKE_MS[cue.level]);
     }
-    timers.current.push(
-      setTimeout(() => setMoment((current) => (current?.key === cue.key ? null : current)), HOLD_MS[cue.level]),
-    );
+    later(() => setMoment((current) => (current?.key === cue.key ? null : current)), HOLD_MS[cue.level]);
   }, [history]);
 
   useEffect(

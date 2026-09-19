@@ -1,65 +1,18 @@
 /**
- * Suit pips as hand-authored pixel bitmaps.
+ * Pixel bitmaps for the small marks drawn inline: the medal and the icons.
  *
- * These are drawn on a 9×9 grid rather than taken from a font or an icon set.
- * A font suit is a smooth vector shape — at card size it either anti-aliases
- * into mush against hard pixel edges, or it simply looks like text sitting on
- * a pixel-art card. Authoring the pips as actual pixels is the difference
- * between a pixel-art game and a game with a pixel font.
+ * Authored on a grid rather than taken from a font or an icon set. A font glyph
+ * is a smooth vector shape — at this size it either anti-aliases into mush
+ * against hard pixel edges, or it reads as text sitting on pixel art. Drawing
+ * them as actual pixels is the difference between a pixel-art game and a game
+ * with a pixel font. (The suit pips and the card back are the same kind of
+ * drawing, kept as asset files in assets/cards — see PixelCard.)
  *
  * They render as SVG rects with crisp edges, so they stay sharp at any integer
- * scale and under the 3D transforms the table applies to cards.
+ * scale.
  */
 
 export type Bitmap = string[];
-
-const HEART: Bitmap = [
-  '.##...##.',
-  '#########',
-  '#########',
-  '#########',
-  '.#######.',
-  '..#####..',
-  '...###...',
-  '....#....',
-  '.........',
-];
-
-const DIAMOND: Bitmap = [
-  '....#....',
-  '...###...',
-  '..#####..',
-  '.#######.',
-  '#########',
-  '.#######.',
-  '..#####..',
-  '...###...',
-  '....#....',
-];
-
-const SPADE: Bitmap = [
-  '....#....',
-  '...###...',
-  '..#####..',
-  '.#######.',
-  '#########',
-  '#########',
-  '.##.#.##.',
-  '....#....',
-  '...###...',
-];
-
-const CLUB: Bitmap = [
-  '...###...',
-  '..#####..',
-  '...###...',
-  '.##.#.##.',
-  '#########',
-  '#########',
-  '.###.###.',
-  '....#....',
-  '...###...',
-];
 
 export interface PixelRun {
   x: number;
@@ -87,31 +40,6 @@ export function toRuns(bitmap: Bitmap): PixelRun[] {
   });
   return runs;
 }
-
-/** Precomputed at module load — the bitmaps never change. */
-export const SUIT_RUNS = {
-  HEART: toRuns(HEART),
-  DIAMOND: toRuns(DIAMOND),
-  SPADE: toRuns(SPADE),
-  CLUB: toRuns(CLUB),
-} as const;
-
-/**
- * The card back motif: a lattice that tiles without needing an image asset,
- * drawn on the same grid discipline as the pips.
- */
-export const CARD_BACK_MOTIF: Bitmap = [
-  '..#..#..',
-  '.#.##.#.',
-  '#..##..#',
-  '.#.##.#.',
-  '..#..#..',
-  '.#.##.#.',
-  '#..##..#',
-  '.#.##.#.',
-];
-
-export const CARD_BACK_RUNS = toRuns(CARD_BACK_MOTIF);
 
 /**
  * A medal, for a seat that has finished the round.

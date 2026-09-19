@@ -696,16 +696,32 @@ is moving. A phone is the machine to design for.
 - **One render per frame.** Pointer moves arrive faster than the screen
   redraws; a drag writes its state to a ref and schedules a single render on the
   next frame (`useTableDrag`).
-- **Draw a card only when that card changes.** Cards are memoised on primitive
-  props and their handlers are a bundle made once, so a gesture re-renders the
-  cards it touched rather than all fifty-two; the pixel art of a face and a back
-  is memoised too.
+- **Draw a card only when that card changes.** Cards and their shadows are
+  memoised on primitive props and their handlers are a bundle made once, so a
+  gesture re-renders the cards it touched rather than all fifty-two. The card
+  layer's `AnimatePresence` sets `presenceAffectsLayout={false}` — nothing in
+  it uses layout animation, and at the default every child gets a new context
+  on every render, which re-rendered every card straight through its memo. The
+  seats, the middle of the table and the log are memoised as well: picking
+  cards changes none of them.
+- **Card art is assets, not markup.** The suit pips and the back's lattice are
+  SVG files in `assets/cards`, laid on as a CSS mask over the card's own
+  colour. Drawn inline they were a dozen to two dozen rects each, over a
+  thousand elements across the table; as masks each is one box, and red,
+  black and dimming still come from the palette. Custom card art replaces
+  those files.
+- **Never measure in the middle of a render.** A caption centres itself from a
+  resize observer, which is told its width after the browser's own layout,
+  rather than reading `offsetWidth` as it mounts and forcing a layout of the
+  whole table on every play.
 - **Blur costs a frame.** A filter over a layer of moving shapes is an offscreen
   buffer redrawn every frame: shadows blur per shadow, and the opened trick's
   plate is a flat scrim rather than a backdrop blur.
 - **Measure before and after**, throttled: the phone-sized table went from 36fps
   (20 slow frames in 2.5s) to ~52fps (5) while dragging along the hand, at 4x
-  CPU throttling.
+  CPU throttling, and with the changes above to 60fps with none, at half the
+  script time; the deal's longest frame fell from ~270ms to ~200ms, and the
+  table holds about a third of the elements it did.
 
 ## 11. Seeds
 
@@ -714,7 +730,7 @@ One format everywhere: two groups of four from the table-code alphabet
 at a shared table — which pile you get still depends on the blind pick.
 Generated and normalised only by `@big-two/session`'s `seed.ts`.
 
-The seed in the table's bottom bar is always the seed that dealt it. Playing
+The seed in the table's top bar is always the seed that dealt it. Playing
 alone, returning to the lobby deals a fresh seed; to replay a deal, copy the
 seed first.
 

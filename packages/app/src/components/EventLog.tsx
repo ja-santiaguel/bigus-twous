@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import type { GameEvent } from '@big-two/engine';
 import { SEAT_IDS, useGameStore } from '../store/gameStore.js';
 import { cardsLabel, comboLabel, personName } from '../lib/format.js';
@@ -15,7 +15,8 @@ import { useSeatNames } from '../lib/useSeatNames.js';
  * Collapsed by default: it is a debugging and verification tool, not part of
  * the table.
  */
-export function EventLog({ history }: { history: GameEvent[] }) {
+/* Memoised: it changes when the log does, not when a card is picked. */
+export const EventLog = memo(function EventLog({ history }: { history: GameEvent[] }) {
   const [open, setOpen] = useState(false);
   const humanSeat = useGameStore((s) => s.humanSeat);
   const seatNames = useSeatNames();
@@ -41,7 +42,7 @@ export function EventLog({ history }: { history: GameEvent[] }) {
       )}
     </aside>
   );
-}
+});
 
 const PLACES = ['1st', '2nd', '3rd', '4th'];
 
