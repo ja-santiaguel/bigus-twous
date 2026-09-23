@@ -64,11 +64,16 @@ async function playRound(pick: () => number) {
 
 describe('a campaign table played through the stores', () => {
   for (const classId of CLASS_IDS) {
-    it(`never stalls between hands (${classId})`, { timeout: 60_000 }, async () => {
+    it(`never stalls between hands (${classId})`, { timeout: Number(process.env.FLOW_TIMEOUT ?? 60_000) }, async () => {
       game.getState().setPaced(false);
       const pick = createRng(`flow-${classId}`);
       let hands = 0;
-      for (let runs = 0; runs < 12 && hands < 60; runs++) {
+      const seen = { reckonings: 0, fallen: 0, handsShort: 0, eventSteps: 0 };
+      for (
+        let runs = 0;
+        runs < Number(process.env.FLOW_RUNS ?? 12) && hands < Number(process.env.FLOW_HANDS ?? 60);
+        runs++
+      ) {
         campaign.getState().begin(classId);
         for (let step = 0; step < 400; step++) {
           const run = campaign.getState().run;
@@ -87,12 +92,19 @@ describe('a campaign table played through the stores', () => {
             continue;
           }
           if (run.phase === 'event') {
+            if (!eventOver(run.event!)) seen.eventSteps += 1;
             const event = run.event!;
             if (eventOver(event)) campaign.getState().leaveEvent();
             else if (event.id === 'ferryman')
               campaign
                 .getState()
-                .act(event.turned.length === 0 ? { kind: 'stake' } : { kind: 'call', higher: pick() < 0.5 });
+                .act(
+                  event.turned.length === 0
+                    ? run.worth > event.stake
+                      ? { kind: 'stake' }
+                      : { kind: 'decline' }
+                    : { kind: 'call', higher: pick() < 0.5 },
+                );
             else if (event.id === 'reliquary')
               campaign.getState().act({ kind: 'open', coffer: Math.floor(pick() * 3) });
             else campaign.getState().act(pick() < 0.5 ? { kind: 'haggle' } : { kind: 'pay' });
@@ -103,10 +115,14 @@ describe('a campaign table played through the stores', () => {
             campaign.getState().rejoin();
             continue;
           }
+          const reck = campaign.getState().run?.table?.hand?.reckoning ?? false;
           await playRound(pick);
           hands += 1;
+          if (reck) seen.reckonings += 1;
           await until(() => !campaign.getState().run?.table?.hand, 'hand settled');
           const after = campaign.getState().run!;
+          seen.fallen += after.lastHand?.left.filter((l) => l.persona).length ?? 0;
+          if (after.table?.seats.some((s) => s.broke)) seen.handsShort += 1;
           expect(after.lastHand).not.toBeNull();
           if (after.lastHand!.end || after.phase !== 'table') {
             campaign.getState().leaveTable();
@@ -118,6 +134,7 @@ describe('a campaign table played through the stores', () => {
         campaign.getState().abandon();
         game.getState().leaveTable();
       }
+      if (process.env.FLOW_LOG) console.log(classId, hands, JSON.stringify(seen));
       expect(hands).toBeGreaterThanOrEqual(60);
     });
   }

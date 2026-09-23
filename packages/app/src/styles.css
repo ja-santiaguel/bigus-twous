@@ -5506,9 +5506,6 @@ button.classcard.is-picked:hover {
   min-height: calc(var(--card-h, 93px) * 1.2);
   align-items: center;
 }
-.eventscene__card .pcard {
-  --px: calc(var(--scale) * 3px);
-}
 .eventscene__card.is-past {
   opacity: 0.5;
 }
@@ -5586,4 +5583,17 @@ button.classcard.is-picked:hover {
   gap: 0.35em;
   font-size: var(--text-sm);
   color: var(--gold);
+}
+
+/* What a Medallion in a coffer does, under its name. */
+.eventscene__medallion {
+  display: grid;
+  gap: var(--space-xs);
+  justify-items: center;
+  text-align: center;
+}
+.eventscene__medallion small {
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--bone-dim);
 }

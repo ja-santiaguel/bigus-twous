@@ -14,6 +14,7 @@ import {
   PLAYER_SEAT,
   SHOWDOWN_ANTE,
   keyOf,
+  inPlay,
   you,
   type HandOutcome,
   type TableSeat,
@@ -147,7 +148,7 @@ export function CampaignInfo() {
             }
           >
             <p>This hand&rsquo;s pot, {gold(pot)} gold:</p>
-            {table.seats.map((s) => {
+            {inPlay(table).map((s) => {
               const paid = contributions[s.id] ?? 0;
               const antePaid = Math.min(paid, anteFor(table, s, showdown && !(reckoning && s.id === PLAYER_SEAT)));
               const plays = paid - antePaid;

@@ -16,7 +16,7 @@ import {
 import { useCampaignStore } from '../../store/campaignStore.js';
 import { CardBack, CardFace } from '../card/PixelCard.js';
 import { GoldCoin } from '../GoldAmount.js';
-import { medallionName } from './medallionText.js';
+import { medallionEffect, medallionName } from './medallionText.js';
 import { Terms } from '../Terms.js';
 
 /**
@@ -180,9 +180,12 @@ function Reliquary({ event }: { run: RunState; event: ReliquaryState }) {
                         <GoldCoin /> {gold(coffer.holds.amount)}
                       </>
                     ) : (
-                      <strong className={`rarity rarity--${MEDALLIONS[coffer.holds.id].rarity}`}>
-                        {medallionName(coffer.holds.id, 1)}
-                      </strong>
+                      <span className="eventscene__medallion">
+                        <strong className={`rarity rarity--${MEDALLIONS[coffer.holds.id].rarity}`}>
+                          {medallionName(coffer.holds.id, 1)}
+                        </strong>
+                        <small>{medallionEffect(coffer.holds.id, 1)}</small>
+                      </span>
                     )}
                   </span>
                 ) : (

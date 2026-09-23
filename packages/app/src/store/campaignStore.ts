@@ -31,6 +31,7 @@ import {
 } from '@big-two/campaign';
 import { makeSeed } from '@big-two/session';
 import { campaignClient, useGameStore } from './gameStore.js';
+import { forgetGold } from '../components/GoldAmount.js';
 
 /**
  * The campaign, as the screens see it.
@@ -244,6 +245,7 @@ export const useCampaignStore =
       arriving: false,
 
       begin: (classId) => {
+        forgetGold();
         save(startRun(makeSeed(), classId, get().vestiges));
         set({ welcoming: true });
       },

@@ -17,6 +17,14 @@ import { useReducedMotion } from 'framer-motion';
 
 const lastShown = new Map<string, number>();
 
+/**
+ * Forget what was last shown: a new run starts its gold afresh, rather than
+ * counting down from where the last run ended.
+ */
+export function forgetGold(prefix = ''): void {
+  for (const key of [...lastShown.keys()]) if (key.startsWith(prefix)) lastShown.delete(key);
+}
+
 /** How long the change is shown before the amount starts counting to it. */
 const COUNT_LEAD_MS = 450;
 
