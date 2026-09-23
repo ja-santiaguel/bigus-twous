@@ -33,23 +33,29 @@ Tokens live in `packages/app/src/styles.css` (`:root`). Card sizes live in
 
 ## 2. Colour
 
-| Token | Value | Use |
-|---|---|---|
-| `--table` | `#2b3a36` | The felt. |
-| `--table-lo` | `#24312e` | Panels, subdued raised buttons. |
-| `--table-hi` | `#35443f` | Default raised button surface, outlines, dividers. |
-| `--field` | `#1e2825` | Input surfaces — darker than any panel they sit on. |
-| `--ink` | `#1b1f24` | Borders of raised things, and the colour every shadow is cast in. |
-| `--bone` | `#e4dccb` | Primary text, card faces. |
-| `--bone-dim` | `#c9c0ae` | Secondary text. |
-| `--dim` | `#95a39e` | Tertiary text, flat control text, disabled flat controls. |
-| `--edge` | `#6a8a80` | The outline of an editable field — 3:1 against the table. |
-| `--gold` | `#d9a441` | **Your move**, the primary action, the standing combo, selection. |
-| `--gold-hi` | `#e6b457` | Primary button hover. |
-| `--on-gold` | `#241905` | Text on a gold surface. |
-| `--alert` | `#e0665c` | Every "no": a selection that cannot play, a refused play, a seat that has **passed** (yours included), urgent time. |
-| `--pass` / `--pass-hi` | `#91352f` / `#9b3a34` | The Pass button — the passed colour, deep enough for bone text. |
-| `--silver` / `--bronze` | `#b9c2c6` / `#cc9660` | Second and third place. |
+The world is a ruin underground — grim gothic fantasy, played by candle and
+bone rather than neon. Every surface is dark slate stone; cards and words are
+bone; gold marks whatever wants your eye and whatever is money; blood red says
+no. Behind everything, still: a vignette at the edges and a two-pixel grain,
+faint enough to read as stone rather than pattern. No glowing titles or mist.
+
+| Token                   | Value                 | Use                                                                                                                 |
+| ----------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `--table`               | `#16211f`             | The stone floor every screen stands on.                                                                             |
+| `--table-lo`            | `#101917`             | Panels, subdued raised buttons.                                                                                     |
+| `--table-hi`            | `#22322f`             | Default raised button surface, outlines, dividers.                                                                  |
+| `--field`               | `#0e1716`             | Input surfaces — darker than any panel they sit on.                                                                 |
+| `--ink`                 | `#0b1212`             | Borders of raised things, and the colour every shadow is cast in.                                                   |
+| `--bone`                | `#ddd5c0`             | Primary text, card faces (parchment, with an aged inner edge).                                                      |
+| `--bone-dim`            | `#bdb4a0`             | Secondary text.                                                                                                     |
+| `--dim`                 | `#8fa29c`             | Tertiary text, flat control text, disabled flat controls.                                                           |
+| `--edge`                | `#4f8177`             | The outline of an editable field — 3:1 against the table.                                                           |
+| `--gold`                | `#d9a441`             | **Your move**, the primary action, the standing combo, selection, focus — and gold itself: pots, prizes, placings.  |
+| `--gold-hi`             | `#e6b457`             | Primary button hover.                                                                                               |
+| `--on-gold`             | `#241905`             | Text on a gold surface.                                                                                             |
+| `--alert`               | `#e0584e`             | Every "no": a selection that cannot play, a refused play, a seat that has **passed** (yours included), urgent time. |
+| `--pass` / `--pass-hi`  | `#7c2621` / `#8a2c26` | The Pass button — the passed colour, deep enough for bone text.                                                     |
+| `--silver` / `--bronze` | `#b9c2c6` / `#cc9660` | Second and third place.                                                                                             |
 
 **Contrast is a rule, not a check at the end.** Every text colour meets WCAG AA
 — 4.5:1 — on `--table`, `--table-lo` and `--field`; the outline of anything
@@ -60,36 +66,36 @@ One deliberate exception: `--alert` is a deep red, because a pale one read as
 pink rather than as "no". It holds **3:1** on every surface, and it only ever
 colours words that already say what is wrong ("passed", "can't play that"), so
 the colour is never the only cue.
-| `--suit-red` | `#b3322b` | Hearts and diamonds. |
-| `--back` / `--back-hi` | | Card backs. |
+| `--suit-red` | `#9c2019` | Hearts and diamonds — dried blood on parchment. |
+| `--back` / `--back-hi` | `#4a6670` / `#5e7f8a` | Card backs. |
 
-Washes and scrims (`--gold-wash`, `--alert-wash`, `--scrim`, `--scrim-strong`)
-are the only translucent colours. Do not write new `rgba()` values.
+Washes and scrims (`--gold-wash`, `--alert-wash`, `--scrim`, `--scrim-strong`) are the only translucent colours,
+with the atmosphere behind the page. Do not write new `rgba()` values.
 
 ### What colour means
 
-| Meaning | Colour |
-|---|---|
-| It is this seat's turn | gold name, gold turn marker |
-| This seat has passed | `--alert` name, "passed" tag |
-| This seat has finished | `--dim` name, place medal |
-| Your selection will play | gold read-out |
-| Your selection cannot play | `--alert` read-out, and the turn marker beside it |
-| You have passed | `--alert` read-out: "Passed — out until the table clears" |
-| Your hand is empty | place medal + `--bone-dim` read-out: "Your hand is empty" |
-| The table refused an action | `--alert` read-out, and the turn marker beside it |
-| Not your move | `--dim` read-out |
+| Meaning                     | Colour                                                    |
+| --------------------------- | --------------------------------------------------------- |
+| It is this seat's turn      | gold name, gold turn marker                               |
+| This seat has passed        | `--alert` name, "passed" tag                              |
+| This seat has finished      | `--dim` name, place medal                                 |
+| Your selection will play    | gold read-out                                             |
+| Your selection cannot play  | `--alert` read-out, and the turn marker beside it         |
+| You have passed             | `--alert` read-out: "Passed — out until the table clears" |
+| Your hand is empty          | place medal + `--bone-dim` read-out: "Your hand is empty" |
+| The table refused an action | `--alert` read-out, and the turn marker beside it         |
+| Not your move               | `--dim` read-out                                          |
 
 ## 3. Type
 
 One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
 
-| Token | Size | Role |
-|---|---|---|
+| Token       | Size | Role                                                     |
+| ----------- | ---- | -------------------------------------------------------- |
 | `--text-xs` | 12px | Incidental meta: captions, "passed", counts under cards. |
-| `--text-sm` | 14px | Labels and **every control label**. |
-| `--text-md` | 16px | The sentence that matters on a screen; seat names. |
-| `--text-lg` | 24px | Headings. |
+| `--text-sm` | 14px | Labels and **every control label**.                      |
+| `--text-md` | 16px | The sentence that matters on a screen; seat names.       |
+| `--text-lg` | 24px | Headings.                                                |
 
 - Every button, chip and tag is `--text-sm` at weight 400. Emphasis comes from
   colour and surface, never from a heavier or bigger label.
@@ -111,17 +117,18 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
 - **Spacing is a five-step scale, and nothing between the steps.** Every margin,
   padding and gap is one of:
 
-  | Token | Size | For |
-  |---|---|---|
-  | `--space-xs` | 2 art px (`--u` / 2) | A label to its control; a caption to its value |
-  | `--space-sm` | 4 art px (`--u`) | Between controls in a row; inside a group |
-  | `--space-md` | 8 art px | Between fields, rows and options |
-  | `--space-lg` | 12 art px | Between sections — e.g. the start group and the options above it |
-  | `--space-xl` | 20 art px | Breathing room around the hand and the top seat |
+  | Token        | Size                 | For                                                              |
+  | ------------ | -------------------- | ---------------------------------------------------------------- |
+  | `--space-xs` | 2 art px (`--u` / 2) | A label to its control; a caption to its value                   |
+  | `--space-sm` | 4 art px (`--u`)     | Between controls in a row; inside a group                        |
+  | `--space-md` | 8 art px             | Between fields, rows and options                                 |
+  | `--space-lg` | 12 art px            | Between sections — e.g. the start group and the options above it |
+  | `--space-xl` | 20 art px            | Breathing room around the hand and the top seat                  |
 
   Sizes that are not spacing — a column width, a panel's maximum width — may
   still be written in `--u`. A new margin that seems to need a value off the
   scale is a sign the grouping is wrong, not that the scale is.
+
 - **One gap between controls: `--space-sm`** — a field and its icon buttons, the
   utility row, a row of action buttons.
 - **Space says what belongs together.** Inside a group, `--space-sm` to
@@ -144,14 +151,14 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
   (721–1024px) and phone (720px and under) — and everything that should respond
   to the screen responds in the same steps. Each band sets the type
   scale, the spacer between groups and, on touch, the control heights. An
-  element asks for a *role* (`--text-md`, `--space-group`, `--control-sm`) and
+  element asks for a _role_ (`--text-md`, `--space-group`, `--control-sm`) and
   never a smaller role to fit a phone: the roles themselves come down.
 
-  | | Desktop | Tablet | Phone |
-  |---|---|---|---|
-  | Type xs / sm / md / lg | 12 / 14 / 16 / 24 | 12 / 14 / 15 / 22 | 12 / 13 / 14 / 20 |
-  | `--space-group` | `--space-lg` (36px) | 10 art px (30px) | `--space-lg` at the phone's scale (24px) |
-  | Touch lg / md / sm | 44 / 44 / 44 | 44 / 40 / 32 | 44 / 36 / 28 |
+  |                        | Desktop             | Tablet            | Phone                                    |
+  | ---------------------- | ------------------- | ----------------- | ---------------------------------------- |
+  | Type xs / sm / md / lg | 12 / 14 / 16 / 24   | 12 / 14 / 15 / 22 | 12 / 13 / 14 / 20                        |
+  | `--space-group`        | `--space-lg` (36px) | 10 art px (30px)  | `--space-lg` at the phone's scale (24px) |
+  | Touch lg / md / sm     | 44 / 44 / 44        | 44 / 40 / 32      | 44 / 36 / 28                             |
 
   `--control-lg` is the action a screen exists for (Start game, Ready up, Pass,
   Play cards) — the same as any button on a wide screen, and the height that
@@ -159,9 +166,10 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
   button and every field; `--control-sm` a chip or tag inside a list — a
   difficulty, a match length, a ready state, and Sit here, which takes its row's
   chip height on every tier so the seat rows stay even. A mouse gets the
-  pixel-exact art heights on every band. The spacing *scale* (`--space-xs` to
+  pixel-exact art heights on every band. The spacing _scale_ (`--space-xs` to
   `--space-xl`) is in art pixels and follows `--scale`; `--space-group` is the
   role that steps. The art never changes size; the box around it does.
+
 - **A height is chosen against the padding beside the label, never on its own.**
   Side padding runs a little under half the height — `--space-md` either side of
   a 36px button, `--space-sm` of a 28px chip — so a control reads as a control
@@ -178,6 +186,7 @@ One face: **Silkscreen**, smoothing off. Four sizes, chosen by role:
 Two tiers. The tier says how consequential the action is, not how it looks.
 
 ### Raised
+
 Changes the game, leaves a screen, or opens one: **Start game, Ready up, Play cards, Pass,
 Clear, Leave, Leave table, Play another round, How to play**, and the sort control.
 
@@ -188,13 +197,22 @@ Clear, Leave, Leave table, Play another round, How to play**, and the sort contr
   (`--pass`, bone) · quiet (`--table-lo`, `--bone-dim`, for Leave).
 
 ### Flat
+
 Conveniences and toggles: **new seed, copy seed, difficulty chips, Sit here, Log**.
 
 - No surface, `--table-hi` outline, `--dim` text, no shadow, no movement.
 - Hover: text to bone, outline to `--dim`.
 - A pressed toggle (`aria-pressed="true"`) takes the gold surface.
 
+### The screen's main action
+
+The one action a screen exists for (Start game, Begin, Sit down, Move on) is
+sized to its words over a floor of 36 art units, centred in its group — never
+stretched to the panel's width, where it read as a banner rather than a
+button. It is the tall height (`--control-lg`).
+
 ### Shared states
+
 - **Focus:** `--px` gold outline, offset `--px`, on keyboard focus only.
 - **Disabled, raised:** the same button at `opacity: .45`, with no shadow and no
   hover. It keeps its hue, so a gold button is still the gold button.
@@ -204,11 +222,12 @@ Conveniences and toggles: **new seed, copy seed, difficulty chips, Sit here, Log
 - **Transition:** 90ms, `steps(2)`, on transform, shadow, colour and border.
 
 ### Labels
+
 Sentence case in source, verbs that say what happens, the same word everywhere.
 
 **A button names the action pressing it performs, never a state.** Somebody
 glancing at a button must not be able to read it as a report of how things
-are. "Not ready" on a button reads as *you are not ready* — while the truth is
+are. "Not ready" on a button reads as _you are not ready_ — while the truth is
 the reverse — so the button says "Cancel ready".
 
 - **Lead with a verb** ("Start game", "Cancel ready", "Leave table"). A bare
@@ -216,7 +235,7 @@ the reverse — so the button says "Cancel ready".
   button label.
 - **State lives beside the control, not in it:** on a tag (the seat's "Ready" /
   "Not ready"), a status line, or a pressed toggle's fill. A button that
-  switches between two actions swaps its label to the *next* action; the state
+  switches between two actions swaps its label to the _next_ action; the state
   it leaves you in shows on the tag.
 - **Exceptions, which show a value rather than an action:** option chips (the
   label is the option, the fill says which is chosen) and a cycling setting
@@ -228,13 +247,13 @@ the reverse — so the button says "Cancel ready".
   someone know what happens when they press it — and could they mistake it for
   what is already true?
 
-| Action | Label |
-|---|---|
-| Start a game — alone, or as a shared table's host | Start game |
-| Say you are ready at a shared table | Ready up / Cancel ready |
-| Leave a lobby | Leave |
-| Leave a game in progress | Leave table |
-| Next round | Play another round |
+| Action                                            | Label                   |
+| ------------------------------------------------- | ----------------------- |
+| Start a game — alone, or as a shared table's host | Start game              |
+| Say you are ready at a shared table               | Ready up / Cancel ready |
+| Leave a lobby                                     | Leave                   |
+| Leave a game in progress                          | Leave table             |
+| Next round                                        | Play another round      |
 
 ## 6. Inputs
 
@@ -270,13 +289,13 @@ Every shadow is cast in the same ink:
 
 **A card's shadow says how far off the felt it is.**
 
-| Card | Shadow |
-|---|---|
-| Played — every card of the closed trick, the standing combo included | two pixels straight down |
-| Discard pile | the bottom card only, one pixel down |
-| Held — your hand and every seat's fan | three pixels straight down, levitating like cards in a hand |
-| Picked up — hovered, pressed, picked or dragged | two across, five down, above the hand it left |
-| An opened trick | two across, three down |
+| Card                                                                 | Shadow                                                      |
+| -------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Played — every card of the closed trick, the standing combo included | two pixels straight down                                    |
+| Discard pile                                                         | the bottom card only, one pixel down                        |
+| Held — your hand and every seat's fan                                | three pixels straight down, levitating like cards in a hand |
+| Picked up — hovered, pressed, picked or dragged                      | two across, five down, above the hand it left               |
+| An opened trick                                                      | two across, three down                                      |
 
 Card shadows are **crisp with a soft edge**: half an art pixel of blur for
 cards on or just above the felt, a pixel for an opened trick, a pixel and a
@@ -381,11 +400,11 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 - **Big plays** are the one celebration during play, and they answer in
   proportion — three levels, by how rare and how decisive the play is:
 
-  | Level | Plays | The table answers with |
-  |---|---|---|
-  | 1 | A single 2; a straight of 4 or 5 | A half-strength flash, no shake; the name at 1.25× `--text-lg`, held 1.1s |
-  | 2 | A chop (a bomb on one 2); a pair of 2s; a straight of 6 or 7 | A gold flash in 3 steps, a 1–2 art pixel shake (360ms); the name at 2×, held 1.6s |
-  | 3 | A bomb on a pair or three of 2s; a bomb on a bomb; three 2s; four 2s; a straight of 8 or more | A card-face flash that comes twice, a 2–3 pixel shake (560ms); the name at 2.5× in bone on a gold shadow, held 2.2s |
+  | Level | Plays                                                                                         | The table answers with                                                                                              |
+  | ----- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+  | 1     | A single 2; a straight of 4 or 5                                                              | A half-strength flash, no shake; the name at 1.25× `--text-lg`, held 1.1s                                           |
+  | 2     | A chop (a bomb on one 2); a pair of 2s; a straight of 6 or 7                                  | A gold flash in 3 steps, a 1–2 art pixel shake (360ms); the name at 2×, held 1.6s                                   |
+  | 3     | A bomb on a pair or three of 2s; a bomb on a bomb; three 2s; four 2s; a straight of 8 or more | A card-face flash that comes twice, a 2–3 pixel shake (560ms); the name at 2.5× in bone on a gold shadow, held 2.2s |
 
   Straights sit where their odds put them. Over 400,000 simulated deals a
   thirteen-card hand holds a 2 70% of the time, two 2s 26%, three 2s 4.4% —
@@ -397,20 +416,20 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   Only the kind of play is named, never who made it — their cards are already
   in front of their seat, and the log says it in words:
 
-  | Play | Name |
-  |---|---|
-  | A single 2 | 2 of Spades! (the card itself: which 2 it is matters) |
-  | A pair / three / four 2s | Pair of Twos! · Three Twos! · Four Twos! |
-  | A bomb on one / two / three 2s | Chopped! · Double chop! · Triple chop! |
-  | A bomb on a bomb | Counter-bomb! |
-  | A straight of 4–11 | Straight of N! |
-  | A straight of all twelve ranks, 3 to the ace | Dragon! |
+  | Play                                         | Name                                                  |
+  | -------------------------------------------- | ----------------------------------------------------- |
+  | A single 2                                   | 2 of Spades! (the card itself: which 2 it is matters) |
+  | A pair / three / four 2s                     | Pair of Twos! · Three Twos! · Four Twos!              |
+  | A bomb on one / two / three 2s               | Chopped! · Double chop! · Triple chop!                |
+  | A bomb on a bomb                             | Counter-bomb!                                         |
+  | A straight of 4–11                           | Straight of N!                                        |
+  | A straight of all twelve ranks, 3 to the ace | Dragon!                                               |
 
   **A "2" never sits directly beside an "S".** In the pixel face the two run
   together into one smudged glyph, so several Twos are spelled out; "2 of
   Spades" is fine, with a word between them.
 
-  **The name sits on a band.** An ink band (95%) runs across the whole table
+  **The name sits on a band.** An ink band (95%) runs across the whole window, edge to edge, not only the table (a table narrower than the window left it looking cut off)
   behind it, so the name has one dark ground wherever it lands — over the
   trick, the seats or the felt. **In:** the band sweeps open sideways from the
   centre of the table (180ms, 3 steps), and the name pops in once it is open.
@@ -427,10 +446,37 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
 
 ## 10. Layout
 
-- **The table is capped both ways and centred**: at most 20 card widths wide and
-  11 card heights tall, in card units so it scales with `--scale`. On a wide
-  screen the side seats stay near the trick instead of running to the edges; on
-  a tall or portrait screen the top seat and your hand stay in proportion.
+### Layout frame
+
+Every screen is laid out in one frame, set by three tokens and the spacing
+scale (section 4):
+
+- **`--edge`** (one `--u`, 12px at scale 3): how far all chrome sits from the
+  viewport's edges — the Log and the Menu in the top corners, the read-out
+  along the top, the run bar along the foot. The same on all four sides.
+- **`--gutter`** (`--space-lg`; `--space-md` on a phone): how far content sits
+  from the sides of the viewport.
+- **`--chrome`** (six `--u`, 72px): the height kept for a bar at the top or at
+  the foot. The same at both, so what sits between is centred between them.
+- **`--foot-clear`** (`--edge` and `--space-lg`, 48px at scale 3): how far a
+  run's bar sits above the foot of the screen — as far as the top seat's name
+  sits below the read-out, so a campaign table is framed alike above and
+  below.
+- **Content blocks are centred and capped**: the map with its panel at 104
+  `--u`, the class panel at 920px, campaign screens at 1560px, the table at 26
+  card widths. Inside a block, alignment is to the left.
+- **Nothing scrolls sideways, and no scrollbar shows.** A screen longer than the
+  window still scrolls by wheel, finger or keys; a scrollbar that came and went
+  pushed every centred screen sideways, so the page has none. Scrolling panels
+  (the log, How to play) keep theirs.
+- **Buttons are sized to their words** over a floor of 22 `--u`; none is
+  stretched across a panel.
+
+- **The table is capped both ways and centred**: at most 26 card widths wide and
+  11 card heights tall, in card units so it scales with `--scale`. A full
+  desktop window is the table's — at 1920 wide it takes 1716 — with the side
+  seats out toward the edges and the room between given to the trick; on a
+  tall or portrait screen the top seat and your hand stay in proportion.
 - **The title card** is the in-game card sprite at two art pixels per pixel —
   `--px` doubled on the card — so its border and inner edge match the table's
   cards. No caption.
@@ -439,8 +485,8 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   above the description. The menu and a link preview show one piece of
   lettering. The name is kept as screen-reader text.
 - **How to play** is one sheet (`RulesSheet`), opened from the main menu
-  ("How to play", raised) and from the table (the `help` icon floating top right,
-  the log toggle's twin: same inset, height, surface and shadow, but square).
+  ("How to play", raised) and from the table (the corner Menu, top right, the
+  log toggle's twin: same inset, height, surface and shadow).
 - **The turn marker** is a five-pixel slot on every seat and beside your own
   read-out: a three-pixel dim square at rest, the whole slot gold (with a felt
   ring) on turn, so text beside it never shifts. It is centred on its text and
@@ -499,7 +545,8 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
     keeps that line — empty for a person — so the fans start level.
   - Top right, **Menu** (flat) opens a panel — `--table-lo`, like every other
     panel, so its buttons' ink borders and shadows show — with the round, match
-    length and seed, How to play (raised) and Leave table (quiet), full width;
+    length and seed, How to play (raised) and Leave table (quiet) — End this
+    run at a campaign table — full width, at every width, not only on a phone;
     Escape or a tap outside closes it. Log
     sits top left. "Menu" is a place, not an action — the one exception to
     labels leading with a verb.
@@ -572,7 +619,7 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   under one corner of the lean.
 - **Match length** sits in both lobbies between your name and the seed, as an
   **option set**: an outlined box of labelled rows, one per kind of answer —
-  *Points* 15 · 30 · 50 and *Rounds* 5 · 10 — divided by a `--table-hi` rule,
+  _Points_ 15 · 30 · 50 and _Rounds_ 5 · 10 — divided by a `--table-hi` rule,
   with the sentence under it saying what the chosen option means. Chips carry
   the bare number; the row says what it counts.
 - **Host-only settings** (computer difficulty, match length) look identical for
@@ -580,8 +627,7 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   a gold outline and gold text (no fill), and a "Host only" tag — a 5×5 pixel
   lock and `--text-xs` `--dim` label — sits beside the setting's heading ("Host
   sets difficulty" beside Seats).
-- **The scores screen** carries a match line above the round's note ("Round 3 of
-  10. …" or "First to 30 points wins the match."). When the round decides the
+- **The scores screen** carries a match line above the round's note ("Round 3 of 10. …" or "First to 30 points wins the match."). When the round decides the
   match, the title becomes "… wins the match", the pick-first note goes, and the
   primary button reads "Play again".
 - **At a browser-hosted table** the lobby has no seed field, since every device
@@ -657,7 +703,7 @@ the constants in `lib/zoneGeometry.ts` (zones 10–60, opened trick 130–150,
   as wide as a control is tall — whatever it says, so "5" and "10", "15" and
   "50" read as a set of equal choices.
 - **Lobbies share one frame** (`LobbyLayout`): Leave top left, the seats, the
-  options common to both modes, the options unique to one, then the full-width
+  options common to both modes, the options unique to one, then the
   primary action. Only mode-unique options differ in layout.
   - Both: seats with computer difficulty, seed.
   - Every seat row has the same order:
@@ -685,7 +731,7 @@ The table draws fifty-two cards and their shadows, and it redraws while a finger
 is moving. A phone is the machine to design for.
 
 - **Size to the visible screen, not the layout one.** A phone browser's `fixed`
-  box and `100vh` are the viewport with the toolbars *hidden*, so anything
+  box and `100vh` are the viewport with the toolbars _hidden_, so anything
   sized that way hides its own bottom edge behind the toolbar actually on
   screen. The table is sized from `--vh`, measured off `visualViewport`
   (`useViewportHeight`) and republished whenever the toolbars slide or the phone
@@ -703,7 +749,7 @@ is moving. A phone is the machine to design for.
   button, the one place they do.
 - **The board takes no page gestures.** `touch-action: none` on the table and
   `overscroll-behavior: none` on the page: a drag across the board picks cards
-  and can never scroll, bounce or pull-to-refresh the page. What opens *over*
+  and can never scroll, bounce or pull-to-refresh the page. What opens _over_
   the board — the log, the rules sheet — still scrolls by finger
   (`touch-action: pan-y`, `overscroll-behavior: contain`).
 - **No 3D.** Every card transform is flat (x, y, rotate, scale), so the table
@@ -755,7 +801,7 @@ seed first.
 - **Codes copy on click; everything else copies with a button.** The table code
   and the in-game seed are `Copyable` buttons styled as text. They hover the
   same way: **pointer cursor, and only the value fades to 60%** — never its
-  label (mark it `copyable__text`). The seed *field* is somewhere you type and
+  label (mark it `copyable__text`). The seed _field_ is somewhere you type and
   select, so it copies with a flat copy icon button beside it. The invite link
   is never shown — a whole URL is noise — and copies with the flat "Copy invite
   link" button beneath the table code.
@@ -764,3 +810,225 @@ seed first.
   with the shared `--fade-out`. Keyboard
   copies place it over the element. It is also announced politely to screen
   readers. Messages: "Seed copied", "Code copied", "Link copied".
+
+## 12a. Main menu
+
+Two games under one roof, each a group headed by its name alone, in bone:
+**Mythic** — Continue run (its class, depth and gold on a dim line under it)
+and Start a new run, which asks first; or Start a run — and **Classic** —
+Continue game when there is a saved match, Play on your own, Play with
+friends, and the name and code to join a table. The name and code fields are
+edged in weathered stone (`--field-edge`), lit toward gold on hover and gold
+on focus, as the buttons beside them answer the pointer. How to play stands apart at the end. Every option is the same
+width — sized for its longest label, not the column — with its label at the
+left edge.
+
+A shared Classic table's lobby has a **Turn timer** beside the match length:
+On (each person has a time limit, and the table plays for anyone who runs
+out) or Off (nobody is hurried). The host's call, before the first deal, in
+the same outlined set of chips, read-only with "Host only" for everyone else.
+
+**The corner Menu** is a square button with a three-bar icon ("Menu" to
+assistive technology), top right on every played screen — every table at
+every width, and every campaign screen — mirroring the Log top left. At a table
+it holds How to play and Leave table — or, at a campaign table, End this run in
+its place; between campaign tables, **Save and quit to main menu** (Back to
+main menu before a run) and End this run. Ending a run always asks first. With
+Leave table in the Menu, the row under the hand no longer repeats it.
+
+## 13. Campaign
+
+A separate mode, reached from **Start a run** or **Continue run** on the menu; the rules and numbers
+are in `DESIGN_SPEC.md` (Section 9 for what is built). Playing on your own and
+with friends are untouched by it.
+
+- **Campaign screens use the whole viewport**, as game screens do: the
+  corner Menu top right, as at the table, and the content across the width,
+  centred when it is short.
+- **The run bar** holds what a run is, on every screen between tables: your
+  class (emblem and name, in its colour), your gold — its largest figure,
+  because it is your life and your stake at once — your depth (room and
+  "2/5"), how many Medallions you carry (their names and effects on point or
+  tap), and the Menu. It floats along the foot of the screen, clear of its
+  edges: an ink edge with a thin gold rule inside it, cells split by
+  hairlines, so it reads as the frame the screens sit in. On a phone it drops
+  the class name and the room's name. The Menu is not in it: the Menu is in
+  the top-right corner on every campaign screen, as at the table.
+- **The descent is a map**, read from the top down: the gate you came in by,
+  four depths of four to seven nodes, and the Hollow Throne at the bottom —
+  twenty-four nodes, drawn fresh for every run. The depths are numbered, not
+  named: names are kept for acts, when there are some.
+  Each node is a small pixel picture of what waits there: a candle for an
+  ordinary table, a skull for an elite one, a purse for the Bone Merchant,
+  the throne itself (a doubled frame). Paths join each node to the one or
+  two below it. The way you came is bone, with a caret over where you stand;
+  the ways open now are gold and dashed, their nodes on gold dashed frames;
+  a node you cannot afford has a red dashed frame; everything else is the
+  colour of the stone, and the ways you did not take fade.
+- **Point to preview, click to select, then confirm.** Every table you could
+  go to next is already dealt when you arrive on the map, so pointing at its
+  node previews all of it in the panel beside the map (under it on a phone):
+  its depth and kind, its buy-in, ante, tribute and hands, what winning it
+  pays (its share of the table prize, and its Medallion), and who sits there
+  — each with class, temperament, gold and any Medallions they carry.
+  Clicking a node selects it (a bone outline); only the panel's button —
+  **Pay 80 and sit down**, **Go down to the merchant** — commits. A seat you
+  cannot fully pay for is marked, in a note edged in red, as a **short
+  seat**: what you put in, the three antes you keep, and the most the prize
+  can pay you. With nothing selected, the panel holds the three steps of how
+  a table works.
+- **The map stays still, and the tree is centred.** The screen reads from
+  the top, so the panel changing height as nodes are pointed at moves
+  nothing; on a wide screen the tree sits on the screen's centre line, with
+  the panel on its right and, balancing it on its left, a **key**: each
+  node's picture and what it is, and the two kinds of path (gold dashed:
+  ways open to you; bone: the way you came).
+- **The world bar**: along the top of every campaign screen of a run, on the
+  Menu's line and ruled under, the world's name — **the Hollow Deep** — and
+  your depth in it ("Depth 1 of 5"). There is no other header on the map;
+  the map fills the height left between the world bar and the run bar.
+- **Classes are dealt as a hand of cards**: four real cards in a gentle fan,
+  each a face in its class's own colour — dark like the felt, framed like the
+  table's cards — with its ranks in the corner, its figure large in a
+  window at the centre and its name across the foot. The figures are painted
+  in the manner of the Ruined King and the Nameless King: dark steel and
+  slate, faces lost in shadow, silver hair, ember, and a muted spectral light
+  over all four — a rim on the lit side, a mist at the hem — never neon. The
+  Wanderer is a hooded wanderer with a lantern; the Courtier a porcelain mask
+  under a steel circlet, silver hair either side; the Tyrant a hood under a
+  steel crown with spectral points and a slit of light for a face, white hair
+  torn sideways by the wind. Each stands against the same storm-grey sky, a
+  band of far ground and a low mist, and differs from the others only by
+  its shape and its one accent in its class's colour. All four wear the same steel cloth; their colour is in their
+  equipment — the lantern's flame, the gold circlet and violet gem, the ember
+  crown and its blood stones. The fourth card is sealed: the same card, its figure a shroud
+  with nothing inside but dark and one pale eye, "?" for its ranks and
+  "Sealed" for its name in the Seer's grey-teal — shown at under half
+  strength, plainly not to be picked. The card you point
+  at lifts out of the fan and the picked one lifts further, on an eased rise,
+  and takes the gold edge and the raised shadow — the same motion and the same
+  edge as a card picked from your hand at the table; pointing at a card never
+  lowers the picked one. The fourth, sealed, is a class not yet open to you. What the
+  picked class does is read in a panel under the hand, the hand large and
+  centred above it with clear air between. On a wide screen the panel's
+  groups sit two by two, told apart by space alone — no rules between them —
+  so the whole class fits in view: its name and cards;
+  its **class play** — rule, and its price at the first table — beside its
+  figures (starting gold, and its **ante share** with a line on what it means:
+  cheap hands and small wins, or dear hands and big wins), which carry their
+  own labels and have no heading over them. The ante share's note works one
+  through, and says the ante on a map node is already the player's own — the
+  node's Ante note breaks that figure down: depth, kind of table, ante share; and **how it plays** beside the
+  profile. It is read — or, while you point at another
+  card, what that one does: its named rule, how it plays, and a three-line
+  profile (Fortitude, Avarice, Guile) in which every class
+  scores the same total and leads on one line, so the choice is a way to
+  play, never the bigger number. **Begin as the …** is not in the panel: it
+  sits alone at the bottom right of the screen, on the frame's edge, where a
+  game puts its "embark" — the one thing to press once a class is chosen. Switching classes fades the new details in,
+  and each line keeps room for its longest class, so nothing on the screen
+  moves.
+- **Each class has one accent colour** — rust Wanderer, muted violet Courtier,
+  blood Tyrant, grey-teal Seer — and it is used for exactly two things: the
+  class's name everywhere (the cards, the seats, the lineups, the run bar)
+  and one small detail inside its portrait (the lantern's flame, a gem and
+  collar trim, the crown's stones, a glint). Everything else is shared: every
+  class card has the same face, the same steel edge and the same storm-grey
+  sky behind its figure, and every portrait is painted from the same palette.
+  The classes differ by shape, name, that accent and their own wording.
+- **Ending a run is quiet and asks twice**, from every screen of a run; it
+  throws away everything the run has won and goes back to the class cards.
+- **How a table works** is three numbered steps on the first room's screen —
+  buy in, pay the tribute, win a Showdown — because they happen in that
+  order: on the buy-in of your first table. The merchant's wares and a won
+  table's spoils sit side by side on a wide screen, to be compared across,
+  each with its own button (Buy, Take it).
+- **Medallions are named with their level** ("Uprising II"), in gold for a
+  common or legendary one and bone for a rare one, with what it does at
+  that level under the name. The Bone Merchant tags each offer with its
+  rarity — and "any class" for the few any class can carry — or "Level up"
+  for one you carry; **the spoils** of a won table offer two or
+  three — new, a level up, or one a beaten player carried that you can,
+  tagged "Spoils" and saying whose it was — and **Take nothing** beside them.
+- **Numbers are stats**: a small dim label over its value, larger, in bone —
+  or in gold, larger still, for a number that changes every hand. A node on
+  the map shows its buy-in, ante, tribute and hands.
+- **Game words explain themselves.** In rules and Medallion texts, and on
+  the stats' labels, every word the game uses in a sense of its own —
+  single, pair, triple, straight, pair chain, four of a kind, bomb, chop,
+  lead, ante, pot, buy-in, table prize, tribute, Showdown, class play,
+  Medallion, elite — has a dotted underline, once per line. Pointing at it,
+  tabbing to it or tapping it shows its meaning in one sentence, the same
+  sentence everywhere. The note floats over the page, beside the word and
+  kept inside the screen, so it never widens or lengthens the page. The
+  sentences, and the one word to use for each thing, are in GLOSSARY.md.
+- **At the table** the board is the ordinary one, framed top and foot. The
+  read-out along the top is three instruments on two shared rows — a label,
+  then a line holding its value — with a hairline between instruments,
+  balanced about the middle: the first pressed right, the pot centred, the
+  last pressed left, each reading toward the pot. Each is explained on point
+  or tap:
+  - **Showdown in** — the count ("4 hands"; "Now" at the Showdown), then a
+    block a hand, the last ringed in gold; label and line end together at the
+    gauge's right edge. The last block is a word to point at: its note says
+    what the Showdown is, and that coming to it holding the tribute wins the
+    table before it is dealt.
+  - **Pot** — this hand's pot, and beside it, small, the **Table** (the
+    table's buy-ins): the two amounts a seat can win here, both paid 70% / 25%
+    / 5%. "Pot" says what the two are and what first place takes of each now;
+    each amount says where its own gold came from — who put what into this
+    pot (ante, class play), and who bought in to the table.
+  - **Tribute** — "30 of 70": what you have won here, of what the table asks;
+    "Tribute paid" in gold, blinking with the turn marker, once it is held.
+    Every value is the same size, with no shadow: counts in bone, gold in gold
+    with a coin, units small and dim. The top seat's name sits 48px under the
+    read-out.
+- **Gold is seen moving.** Every amount of gold — your gold in the run bar,
+  the pot and the table in the read-out, each seat's gold — carries a pixel
+  coin, counts to its new value when it changes, and the change itself rises
+  off it (+59 in gold, −30 in red): the buy-in leaving your gold as you sit
+  down, each ante as the cards are dealt, the pot filling and paying out.
+  Amounts that live across screens remember what was last shown, so your gold
+  counts on from the map to the table rather than starting over.
+- **The foot mirrors the top**: the run bar centred, 48px above the foot of
+  the screen — as far as the top seat's name is below the read-out — with Sort
+  and Clear hanging off either side of it on its centre line. The bar is in the
+  same place on the map, at pile select and at the table. At a table it
+  carries your class (emblem and name), your gold, your class play — its name
+  and what it costs you now ("Uprising · 15 gold", or "free"), its rule on
+  point or tap — your depth and your Medallions. At pile select your gold is
+  shown before this hand's ante, which leaves it as the cards are dealt. On a
+  phone the foot gives way to Sort and Clear by the hand, with the class's
+  emblem and name between them.
+- **At pile select you are your run's name** ("Sunk Wake" took a pile), not
+  "(you)": two words drawn from the run's seed, which a run that takes the
+  throne keeps as its Vestige.
+- Each seat shows its gold where points
+  would be — what it has not put into this pot, as yours is shown — and its
+  class, in its colour, where a practice table says "(CPU)"; a long name ends
+  in an ellipsis inside its seat. Every seat's name sits 16px over its cards.
+- **A play only a passive allowed is marked**: its name ("Decree") flashes
+  over the trick in the class's colour, and its cards keep an edge and glow of
+  that colour, instead of the gold edge, while they stand on top. Once another
+  play covers them they step back with the other beaten plays, edgeless, and
+  take the edge again when the trick is opened out to be read.
+- **Your class's play is pointed out**: on your turn, the cards that make a
+  play only your class allows — never plays the base rules allow anyway —
+  take your class's edge and glow in your hand and
+  nudge up two pixels every few seconds — so a Tyrant holding a 2 against a
+  short straight sees the chance.
+- **Seat states keep the seat's colours** at a campaign table: its turn is a
+  gold underline that sweeps out under the whole label, name and class, in
+  step with the turn marker: out in four steps while the marker is lit, dim
+  with it for the other half of its 1.4-second beat,
+  and a seat that has passed keeps its "passed" line while its cards drop into
+  shadow — the dimming a beaten play takes, by tone rather than transparency.
+  Your own hand is never dimmed: you still arrange it while you wait.
+- **The end of a hand** replaces the round-end standings with the reckoning:
+  each seat in finishing order with what it gained or lost and its gold, any
+  any-class Medallion that moved gold ("Tithe: Crowe took 90 from the
+  table"), who went broke and who sat down, and what comes
+  next — Next hand, Call a Showdown once you are past the Mark, or the
+  table's end.
+- Leaving mid-hand, or reloading, counts as finishing that hand last, and the
+  leave confirmation says so.

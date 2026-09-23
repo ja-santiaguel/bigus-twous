@@ -6,6 +6,7 @@ import { MainMenu } from './screens/MainMenu.js';
 import { CopyToast } from './components/CopyToast.js';
 import { DisabledHint } from './components/DisabledHint.js';
 import { useViewportHeight } from './lib/useViewportHeight.js';
+import { useBackdropScroll } from './lib/useBackdropScroll.js';
 import { devDemo, devSeed } from './lib/devFlags.js';
 
 /*
@@ -17,11 +18,13 @@ import { devDemo, devSeed } from './lib/devFlags.js';
 const loadLobby = () => import('./screens/Lobby.js');
 const loadWaitingRoom = () => import('./screens/WaitingRoom.js');
 const loadTable = () => import('./screens/Table.js');
+const loadCampaign = () => import('./screens/Campaign.js');
 const loadMotion = () => import('./design/motionFeatures.js').then((module) => module.default);
 
 const Lobby = lazy(() => loadLobby().then((module) => ({ default: module.Lobby })));
 const WaitingRoom = lazy(() => loadWaitingRoom().then((module) => ({ default: module.WaitingRoom })));
 const Table = lazy(() => loadTable().then((module) => ({ default: module.Table })));
+const Campaign = lazy(() => loadCampaign().then((module) => ({ default: module.Campaign })));
 
 /** Fetch the rest of the game once the browser has a moment, rather than on the first click. */
 function usePreloadScreens() {
@@ -30,6 +33,7 @@ function usePreloadScreens() {
       void loadLobby();
       void loadWaitingRoom();
       void loadTable();
+      void loadCampaign();
       void loadMotion();
     };
     // Safari has no idle callback; a short delay does the same job there.
@@ -50,6 +54,7 @@ function Screen() {
 
   if (screen === 'menu') return <MainMenu />;
   if (screen === 'lobby') return <Lobby />;
+  if (screen === 'campaign') return <Campaign />;
   // A shared table waits for the people it was shared with. Once it has dealt
   // — or started dealing — the table itself takes over.
   if (online && !dealt && ceremony === 'idle') return <WaitingRoom />;
@@ -117,6 +122,7 @@ function useDevDemo() {
 
 export function App() {
   useViewportHeight();
+  useBackdropScroll();
   useJoinOnLoad();
   usePreloadScreens();
   useDevDemo();

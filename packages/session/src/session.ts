@@ -5,6 +5,8 @@ import {
   dealPiles,
   getTurnOptions,
   playTurn,
+  applyPass,
+  applyPlay,
   toPlayerView,
   type Card,
   type GameState,
@@ -13,6 +15,7 @@ import {
   type Player,
   type PlayerId,
   type PlayerView,
+  type TurnOptions,
 } from '@big-two/engine';
 import { createCpuPlayer } from '@big-two/ai';
 import type {
@@ -156,7 +159,10 @@ export function createGameSession(options: SessionOptions): GameSession {
    * outcome — it validates the claims and deals the hands from them.
    */
   async function runRound(myToken: number) {
-    const order = pickOrder();
+    // Seats sitting this round out pick nothing and are dealt nothing.
+    const out = new Set(options.sittingOut?.() ?? []);
+    const playing = seats.filter((s) => !out.has(s.config.id));
+    const order = pickOrder().filter((id) => !out.has(id));
     // Its own stream, keyed on the seed and the round alone, so the same seed
     // deals the same four piles whoever is sitting at the table.
     const stream = matchIndex === 0 ? seed : `${seed}:match:${matchIndex}`;
@@ -192,6 +198,18 @@ export function createGameSession(options: SessionOptions): GameSession {
 
     if (myToken !== token) return;
 
+    // Piles left over are set aside for the seats sitting out, one each, and
+    // shown so before the round begins.
+    if (remaining.length > 0 && out.size > 0) {
+      const absent = seats.filter((s) => out.has(s.config.id)).map((s) => s.config.id);
+      const setAside = remaining.map((pileIndex, i) => ({ pileIndex, playerId: absent[i % absent.length]! }));
+      ceremony = { kind: 'picking', claims: [...claims], remaining: [...remaining], picker: null, setAside };
+      emit({ type: 'CEREMONY', ceremony });
+      await pace('pick');
+      await pace('pick');
+      if (myToken !== token) return;
+    }
+
     // Dealt only now, once every pile is claimed. The picks are blind either
     // way, but dealing after them is what lets a fair table (9.18) settle the
     // shuffle when nobody can pick with the cards in view — the host included.
@@ -207,7 +225,7 @@ export function createGameSession(options: SessionOptions): GameSession {
     piles = dealPiles(seats.length, createRng(dealSeed));
 
     roundNumber += 1;
-    const ids = seats.map((s) => s.config.id);
+    const ids = playing.map((s) => s.config.id);
     record = {
       roundNumber,
       seats: ids,
@@ -220,6 +238,7 @@ export function createGameSession(options: SessionOptions): GameSession {
     state = createNewRound(ids, rng, stream + ':' + roundNumber, roundNumber, previousWinner, record.roundsWon, {
       piles,
       claims,
+      seats: playing.map((s) => s.config.seat),
       ...(state ? { points: state.points } : {}),
     });
     ceremony = { kind: 'idle' };
@@ -239,7 +258,9 @@ export function createGameSession(options: SessionOptions): GameSession {
 
       let next: GameState;
       try {
-        next = await playTurn(current, playerMap());
+        next = options.turnOptions
+          ? await playTurnWith(current, playerMap(), options.turnOptions)
+          : await playTurn(current, playerMap());
       } catch (err) {
         if (myToken !== token) return; // disposed or handed over mid-turn
         emit({ type: 'FAILED', message: err instanceof Error ? err.message : String(err) });
@@ -322,14 +343,15 @@ export function createGameSession(options: SessionOptions): GameSession {
     },
 
     viewFor(playerId): PlayerView | null {
-      if (!state || !seatOf(playerId)) return null;
+      // A seat sitting the round out has no hand to see.
+      if (!state || !seatOf(playerId) || !state.players.some((p) => p.id === playerId)) return null;
       return toPlayerView(state, playerId);
     },
 
     promptFor(playerId): TurnPrompt | null {
       if (!state || state.phase === 'ROUND_END') return null;
       if (currentSeatId() !== playerId) return null;
-      const turn = getTurnOptions(state);
+      const turn = (options.turnOptions ?? getTurnOptions)(state);
       return {
         playerId,
         legalMoves: turn.legalMoves,
@@ -519,4 +541,31 @@ function key(cards: { rank: string; suit: string }[]): string {
     .map((c) => cardId(c as never))
     .sort()
     .join('|');
+}
+
+/**
+ * The engine's `playTurn`, with the turn's options supplied by the table
+ * rather than the base rules. Used only when a session is given
+ * `turnOptions`; the base game goes through the engine's own `playTurn`
+ * untouched. The same checks, in the same order: a pass must be allowed, a
+ * play must be one of the legal moves, matched by card identity.
+ */
+async function playTurnWith(
+  state: GameState,
+  players: Map<string, Player>,
+  turnOptions: (state: GameState) => TurnOptions,
+): Promise<GameState> {
+  const actor = state.players[state.turnIndex]!;
+  const player = players.get(actor.id);
+  if (!player) throw new Error(`No Player implementation registered for ${actor.id}`);
+  const { legalMoves, canPass } = turnOptions(state);
+  const move = await player.getMove(toPlayerView(state, actor.id), legalMoves, canPass);
+  if (move.kind === 'PASS') {
+    if (!canPass) throw new Error(`${actor.id} attempted to pass when passing was not legal.`);
+    return applyPass(state, actor.id);
+  }
+  const wanted = key(move.combo.cards);
+  const legal = legalMoves.find((combo) => combo.type === move.combo.type && key(combo.cards) === wanted);
+  if (!legal) throw new Error(`${actor.id} attempted an illegal move: ${JSON.stringify(move.combo)}`);
+  return applyPlay(state, actor.id, legal);
 }

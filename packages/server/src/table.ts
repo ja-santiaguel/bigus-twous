@@ -137,6 +137,8 @@ export interface LobbySnapshot {
   code: TableCode;
   seed: string;
   match: WireMatch['rule'];
+  /** Whether people are on a clock. Absent in a snapshot from before it could be set: on. */
+  turnTimer?: boolean;
   joinOrder: number;
   seats: Array<{ seat: number; name: string; token: string | null; joinedAt: number | null; difficulty: Difficulty }>;
 }
@@ -189,6 +191,8 @@ export class Table {
   private roundLive = false;
   /** Set at the first deal. Seats are fixed from then on. */
   private matchStarted = false;
+  /** The host's call, before the first deal: whether people are on a clock at all. */
+  private turnTimerOn = true;
   private closed = false;
   /** The sealed shuffle for the round being dealt, kept until its audit is sent. */
   private shuffle: {
@@ -277,6 +281,7 @@ export class Table {
       code: this.options.code,
       seed: this.session.seed(),
       match: this.session.match().rule,
+      turnTimer: this.turnTimerOn,
       joinOrder: this.joinOrder,
       seats: this.occupancy.map((o) => ({
         seat: o.seat,
@@ -417,6 +422,17 @@ export class Table {
           return this.reject(connection, envelope.id, 'Only the host can change the match length.');
         const result = this.session.setMatch(message.rule);
         if (!result.ok) return this.reject(connection, envelope.id, result.reason);
+        this.clearReadiness();
+        this.broadcast([]);
+        return;
+      }
+      case 'SET_TURN_TIMER': {
+        // The host's call, as the match length is, and only before the deal:
+        // a clock switched off mid-match would change the game under people.
+        if (this.hostSeat() !== seat)
+          return this.reject(connection, envelope.id, 'Only the host can change the timer.');
+        if (this.matchStarted) return this.reject(connection, envelope.id, 'The game has already started.');
+        this.turnTimerOn = message.on;
         this.clearReadiness();
         this.broadcast([]);
         return;
@@ -755,6 +771,7 @@ export class Table {
   /** Pick up a lobby where its host's last page left it (9.18). */
   private restoreLobby(snapshot: LobbySnapshot): void {
     this.session.setMatch(snapshot.match);
+    this.turnTimerOn = snapshot.turnTimer ?? true;
     this.joinOrder = snapshot.joinOrder;
     for (const saved of snapshot.seats) {
       const seat = this.occupancy[saved.seat];
@@ -847,6 +864,7 @@ export class Table {
         clock: this.wireClock(),
         nextRound: this.wireNextRound(),
         match: this.session.match(),
+        turnTimer: this.turnTimerOn,
         seed: this.session.seed(),
       }),
     );
@@ -915,7 +933,7 @@ export class Table {
       (o) => o.connection !== null && !o.standIn && this.session.promptFor(o.id) !== null,
     );
     if (waiting) {
-      if (this.options.turnTimeoutMs > 0) {
+      if (this.turnTimerOn && this.options.turnTimeoutMs > 0) {
         this.startClock(waiting.id, this.options.turnTimeoutMs, () => this.playForAbsentee(waiting.id));
       }
       return;
@@ -923,7 +941,7 @@ export class Table {
 
     // The pile pick, which has a clock of its own.
     const ceremony = this.session.ceremony();
-    if (ceremony.kind !== 'picking' || !ceremony.picker || this.options.pickTimeoutMs <= 0) return;
+    if (ceremony.kind !== 'picking' || !ceremony.picker || !this.turnTimerOn || this.options.pickTimeoutMs <= 0) return;
     const picker = this.occupancy.find((o) => o.id === ceremony.picker && o.connection !== null && !o.standIn);
     if (picker) this.startClock(picker.id, this.options.pickTimeoutMs, () => this.pickForAbsentee(picker.id));
   }

@@ -1,4 +1,5 @@
 import type {
+  TurnOptions,
   Card,
   Combo,
   GameEvent,
@@ -91,6 +92,11 @@ export type CeremonyState =
       remaining: number[];
       /** Seat currently choosing, or null during the beat between picks. */
       picker: PlayerId | null;
+      /**
+       * Piles nobody will pick, once every seat dealt in has picked: each set
+       * aside for a seat sitting the round out (see `sittingOut`).
+       */
+      setAside?: { pileIndex: number; playerId: PlayerId }[];
     };
 
 /** What a seat may do on its turn. Sent only to the seat whose turn it is. */
@@ -150,6 +156,21 @@ export interface SessionOptions {
    * player's browser settles it from everyone's shuffle instead (9.18).
    */
   dealSeed?: (roundNumber: number) => string | Promise<string>;
+  /**
+   * What the seat whose turn it is may do. The base game's rules when not
+   * given (the engine's `getTurnOptions`). A variant table — the campaign,
+   * where a class's passive lets a seat make a beat the base rules do not —
+   * supplies its own, and the turn loop validates every move against it.
+   */
+  turnOptions?: (state: GameState) => TurnOptions;
+  /**
+   * Seats that sit the next round out, asked as each round begins: they pick
+   * no pile, hold no cards and take no turns, and keep their chair. The piles
+   * they would have picked are set aside unplayed. A campaign table, where a
+   * player who goes broke stays out, is the one user; every seat plays when
+   * not given.
+   */
+  sittingOut?: () => PlayerId[];
 }
 
 /**
@@ -216,4 +237,4 @@ export interface GameSession {
 }
 
 /** Re-exported so consumers need one import for the whole vocabulary. */
-export type { Card, Combo, GameEvent, GameState, Move, PileClaim, PlayerId, PlayerView, TurnConstraint };
+export type { Card, Combo, GameEvent, GameState, Move, PileClaim, PlayerId, PlayerView, TurnConstraint, TurnOptions };

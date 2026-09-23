@@ -35,7 +35,11 @@ const SIT: Bitmap = ['...#...', '...#...', '...#...', '#######', '...#...', '...
 /** A question mark — how to play. */
 const HELP: Bitmap = ['.#####.', '##...##', '.....##', '...###.', '...#...', '.......', '...#...'];
 
+/** Three bars — the menu. */
+const MENU: Bitmap = ['.......', '#######', '.......', '#######', '.......', '#######', '.......'];
+
 export const ICON_RUNS = {
+  menu: toRuns(MENU),
   copy: toRuns(COPY),
   refresh: toRuns(REFRESH),
   check: toRuns(CHECK),

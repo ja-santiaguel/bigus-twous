@@ -108,6 +108,7 @@ const SYNC: ServerMessage = {
   seed: 'TEST-SEED',
   nextRound: null,
   match: { rule: { kind: 'points', target: 30 }, winner: null },
+  turnTimer: true,
 };
 
 describe('connecting', () => {

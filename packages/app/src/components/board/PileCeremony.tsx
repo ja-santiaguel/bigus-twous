@@ -30,6 +30,8 @@ export function PileCeremony({
   seatIds,
   humanSeat,
   clock = null,
+  selfLabel,
+  setAside = [],
   onChoose,
 }: {
   /** Claims settled so far, in pick order. */
@@ -44,11 +46,19 @@ export function PileCeremony({
   humanSeat: number;
   /** The picker's clock at a shared table; null when nobody is being timed. */
   clock?: { remainingMs: number; totalMs: number } | null;
+  /**
+   * What your own pile is labelled when you are known by a name of your own —
+   * a campaign run's — rather than as "(you)".
+   */
+  selfLabel?: string | undefined;
+  /** Piles no one will pick: each the pick of a seat that is out, dimmed under that seat's name. */
+  setAside?: { pileIndex: number; playerId: PlayerId }[] | undefined;
   onChoose: (pileIndex: number) => void;
 }) {
   const reduced = useReducedMotion() ?? false;
   const seatNames = useSeatNames();
-  const who = (id: PlayerId) => personName(seatIds.indexOf(id), humanSeat, seatNames);
+  const who = (id: PlayerId) =>
+    selfLabel && seatIds.indexOf(id) === humanSeat ? selfLabel : personName(seatIds.indexOf(id), humanSeat, seatNames);
 
   const takenBy = new Map<number, PlayerId>();
   for (const claim of claims) takenBy.set(claim.pileIndex, claim.playerId);
@@ -58,13 +68,15 @@ export function PileCeremony({
     ? 'Choose a pile.'
     : picker
       ? `${who(picker)} is choosing…`
-      : remaining.length === 0
-        ? 'Piles claimed — here is your hand.'
-        : lastClaim
-          ? // The beat between picks. Naming who just took one beats repeating
-            // "Dealing…", which is both wrong by then and says nothing.
-            `${who(lastClaim.playerId)} took a pile.`
-          : 'Dealing…';
+      : setAside.length > 0
+        ? 'The fallen have no pick. Their piles stay unplayed.'
+        : remaining.length === 0
+          ? 'Piles claimed — here is your hand.'
+          : lastClaim
+            ? // The beat between picks. Naming who just took one beats repeating
+              // "Dealing…", which is both wrong by then and says nothing.
+              `${who(lastClaim.playerId)} took a pile.`
+            : 'Dealing…';
 
   return (
     <div className="ceremony" role="group" aria-label="Pile selection">
@@ -81,11 +93,12 @@ export function PileCeremony({
       <div className={`ceremony__piles ${interactive ? 'is-choosing' : ''}`}>
         {[0, 1, 2, 3].map((pileIndex) => {
           const owner = takenBy.get(pileIndex);
+          const forsaken = setAside.find((a) => a.pileIndex === pileIndex);
           const pickable = interactive && !owner;
           return (
             <m.div
               key={pileIndex}
-              className={`cpile ${owner ? 'is-taken' : ''} ${pickable ? 'is-pickable' : ''}`}
+              className={`cpile ${owner ? 'is-taken' : ''} ${pickable ? 'is-pickable' : ''} ${forsaken ? 'is-forsaken' : ''}`}
               initial={reduced ? false : { opacity: 0, y: -40, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={transition(reduced, { ...SETTLE, delay: pileIndex * 0.08 })}
@@ -126,7 +139,15 @@ export function PileCeremony({
                   ))}
                 </span>
               </button>
-              <span className="cpile__label">{owner ? who(owner) : `Pile ${pileIndex + 1}`}</span>
+              <span className="cpile__label">
+                {owner ? (
+                  who(owner)
+                ) : forsaken ? (
+                  <s className="cpile__forsaken">{who(forsaken.playerId)}</s>
+                ) : (
+                  `Pile ${pileIndex + 1}`
+                )}
+              </span>
             </m.div>
           );
         })}

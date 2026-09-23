@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
-import { cardId, PLACEMENT_POINTS, type Card, type Combo, type GameEvent, type TurnConstraint } from '@big-two/engine';
+import {
+  cardId,
+  PLACEMENT_POINTS,
+  type Card,
+  type Combo,
+  type GameEvent,
+  type PlayerId,
+  type TurnConstraint,
+} from '@big-two/engine';
 import { useGameStore, SEAT_IDS } from '../store/gameStore.js';
 import { buildTableView } from '../lib/tableView.js';
-import { evaluateSelection, turnPrompt } from '../lib/selection.js';
+import { evaluateSelection, matchLegalMove, turnPrompt } from '../lib/selection.js';
 import { cardSpoken, cardsLabel, personName, seatPosition } from '../lib/format.js';
 import { useSeatNames } from '../lib/useSeatNames.js';
 import { OpponentSeat } from '../components/board/OpponentSeat.js';
@@ -18,10 +26,20 @@ import { buildScene } from '../lib/cardScene.js';
 import { DRAG_Z, HOVER_Z, openTrickLayout, type SceneMetrics } from '../lib/zoneGeometry.js';
 import { useZoneRects } from '../lib/useZoneRects.js';
 import { CardLayer, type CardVisual } from '../components/table/CardLayer.js';
+import {
+  CampaignHandEnd,
+  CampaignInfo,
+  ClassBadge,
+  TableFlashes,
+  type TableRect,
+} from '../components/campaign/CampaignTable.js';
+import { CLASSES, passiveBeats, playCost, you as yourSeat, type TableState } from '@big-two/campaign';
+import { useCampaignStore } from '../store/campaignStore.js';
+import { RunBar } from '../components/campaign/RunBar.js';
+import { BrokeSeat } from '../components/campaign/BrokeSeat.js';
 import { TurnDot } from '../components/board/TurnDot.js';
 import { TurnClock } from '../components/board/TurnClock.js';
 import { Copyable } from '../components/Copyable.js';
-import { PixelIcon } from '../components/PixelIcon.js';
 import { RulesSheet } from '../components/RulesSheet.js';
 import { useCountdown } from '../lib/useCountdown.js';
 import { matchSummary } from '../components/MatchField.js';
@@ -38,6 +56,15 @@ const NO_HISTORY: GameEvent[] = [];
 export function Table() {
   const playerView = useGameStore((s) => s.view);
   const online = useGameStore((s) => s.online);
+  /** A campaign table: the same table, with the campaign's gold around it. */
+  const campaign = useGameStore((s) => s.campaign);
+  const campaignSeats = useCampaignStore((s) => (campaign ? (s.run?.table?.seats ?? null) : null));
+  const passiveCards = useCampaignStore((s) => s.passiveCards);
+  const campaignTable = useCampaignStore((s) => (campaign ? (s.run?.table ?? null) : null));
+  const endRun = useCampaignStore((s) => s.endRun);
+  const campaignRun = useCampaignStore((s) => (campaign ? s.run : null));
+  /** Ending the run from the table asks first, as leaving does. */
+  const [confirmEnd, setConfirmEnd] = useState(false);
   const connection = useGameStore((s) => s.connection);
   const clock = useGameStore((s) => s.clock);
   const selection = useGameStore((s) => s.selection);
@@ -236,9 +263,28 @@ export function Table() {
             seatIds={SEAT_IDS}
             humanSeat={humanSeat}
             clock={clock && ceremony.picker && clock.playerId === ceremony.picker ? clock : null}
+            selfLabel={campaignRun?.name}
+            setAside={ceremony.setAside}
             onChoose={choosePile}
           />
         </div>
+        {/* A run's bar stays where it is from the map to the cards: here, in
+            the table's foot, with Sort and Clear held in their places unseen
+            so it does not shift when they appear. Your gold is shown before
+            this hand's ante, which leaves it as the cards are dealt. */}
+        {campaignRun && (
+          <div className="tablefoot">
+            <span className="tablefoot__hold" aria-hidden="true">
+              <SortControl mode={sortMode} onCycle={cycleSort} />
+            </span>
+            <RunBar run={campaignRun} atTable inline dealt={false} />
+            <span className="tablefoot__hold" aria-hidden="true">
+              <button className="btn" disabled tabIndex={-1}>
+                Clear
+              </button>
+            </span>
+          </div>
+        )}
       </div>
     );
   }
@@ -258,6 +304,56 @@ export function Table() {
     trickPlays: view.trickPlays,
     mound: view.moundCards,
   });
+
+  /**
+   * At a campaign table, another seat that has passed shows it by its cards,
+   * dimmed, rather than a red name. Not your own: you still arrange and pick
+   * from your hand while you wait, and the line above it already says you passed.
+   */
+  const passedSeats = new Set(
+    [...view.passedThisTrick].map((id) => SEAT_IDS.indexOf(id)).filter((seat) => seat >= 0 && seat !== humanSeat),
+  );
+
+  /**
+   * Cards in your hand that make a play only your class allows, on your turn:
+   * marked in your class's colour so the chance is seen, not missed.
+   */
+  const mySeat = campaignSeats?.find((s) => s.id === HUMAN_ID) ?? null;
+  const myClass = mySeat?.classId ?? null;
+  const passiveReady = new Map<string, string>();
+  if (campaign && mySeat && myClass && isMyTurn && self.pile) {
+    for (const move of legalMoves) {
+      if (!passiveBeats(myClass, self.pile, move, mySeat.medallions)) continue;
+      for (const card of move.cards) passiveReady.set(cardId(card), myClass);
+    }
+  }
+  /**
+   * When the cards picked make a class play, Play says so, and its price: the
+   * rule bent and what it costs are read before the button is pressed.
+   */
+  const picked = matchLegalMove(selection, legalMoves);
+  const classPlayLabel =
+    campaign &&
+    mySeat &&
+    myClass &&
+    campaignTable &&
+    isMyTurn &&
+    self.pile &&
+    picked &&
+    passiveBeats(myClass, self.pile, picked, mySeat.medallions)
+      ? (() => {
+          const cost = playCost(campaignTable, yourSeat(campaignTable));
+          return `Play · ${CLASSES[myClass].passiveName}${cost > 0 ? ` · ${cost.toLocaleString('en-GB')} gold` : ''}`;
+        })()
+      : null;
+
+  /** A zone's box in the table's own coordinates, for anything drawn over the table. */
+  const tableRect = (zone: string): TableRect | null => {
+    const rect = zones.rects[zone];
+    const layer = zones.rects['layer'];
+    if (!rect || !layer) return null;
+    return { x: rect.x - layer.x, y: rect.y - layer.y, width: rect.width, height: rect.height };
+  };
 
   const metrics: SceneMetrics = {
     layer: zones.rects['layer'] ?? { x: 0, y: 0, width: 0, height: 0 },
@@ -431,7 +527,7 @@ export function Table() {
               : 'Those cards cannot be played now'
       }
     >
-      Play cards
+      {classPlayLabel ?? 'Play cards'}
     </button>
   );
   const handElement = (
@@ -488,7 +584,7 @@ export function Table() {
   );
 
   return (
-    <div className="screen screen--table">
+    <div className={`screen screen--table ${campaign ? 'screen--campaign-table' : ''}`}>
       {/* A dropped connection has to be visible, because from inside the game
           it looks exactly like three people thinking for a very long time.
           The seat is not lost while this is up — the table holds it, and a
@@ -504,7 +600,7 @@ export function Table() {
       )}
 
       <div
-        className={`table ${bomb.shaking ? `is-shaking is-shaking--l${bomb.shaking}` : ''}`}
+        className={`table ${campaign ? 'table--campaign' : ''} ${bomb.shaking ? `is-shaking is-shaking--l${bomb.shaking}` : ''}`}
         ref={zones.anchor('layer')}
         {...sweepHandlers}
       >
@@ -515,6 +611,7 @@ export function Table() {
             position={seatPosition(opponent.seat, humanSeat)}
             cardCount={opponent.cardCount}
             points={points[opponent.id] ?? 0}
+            {...(campaignTable ? campaignSeatProps(campaignTable, opponent.id) : {})}
             place={placeOf(self.finishOrder, opponent.id)}
             isTurn={self.turnPlayerId === opponent.id}
             hasPassed={view.passedThisTrick.has(opponent.id)}
@@ -523,6 +620,19 @@ export function Table() {
             cpu={isComputer(opponent.id)}
           />
         ))}
+        {/* The broke: out for good, a stone where their cards were. Not in the
+            round at all, so not among the opponents the view lists. */}
+        {campaignTable?.seats
+          .filter((seat) => seat.broke && seat.persona && !self.opponents.some((o) => o.id === seat.id))
+          .map((seat) => (
+            <BrokeSeat
+              key={seat.id}
+              name={seat.persona!.name}
+              classId={seat.classId}
+              position={seatPosition(SEAT_IDS.indexOf(seat.id), humanSeat)}
+              fresh={campaignRun?.lastHand?.left.some((l) => l.seat === seat.id) ?? false}
+            />
+          ))}
 
         <TableCentre
           trickPlays={view.trickPlays}
@@ -545,6 +655,9 @@ export function Table() {
             this draws what is in them. */}
         <CardLayer
           instant={zones.resizing}
+          accentOf={campaign ? (id) => passiveCards[id] ?? null : undefined}
+          dimmedSeats={campaign ? passedSeats : undefined}
+          readyOf={campaign ? (id) => passiveReady.get(id) ?? null : undefined}
           entities={entities}
           metrics={metrics}
           labels={labels}
@@ -596,7 +709,7 @@ export function Table() {
               <div className="actionbar">
                 <SortControl mode={sortMode} onCycle={cycleSort} />
                 {/* Between Sort and Clear, in the row's own gap. */}
-                <span className="actionbar__spacer">{myScore}</span>
+                <span className="actionbar__spacer">{campaign ? <ClassBadge compact /> : myScore}</span>
                 {clearButton}
               </div>
               <div className="actionbar actionbar--primary">
@@ -622,7 +735,9 @@ export function Table() {
                       constrains the decision those buttons make. Out of flow
                       above them, so nothing beside it wraps or shifts. */}
                   {myClock}
-                  {clearButton}
+                  {/* At a campaign table Sort and Clear flank the run bar at
+                      the foot instead. */}
+                  {!campaign && clearButton}
                   {playButton}
                   {passButton}
                 </div>
@@ -632,18 +747,22 @@ export function Table() {
                   is what lets one of them travel to the table as one object. */}
               {handElement}
 
-              <div className="utility">
-                <SortControl mode={sortMode} onCycle={cycleSort} />
-                <span className="utility__seed">{myScore}</span>
-                <button className="btn btn--quiet" onClick={() => setConfirmLeave(true)}>
-                  Leave table
-                </button>
-              </div>
+              {!campaign && (
+                <div className="utility">
+                  <SortControl mode={sortMode} onCycle={cycleSort} />
+                  {/* The middle of the row: your points, or at a campaign table
+                    your class and its rule. Leaving is in the corner Menu, as
+                    on a phone; the empty cell keeps the middle centred. */}
+                  <span className="utility__seed">{myScore}</span>
+                  <span aria-hidden="true" />
+                </div>
+              )}
             </>
           )}
         </div>
 
         <BombCallout moment={bomb.moment} />
+        {campaign && <TableFlashes rectOf={tableRect} />}
 
         {sweep && <span className="table__marquee" style={sweepStyle(sweep)} aria-hidden="true" />}
       </div>
@@ -654,24 +773,30 @@ export function Table() {
           at the top of the screen, centred between the corner buttons, on
           every screen. It is read at a glance and never acted on during a
           turn, so it sits with the other chrome rather than beside the hand. */}
-      <div className="tablebar">{gameInfo}</div>
-
-      {/* Top left, mirroring the log in the top right: reference you reach for,
-          not part of playing a turn. On a phone the corner holds the menu, and
-          How to play, the round and Leave table live inside it. */}
-      {compact ? (
-        <TableMenu onRules={() => setRulesOpen(true)} onLeave={() => setConfirmLeave(true)} />
-      ) : (
-        <button
-          type="button"
-          className="helpbtn"
-          onClick={() => setRulesOpen(true)}
-          aria-label="How to play"
-          title="How to play"
-        >
-          <PixelIcon name="help" />
-        </button>
+      <div className="tablebar">{campaign ? <CampaignInfo /> : gameInfo}</div>
+      {/* At a campaign table, the foot mirrors the read-out along the top:
+          Sort, the run bar — class, gold, class play, depth, Medallions —
+          and Clear, outside the bar either side of it. */}
+      {campaignRun && (
+        <div className="tablefoot">
+          <SortControl mode={sortMode} onCycle={cycleSort} />
+          <RunBar run={campaignRun} atTable inline />
+          {clearButton}
+        </div>
       )}
+
+      {/* Top right, mirroring the log in the top left, at every width: the
+          same corner menu every played screen has. */}
+      <TableMenu
+        items={[
+          { label: 'How to play', onSelect: () => setRulesOpen(true) },
+          // At a campaign table the way out is ending the run; the run's own
+          // screens are reached when the table ends.
+          campaign
+            ? { label: 'End this run', onSelect: () => setConfirmEnd(true), quiet: true }
+            : { label: 'Leave table', onSelect: () => setConfirmLeave(true), quiet: true },
+        ]}
+      />
 
       {/* A computer took this seat when the countdown between rounds ran out.
           Said at the top of the screen, out of the board's flow, with the one
@@ -686,6 +811,45 @@ export function Table() {
       )}
 
       <RulesSheet open={rulesOpen} onClose={() => setRulesOpen(false)} focus={rulesFocus} />
+
+      <AnimatePresence>
+        {confirmEnd && (
+          <m.div
+            className="overlay overlay--confirm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={SETTLE}
+            onClick={(event) => {
+              if (event.target === event.currentTarget) setConfirmEnd(false);
+            }}
+          >
+            <div
+              className="overlay__box overlay__box--confirm"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="end-title"
+            >
+              <h2 id="end-title">End this run?</h2>
+              <p className="overlay__note">Its gold and Medallions are lost, and you choose a class for a new one.</p>
+              <div className="overlay__actions">
+                <button className="btn btn--quiet" onClick={() => setConfirmEnd(false)} autoFocus>
+                  Keep playing
+                </button>
+                <button
+                  className="btn btn--pass"
+                  onClick={() => {
+                    setConfirmEnd(false);
+                    endRun();
+                  }}
+                >
+                  End run
+                </button>
+              </div>
+            </div>
+          </m.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {confirmLeave && (
@@ -708,11 +872,13 @@ export function Table() {
             >
               <h2 id="leave-title">Leave this game?</h2>
               <p className="overlay__note" id="leave-body">
-                {!online
-                  ? 'This ends the match, and its points are not kept.'
-                  : hosting === 'browser' && mine?.host
-                    ? 'Your browser is hosting this table, so leaving closes it for everyone.'
-                    : 'A computer plays your seat while you are gone. Rejoin within 2 minutes to take it back.'}
+                {campaign
+                  ? 'You forfeit this hand, finishing it last. Your run is kept, and you can come back to this table.'
+                  : !online
+                    ? 'This ends the match, and its points are not kept.'
+                    : hosting === 'browser' && mine?.host
+                      ? 'Your browser is hosting this table, so leaving closes it for everyone.'
+                      : 'A computer plays your seat while you are gone. Rejoin within 2 minutes to take it back.'}
               </p>
               <div className="overlay__actions">
                 <button className="btn btn--quiet" onClick={() => setConfirmLeave(false)} autoFocus>
@@ -728,7 +894,10 @@ export function Table() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {view.isRoundOver && (
+        {view.isRoundOver && campaign && (
+          <CampaignHandEnd key="campaign" nameOf={labelFor} finishOrder={self.finishOrder} />
+        )}
+        {view.isRoundOver && !campaign && (
           <m.div
             className="overlay"
             initial={{ opacity: 0 }}
@@ -834,6 +1003,26 @@ export function Table() {
 }
 
 const PLACE_LABELS = ['1st', '2nd', '3rd', '4th'];
+
+/**
+ * A campaign seat, as the seat shows it: its gold where points would be, and
+ * its class, in its colour, where a practice table says "(CPU)" — at a
+ * campaign table everyone else is a computer, so the class is what tells them
+ * apart.
+ */
+function campaignSeatProps(table: TableState, id: PlayerId) {
+  const seat = table.seats.find((s) => s.id === id);
+  if (!seat) return { worth: 0 };
+  // Gold in hand, as your own is shown: what the seat has not put into this pot.
+  const inPot = table.hand?.pot.contributions[id] ?? 0;
+  const key = seat.persona?.key ?? id;
+  return {
+    worth: seat.worth - inPot,
+    worthMemory: `seat:${table.option.id}:${key}`,
+    worthFrom: seat.worth + (table.stakes[key] ?? 0),
+    tag: { label: CLASSES[seat.classId].name, className: `classtag classtag--${seat.classId}` },
+  };
+}
 
 /**
  * Where a seat finished, or null if they are still holding cards.

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@big-two/ai": "*",
+    "@big-two/campaign": "*",
     "@big-two/engine": "*",
     "@big-two/protocol": "*",
     "@big-two/server": "*",

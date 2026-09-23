@@ -1,0 +1,12 @@
+{
+  // Build config emits from `src` and so cannot include `test`. Tests still
+  // need type-checking — vitest transpiles with esbuild, which strips types
+  // without looking at them, so a test file is otherwise never checked at all.
+  // That matters here: this package's compile-time assertions live in tests.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["src", "test"]
+}

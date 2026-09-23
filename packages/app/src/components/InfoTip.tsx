@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * A small "[?]" beside a label that explains it on the spot.
@@ -15,6 +25,12 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 
  * The glyph is 5 art pixels tall, the height of the "Host only" lock, so it
  * sits beside a small label without standing taller than it. The brackets are
  * what say it can be pressed; a bare "?" reads as punctuation.
+ *
+ * Given a `word`, the word itself is the trigger instead — a game term in a
+ * line of rules, marked with a dotted underline (see Term). Its note floats
+ * above the page rather than in it: placed beside the word, kept inside the
+ * screen, so a word near an edge never widens or lengthens the page and
+ * never brings up a scrollbar.
  */
 const GLYPH = ['##..###..##', '#......#..#', '#....##...#', '#.........#', '##...#...##'];
 
@@ -24,13 +40,15 @@ const HIDE_AFTER_MS = 120;
 /** The shared fade-out's length — `--fade-out` in styles.css. */
 const FADE_OUT_MS = 260;
 
-export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
+export function InfoTip({ label, word, children }: { label: string; word?: ReactNode; children: ReactNode }) {
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [pinned, setPinned] = useState(false);
   const open = hovered || focused || pinned;
   const panelId = useId();
   const root = useRef<HTMLSpanElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const [placed, setPlaced] = useState<CSSProperties | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Stable, so the listeners below are added once per opening rather than on
@@ -75,7 +93,8 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
       if (event.key === 'Escape') close();
     };
     const onPointer = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) close();
+      const target = event.target as Node;
+      if (!root.current?.contains(target) && !panel.current?.contains(target)) close();
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('pointerdown', onPointer);
@@ -85,9 +104,47 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
     };
   }, [open, close]);
 
+  // A word's note: under the word, or over it where there is no room below,
+  // and slid sideways to stay a gutter inside the screen. Hidden until placed.
+  const showing = open || leaving;
+  useLayoutEffect(() => {
+    if (!word || !showing) {
+      setPlaced(null);
+      return;
+    }
+    const trigger = root.current?.getBoundingClientRect();
+    const box = panel.current?.getBoundingClientRect();
+    if (!trigger || !box) return;
+    const gutter = 8;
+    const left = Math.min(Math.max(gutter, trigger.left), window.innerWidth - box.width - gutter);
+    const below = trigger.bottom + 6;
+    const top = below + box.height > window.innerHeight - gutter ? trigger.top - box.height - 6 : below;
+    setPlaced({ left: Math.max(gutter, left), top: Math.max(gutter, top) });
+  }, [word, showing]);
+
+  const note = (
+    <div
+      ref={panel}
+      className={`infotip__panel ${word ? 'infotip__panel--float' : ''} ${open ? '' : 'is-leaving'}`}
+      id={panelId}
+      role="note"
+      style={word ? (placed ?? { visibility: 'hidden', left: 0, top: 0 }) : undefined}
+      onAnimationEnd={() => setLeaving(false)}
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'mouse') cancelHide();
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType !== 'mouse') return;
+        hideTimer.current = setTimeout(() => setHovered(false), HIDE_AFTER_MS);
+      }}
+    >
+      {children}
+    </div>
+  );
+
   return (
     <span
-      className="infotip"
+      className={word ? 'infotip infotip--term' : 'infotip'}
       ref={root}
       // Mouse only: a touch fires enter and leave around every tap, which would
       // flash the note rather than open it.
@@ -104,38 +161,31 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
     >
       <button
         type="button"
-        className="infotip__trigger"
-        aria-label={label}
+        className={word ? 'term' : 'infotip__trigger'}
+        aria-label={word ? undefined : label}
         aria-expanded={open}
         aria-controls={panelId}
         onFocus={(event) => setFocused(event.currentTarget.matches(':focus-visible'))}
         onBlur={() => setFocused(false)}
         onClick={() => setPinned((was) => !was)}
       >
-        <svg
-          viewBox={`0 0 ${GLYPH[0]!.length} ${GLYPH.length}`}
-          shapeRendering="crispEdges"
-          className="infotip__glyph"
-          aria-hidden="true"
-          focusable="false"
-        >
-          {GLYPH.flatMap((row, y) =>
-            [...row].map((cell, x) =>
-              cell === '#' ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill="currentColor" /> : null,
-            ),
-          )}
-        </svg>
+        {word ?? (
+          <svg
+            viewBox={`0 0 ${GLYPH[0]!.length} ${GLYPH.length}`}
+            shapeRendering="crispEdges"
+            className="infotip__glyph"
+            aria-hidden="true"
+            focusable="false"
+          >
+            {GLYPH.flatMap((row, y) =>
+              [...row].map((cell, x) =>
+                cell === '#' ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill="currentColor" /> : null,
+              ),
+            )}
+          </svg>
+        )}
       </button>
-      {(open || leaving) && (
-        <div
-          className={`infotip__panel ${open ? '' : 'is-leaving'}`}
-          id={panelId}
-          role="note"
-          onAnimationEnd={() => setLeaving(false)}
-        >
-          {children}
-        </div>
-      )}
+      {showing && (word ? createPortal(note, document.body) : note)}
     </span>
   );
 }

@@ -47,6 +47,8 @@ export interface TableSnapshot {
   nextRound: WireCountdown | null;
   /** How long the match runs, and who won it once decided. */
   match: WireMatch;
+  /** Whether people at a shared table are on a turn clock. */
+  turnTimer: boolean;
   /** At a table hosted in a browser: whether the last round passed its check (9.18). */
   fairness: Fairness | null;
   /** Which seat we are. Null until the table has told us. */
@@ -109,6 +111,8 @@ export interface TableClient {
   kick(seat: number): void;
   /** Set how long a shared table's match runs. Host only. A local table's is set before it exists. */
   setMatch(rule: WireMatchRule): void;
+  /** Turn a shared table's turn clock on or off. Host only, before the first deal. */
+  setTurnTimer(on: boolean): void;
   dispose(): void;
 }
 
@@ -121,6 +125,7 @@ export const EMPTY_SNAPSHOT: TableSnapshot = {
   clock: null,
   nextRound: null,
   match: { rule: { kind: 'points', target: 30 }, winner: null },
+  turnTimer: true,
   fairness: null,
   you: null,
   events: [],

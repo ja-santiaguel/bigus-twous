@@ -5,6 +5,7 @@ import type { SeatPosition } from '../../lib/format.js';
 import { TurnDot } from './TurnDot.js';
 import { TurnClock } from './TurnClock.js';
 import { PlaceBadge } from './PlaceBadge.js';
+import { GoldAmount } from '../GoldAmount.js';
 
 /**
  * An opponent: their name, how many cards they hold, and the box their fan
@@ -29,6 +30,10 @@ export const OpponentSeat = memo(function OpponentSeat({
   clock,
   fanRef,
   cpu = false,
+  worth,
+  worthMemory,
+  worthFrom,
+  tag,
 }: {
   name: string;
   position: SeatPosition;
@@ -45,17 +50,25 @@ export const OpponentSeat = memo(function OpponentSeat({
   fanRef: (el: HTMLElement | null) => void;
   /** A computer holds this seat, said beside the name as the lobby says it. */
   cpu?: boolean;
+  /** At a campaign table, the seat's gold, shown where its points would be. */
+  worth?: number;
+  /** Names this seat's gold across hands and screens, so a change counts on from what was last shown. */
+  worthMemory?: string;
+  /** What the seat's gold counts down from the first time it is shown: its gold before the buy-in. */
+  worthFrom?: number;
+  /** Said under the name instead of "(CPU)": at a campaign table, the seat's class. */
+  tag?: { label: string; className: string };
 }) {
   const reduced = useReducedMotion() ?? false;
 
   const nameLine = (
     <span className="opp__name">
       <TurnDot on={isTurn} />
-      <span>{name}</span>
+      <span className="opp__who">{name}</span>
       {/* Always present, empty for a person: on a phone it is a line of its
           own under the name, and every seat keeps that line so the fans stay
           level whoever holds them. */}
-      <span className="opp__role">{cpu ? '(CPU)' : ''}</span>
+      <span className={`opp__role ${tag?.className ?? ''}`}>{tag ? tag.label : cpu ? '(CPU)' : ''}</span>
       {/* The blinking marker says whose turn it is to the eye only. */}
       {isTurn && <span className="sr-only"> (playing now)</span>}
     </span>
@@ -107,7 +120,11 @@ export const OpponentSeat = memo(function OpponentSeat({
         {/* On a phone the two halves stack instead, and the dot goes. */}
         <span className="opp__sep">·</span>
         <span>
-          {points} {points === 1 ? 'pt' : 'pts'}
+          {worth !== undefined ? (
+            <GoldAmount value={worth} memory={worthMemory} from={worthFrom} className="goldamount--below" />
+          ) : (
+            `${points} ${points === 1 ? 'pt' : 'pts'}`
+          )}
         </span>
       </span>
 

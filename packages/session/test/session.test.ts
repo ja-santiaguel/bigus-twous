@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardId, type Move, type PlayerId } from '@big-two/engine';
+import { cardId, getTurnOptions, type Move, type PlayerId } from '@big-two/engine';
 import { createGameSession, decideMatch, type GameSession, type SeatConfig, type SessionEvent } from '../src/index.js';
 
 /**
@@ -616,6 +616,53 @@ describe('matches', () => {
     expect(deals[1]!.points.every((p) => p === 0)).toBe(true);
     // Same seed, new match: its own deal, not the first match's cards again.
     expect(deals[1]!.hand).not.toBe(deals[0]!.hand);
+    s.dispose();
+  });
+});
+
+describe('a table with its own turn options', () => {
+  it('runs every turn through them instead of the base rules', async () => {
+    let asked = 0;
+    const s = createGameSession({
+      seats: seats(),
+      seed: 'turn-options',
+      // The base rules, except that a fresh trick may only be led with a
+      // single: a variant the base game never imposes, so a led pair or
+      // straight in the log would mean the options were ignored.
+      turnOptions: (state) => {
+        asked++;
+        const base = getTurnOptions(state);
+        if (state.trick.pile !== null || state.firstPlayPending) return base;
+        return { ...base, legalMoves: base.legalMoves.filter((combo) => combo.type === 'SINGLE') };
+      },
+    });
+    const log = await playOut(s);
+    const events = log.flatMap((e) => (e.type === 'TURN' ? e.events : []));
+    // Every play straight after a trick closed is a lead.
+    const leads = events.filter((e, i) => e.type === 'CARDS_PLAYED' && events[i - 1]?.type === 'TRICK_RESET');
+    expect(asked).toBeGreaterThan(0);
+    expect(leads.length).toBeGreaterThan(0);
+    for (const lead of leads) expect(lead.type === 'CARDS_PLAYED' && lead.combo.type).toBe('SINGLE');
+    s.dispose();
+  });
+});
+
+describe('a seat sitting the round out', () => {
+  it('picks no pile and holds no cards; its pile is set aside, and the others play on', async () => {
+    const s = createGameSession({ seats: seats(), seed: 'sitting-out', sittingOut: () => ['seat-3'] });
+    const log = await playOut(s);
+    const picks = log.flatMap((e) => (e.type === 'CEREMONY' && e.ceremony.kind === 'picking' ? [e.ceremony] : []));
+    const last = picks.at(-1)!;
+    expect(last.claims.map((c) => c.playerId).sort()).toEqual(['seat-1', 'seat-2', 'seat-4']);
+    expect(last.setAside).toEqual([{ pileIndex: last.remaining[0], playerId: 'seat-3' }]);
+    expect(s.viewFor('seat-3')).toBeNull();
+    const view = s.viewFor('seat-1')!;
+    expect(view.opponents.map((o) => [o.id, o.seat])).toEqual([
+      ['seat-2', 1],
+      ['seat-4', 3],
+    ]);
+    const ended = log.find((e) => e.type === 'ROUND_ENDED') as { winner: PlayerId };
+    expect(ended.winner).not.toBe('seat-3');
     s.dispose();
   });
 });

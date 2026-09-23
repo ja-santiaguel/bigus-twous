@@ -876,6 +876,26 @@ describe('match length', () => {
   });
 });
 
+describe('the turn timer', () => {
+  it("is on by default, the host's to switch, and fixed once the first round is dealt", () => {
+    const t = table();
+    const a = join(t, 'a');
+    const b = join(t, 'b');
+    expect(a.last('SYNC')!.turnTimer).toBe(true);
+
+    say(t, b, { type: 'SET_TURN_TIMER', on: false }, 'req-timer');
+    expect(b.last('REJECTED')).toMatchObject({ id: 'req-timer', reason: 'Only the host can change the timer.' });
+
+    say(t, a, { type: 'SET_TURN_TIMER', on: false });
+    expect(b.last('SYNC')!.turnTimer).toBe(false);
+
+    say(t, b, { type: 'READY' });
+    say(t, a, { type: 'START' });
+    say(t, a, { type: 'SET_TURN_TIMER', on: true }, 'req-late-timer');
+    expect(a.last('REJECTED')).toMatchObject({ id: 'req-late-timer', reason: 'The game has already started.' });
+  });
+});
+
 describe('computer difficulty', () => {
   it("is the host's to set", () => {
     const t = table();

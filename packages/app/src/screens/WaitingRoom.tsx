@@ -6,6 +6,7 @@ import { Copyable } from '../components/Copyable.js';
 import { copyWithNotice } from '../lib/copy.js';
 import { HostOnly } from '../components/HostOnly.js';
 import { LobbyLayout, SeatRow, SitButton } from '../components/LobbyLayout.js';
+import { TimerField } from '../components/TimerField.js';
 import { MatchField } from '../components/MatchField.js';
 import { SeedField } from '../components/SeedField.js';
 import { DIFFICULTY_LABELS, DIFFICULTY_SPOKEN } from './Lobby.js';
@@ -37,6 +38,8 @@ export function WaitingRoom() {
   const kick = useGameStore((s) => s.kick);
   const match = useGameStore((s) => s.match);
   const setMatchRule = useGameStore((s) => s.setMatchRule);
+  const turnTimer = useGameStore((s) => s.turnTimer);
+  const setTurnTimer = useGameStore((s) => s.setTurnTimer);
   const setSeatDifficulty = useGameStore((s) => s.setSeatDifficulty);
   const seed = useGameStore((s) => s.seed);
   const setSeed = useGameStore((s) => s.setSeed);
@@ -212,6 +215,7 @@ export function WaitingRoom() {
       </div>
 
       <MatchField rule={match.rule} onChange={setMatchRule} editable={canSet} hostOnly={!iAmHost} />
+      <TimerField on={turnTimer} onChange={setTurnTimer} editable={canSet} hostOnly={!iAmHost} />
 
       {/* At a browser-hosted table every device adds to the shuffle, so there
           is no single seed to show or set. */}

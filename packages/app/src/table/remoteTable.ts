@@ -158,6 +158,7 @@ export function createRemoteTable(options: RemoteTableOptions): TableClient {
             clock: message.clock,
             nextRound: message.nextRound,
             match: message.match,
+            turnTimer: message.turnTimer,
             seed: message.seed,
             events: message.events,
             seq: message.seq,
@@ -279,6 +280,9 @@ export function createRemoteTable(options: RemoteTableOptions): TableClient {
     },
     setMatch(rule) {
       send({ type: 'SET_MATCH', rule });
+    },
+    setTurnTimer(on) {
+      send({ type: 'SET_TURN_TIMER', on });
     },
     dispose() {
       disposed = true;

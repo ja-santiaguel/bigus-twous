@@ -22,7 +22,7 @@ import {
   type SessionSave,
 } from '@big-two/session';
 import type { WireCeremony, WireClock, WireCountdown, WireMatch, WireMatchRule, WireSeat } from '@big-two/protocol';
-import { createLocalTable } from '../table/localTable.js';
+import { createLocalTable, type LocalTableClient, type LocalTableOptions } from '../table/localTable.js';
 import { createRemoteTable } from '../table/remoteTable.js';
 import type { SocketLike } from '../table/remoteTable.js';
 import type { Hosting } from '../hosting/startHosting.js';
@@ -49,7 +49,7 @@ import { matchLegalMove } from '../lib/selection.js';
  * `subscribe` and `submitMove` go, not what this store does with them.
  */
 
-export type Screen = 'menu' | 'lobby' | 'table';
+export type Screen = 'menu' | 'lobby' | 'table' | 'campaign';
 
 /**
  * The pile-selection ceremony (9.13), which runs before a round exists.
@@ -71,6 +71,8 @@ export type CeremonyState =
       picker: PlayerId | null;
       /** True when this seat is a person and the ceremony is waiting on a click. */
       interactive: boolean;
+      /** Piles set aside for seats sitting the round out: at a campaign table, the broke. */
+      setAside?: { pileIndex: number; playerId: PlayerId }[];
     };
 
 export interface SeatConfig {
@@ -188,6 +190,8 @@ interface GameStore {
   nextRound: WireCountdown | null;
   /** The table's match rule and winner, as the table last said. */
   match: WireMatch;
+  /** Whether a shared table puts people on a turn clock, as the table last said. */
+  turnTimer: boolean;
   /** Who runs shared tables: a player's browser (the default) or a table server. */
   hosting: 'browser' | 'server';
   /** Whether the last round at a browser-hosted table passed its check. */
@@ -198,6 +202,29 @@ interface GameStore {
   pending: boolean;
   /** True when the table is somebody else's process rather than this tab. */
   online: boolean;
+  /**
+   * True at a campaign table: the same table, with the campaign's gold laid
+   * around it (see campaignStore). Playing on your own and with friends are
+   * never campaign tables.
+   */
+  campaign: boolean;
+
+  // Campaign intents
+  goToCampaign(): void;
+  /** Sit down at a campaign table. The campaign store owns everything but the cards. */
+  startCampaignTable(options: {
+    seats: SessionSeat[];
+    seed: string;
+    /** What you are called at this table: the run's name. */
+    name: string;
+    turnOptions: NonNullable<LocalTableOptions['turnOptions']>;
+    names: NonNullable<LocalTableOptions['names']>;
+    /** Seats that sit each round out: the broke. */
+    sittingOut: NonNullable<LocalTableOptions['sittingOut']>;
+    onTurn: NonNullable<LocalTableOptions['onTurn']>;
+    /** Told as you leave, while the hand you are walking out of is still on screen. */
+    onLeave: () => void;
+  }): void;
 
   // Lobby intents
   goToLobby(): void;
@@ -240,6 +267,8 @@ interface GameStore {
   kick(seat: number): void;
   /** Choose the match length: in the lobby alone, or as the host of a shared table. */
   setMatchRule(rule: WireMatchRule): void;
+  /** Turn a shared table's turn clock on or off. Host only, before the first deal. */
+  setTurnTimer(on: boolean): void;
   /** Take your seat back from the computer standing in for you. */
   reclaimSeat(): void;
   startNextRound(): void;
@@ -265,6 +294,14 @@ interface GameStore {
  * whole tree every time the table moved.
  */
 let table: TableClient | null = null;
+/** The campaign table, when that is the table: the same client, with its campaign handles. */
+let campaignTable: LocalTableClient | null = null;
+let campaignLeave: (() => void) | null = null;
+
+/** The campaign table's handles, for the campaign store. Null at any other table. */
+export function campaignClient(): LocalTableClient | null {
+  return campaignTable;
+}
 let unsubscribe: (() => void) | null = null;
 /** The table this browser is hosting, when it is hosting one. */
 let hostedTable: Hosting | null = null;
@@ -322,6 +359,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       clock: snapshot.clock,
       nextRound: snapshot.nextRound,
       match: snapshot.match,
+      turnTimer: snapshot.turnTimer,
       fairness: snapshot.fairness,
       connection: snapshot.status,
       pending: snapshot.pending,
@@ -396,6 +434,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     unsubscribe = null;
     table?.dispose();
     table = null;
+    campaignTable = null;
     // Leaving a table this browser hosts closes it for everyone.
     hostedTable?.close();
     hostedTable = null;
@@ -452,9 +491,11 @@ export const useGameStore = create<GameStore>((set, get) => {
     connection: 'connected',
     pending: false,
     online: false,
+    campaign: false,
     clock: null,
     nextRound: null,
     match: { rule: DEFAULT_MATCH, winner: null },
+    turnTimer: true,
     fairness: null,
     hosting: hostingMode(),
     matchRule: DEFAULT_MATCH,
@@ -480,6 +521,49 @@ export const useGameStore = create<GameStore>((set, get) => {
         })),
       })),
     goToMenu: () => set({ screen: 'menu' }),
+
+    goToCampaign: () => set({ screen: 'campaign' }),
+
+    startCampaignTable: ({ seats, seed, name, turnOptions, names, sittingOut, onTurn, onLeave }) => {
+      set({
+        screen: 'table',
+        view: null,
+        roundsWon: {},
+        points: {},
+        previousWinner: null,
+        roundNumber: 0,
+        selection: [],
+        handOrder: [],
+        awaitingHuman: false,
+        legalMoves: [],
+        canPass: false,
+        constraint: { kind: 'NONE' },
+        ceremony: { kind: 'picking', claims: [], remaining: [0, 1, 2, 3], picker: null, interactive: false },
+        error: null,
+        connection: 'connected',
+        pending: false,
+        online: false,
+        campaign: true,
+        humanSeat: 0,
+      });
+      const client = createLocalTable({
+        you: SEAT_IDS[0]!,
+        seed,
+        pacer,
+        seats,
+        name,
+        // The campaign ends a table, not the match rule: long enough that the
+        // session never decides a match of its own.
+        match: { kind: 'rounds', count: 1000 },
+        turnOptions,
+        names,
+        sittingOut,
+        onTurn,
+      });
+      attach(client, { readyNow: true });
+      campaignTable = client;
+      campaignLeave = onLeave;
+    },
 
     setSeatDifficulty: (seat, difficulty) => {
       // At a shared table the computers belong to the table, so the change goes
@@ -522,6 +606,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         connection: 'connected',
         pending: false,
         online: false,
+        campaign: false,
       });
 
       const { seats, seed, humanSeat, playerName } = get();
@@ -569,6 +654,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         connection: 'connected',
         pending: false,
         online: false,
+        campaign: false,
         seed: saved.save.seed,
         humanSeat: saved.seats.find((seat) => seat.id === saved.you)?.seat ?? DEFAULT_HUMAN_SEAT,
       });
@@ -605,6 +691,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         connection: 'connecting',
         ceremony: { kind: 'idle' },
         online: true,
+        campaign: false,
       });
 
       const stored = seatStore()?.getItem(TOKEN_KEY(code)) ?? undefined;
@@ -653,6 +740,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (get().online) table?.setMatch(rule);
       else set({ matchRule: rule });
     },
+    setTurnTimer: (on) => table?.setTurnTimer(on),
     // Saying you are ready is how a seat a computer took over comes back —
     // the same message, because it is the same answer the table was waiting for.
     reclaimSeat: () => table?.ready(),
@@ -743,6 +831,24 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     leaveTable: () => {
+      // A campaign table is left for the campaign: the run is kept, and the
+      // hand in progress simply was not played (its gold was never settled).
+      if (get().campaign) {
+        const leaving = campaignLeave;
+        campaignLeave = null;
+        leaving?.();
+        detach();
+        set({
+          screen: 'campaign',
+          campaign: false,
+          view: null,
+          awaitingHuman: false,
+          selection: [],
+          ceremony: { kind: 'idle' },
+          error: null,
+        });
+        return;
+      }
       // Leaving a match played alone ends it — the confirmation said so — and a
       // save left behind would offer to continue a game the player walked out of.
       if (!get().online) {
@@ -844,6 +950,7 @@ function toAppCeremony(ceremony: WireCeremony, viewerId: PlayerId | null): Cerem
     remaining: ceremony.remaining,
     picker: ceremony.picker,
     interactive: ceremony.picker === viewerId,
+    ...(ceremony.setAside ? { setAside: ceremony.setAside } : {}),
   };
 }
 

@@ -62,6 +62,9 @@ export function CardLayer({
   visuals,
   handlers,
   instant = false,
+  accentOf,
+  readyOf,
+  dimmedSeats,
 }: {
   entities: CardEntity[];
   metrics: SceneMetrics;
@@ -83,6 +86,18 @@ export function CardLayer({
   };
   /** Follow layout changes without animating — while the window is being resized. */
   instant?: boolean;
+  /**
+   * A class name for a card in the trick that a campaign passive put there,
+   * so the play that bent the rules is marked for as long as it stands.
+   */
+  accentOf?: ((id: string) => string | null) | undefined;
+  /**
+   * A class name for a card in your hand that a campaign passive would let you
+   * play right now, so the chance is seen before it is missed.
+   */
+  readyOf?: ((id: string) => string | null) | undefined;
+  /** Seats whose held cards are shown dimmed — at a campaign table, the seats that have passed. */
+  dimmedSeats?: ReadonlySet<number> | undefined;
 }) {
   const reduced = useReducedMotion() ?? false;
 
@@ -209,6 +224,9 @@ export function CardLayer({
           const inTrick = entity.placement.zone === 'trick';
           const standing = inTrick && entity.placement.group === (entity.placement.groups ?? 1) - 1;
           const beaten = inTrick && !standing;
+          const accent = inTrick ? (accentOf?.(entity.id) ?? null) : null;
+          const ready = !inTrick && entity.placement.zone === 'hand' ? (readyOf?.(entity.id) ?? null) : null;
+          const dimmed = entity.placement.zone === 'hand' && (dimmedSeats?.has(entity.placement.seat ?? -1) ?? false);
 
           // Local state rides on top of the derived placement. The placement
           // says where the card belongs; this says what you are doing to it.
@@ -231,7 +249,9 @@ export function CardLayer({
                 v?.marked ? 'is-marked' : ''
               } ${v?.interactive ? 'is-live' : ''} ${v?.raised ? 'is-raised' : ''} ${
                 dragging ? 'is-dragging' : ''
-              } ${standing ? 'is-standing' : ''} ${piled}`}
+              } ${standing ? 'is-standing' : ''} ${piled} ${accent ? `is-passive is-passive--${accent}` : ''} ${dimmed ? 'is-held-passed' : ''} ${
+                ready ? `is-passive-ready is-passive--${ready}` : ''
+              }`}
               z={v?.z ?? to.z}
               x={to.x + (v?.dx ?? 0)}
               y={to.y - (v?.lift ?? 0) + (v?.dy ?? 0)}

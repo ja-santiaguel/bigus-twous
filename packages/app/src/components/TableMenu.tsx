@@ -1,16 +1,23 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { PixelIcon } from './PixelIcon.js';
+
+/** One entry in the corner menu. */
+export interface MenuItem {
+  label: string;
+  onSelect: () => void;
+  /** A way out — leaving, ending — drawn quiet so it never reads as the thing to do. */
+  quiet?: boolean;
+}
 
 /**
- * The table's menu, on a phone.
- *
- * On a wide screen How to play and Leave table each have room of their own. On
- * a phone they wrapped into a block under the hand that pushed the table past
- * the bottom of the screen, and neither is needed during a turn. So they live
- * here, behind one button in the corner — the same corner as How to play on a
- * wide screen. (The round and the seed sit at the top of the screen, between
- * the corner buttons, on every screen.)
+ * The corner menu: one button, top right, on every screen that is played
+ * rather than set up — every table, at every width, and the campaign between
+ * tables — so it is always in the same place. What is in it depends on the
+ * screen: How to play and Leave table at a table; the main menu and ending a
+ * run in the campaign. None of it is needed during a turn, so it stays behind
+ * one button rather than taking room on the board.
  */
-export function TableMenu({ onRules, onLeave }: { onRules: () => void; onLeave: () => void }) {
+export function TableMenu({ items }: { items: MenuItem[] }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -41,20 +48,25 @@ export function TableMenu({ onRules, onLeave }: { onRules: () => void; onLeave: 
       <button
         type="button"
         className="tablemenu__toggle"
+        aria-label="Menu"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((was) => !was)}
       >
-        Menu
+        <PixelIcon name="menu" />
       </button>
       {open && (
         <div className="tablemenu__panel" id={panelId}>
-          <button type="button" className="btn" onClick={choose(onRules)}>
-            How to play
-          </button>
-          <button type="button" className="btn btn--quiet" onClick={choose(onLeave)}>
-            Leave table
-          </button>
+          {items.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              className={item.quiet ? 'btn btn--quiet' : 'btn'}
+              onClick={choose(item.onSelect)}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       )}
     </div>

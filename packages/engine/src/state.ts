@@ -9,7 +9,7 @@ import {
 } from './cards.js';
 import { lowestCard } from './legalMoves.js';
 import { addScores, scoreRound } from './scoring.js';
-import type { Card, Combo, PlayerId } from './types.js';
+import { cardValue, type Card, type Combo, type PlayerId } from './types.js';
 import type { Rng } from './rng.js';
 
 export interface PlayerState {
@@ -160,6 +160,31 @@ export interface NewRoundOptions {
   claims?: PileClaim[];
   /** Running match points carried in from previous rounds. */
   points?: Record<PlayerId, number>;
+  /**
+   * Each player's seat at the table, when not every seat is dealt in: a
+   * player keeps their own chair while an empty one sits out the round.
+   * Defaults to each player's position in `playerIds`.
+   */
+  seats?: number[];
+}
+
+/** Whether every card of the deck is in someone's hand. */
+function dealsEveryCard(hands: Map<PlayerId, Card[]>): boolean {
+  let count = 0;
+  for (const cards of hands.values()) count += cards.length;
+  return count === 52;
+}
+
+/** Whoever holds the lowest card in play. */
+function holderOfLowestCard(hands: Map<PlayerId, Card[]>): PlayerId {
+  let best: { id: PlayerId; card: Card } | null = null;
+  for (const [id, cards] of hands.entries()) {
+    if (cards.length === 0) continue;
+    const card = lowestCard(cards);
+    if (!best || cardValue(card) < cardValue(best.card)) best = { id, card };
+  }
+  if (!best) throw new Error('No cards in play.');
+  return best.id;
 }
 
 export function createNewRound(
@@ -177,12 +202,21 @@ export function createNewRound(
     ? handsFromClaims(playerIds, piles, options.claims)
     : claimPiles(playerIds, piles, firstPickerId, rng);
 
-  const starterId = previousWinner ?? findThreeOfSpadesHolder(hands);
+  // The 3 of Spades opens (9.1). When a seat sits out and its pile is set
+  // aside unplayed, the 3 of Spades may be among those cards: then whoever
+  // holds the lowest card in play opens with it instead. A full deal is
+  // unchanged.
+  const starterId =
+    previousWinner && playerIds.includes(previousWinner)
+      ? previousWinner
+      : dealsEveryCard(hands)
+        ? findThreeOfSpadesHolder(hands)
+        : holderOfLowestCard(hands);
   const starterIndex = playerIds.indexOf(starterId);
 
-  const players: PlayerState[] = playerIds.map((id, seat) => ({
+  const players: PlayerState[] = playerIds.map((id, index) => ({
     id,
-    seat,
+    seat: options.seats?.[index] ?? index,
     hand: hands.get(id)!,
   }));
 

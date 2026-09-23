@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { claimPiles, createDeck, dealPiles } from '../src/cards.js';
 import { createRng } from '../src/rng.js';
 import { createNewRound } from '../src/state.js';
-import { cardId, type Card, type PlayerId } from '../src/types.js';
+import { cardId, cardValue, type Card, type PlayerId } from '../src/types.js';
 
 const PLAYER_IDS: PlayerId[] = ['p1', 'p2', 'p3', 'p4'];
 
@@ -108,5 +108,36 @@ describe('createNewRound — ceremony wiring', () => {
     const build = () => createNewRound(PLAYER_IDS, createRng('replay'), 'replay', 1, null, {});
     expect(JSON.stringify(build().history)).toBe(JSON.stringify(build().history));
     expect(JSON.stringify(build().players)).toBe(JSON.stringify(build().players));
+  });
+});
+
+describe('a round with a seat sitting out', () => {
+  // Three players pick from four piles; the fourth pile is set aside unplayed.
+  const piles = dealPiles(4, createRng('short-table'));
+  const holder = piles.findIndex((pile) => pile.some((c) => c.rank === '3' && c.suit === 'SPADE'));
+
+  it('keeps each player in their own seat', () => {
+    const ids: PlayerId[] = ['p1', 'p2', 'p4'];
+    const claims = ids.map((playerId, pickIndex) => ({ playerId, pileIndex: pickIndex, pickIndex }));
+    const state = createNewRound(ids, createRng('r'), 'r', 1, null, {}, { piles, claims, seats: [0, 1, 3] });
+    expect(state.players.map((p) => [p.id, p.seat])).toEqual([
+      ['p1', 0],
+      ['p2', 1],
+      ['p4', 3],
+    ]);
+    for (const p of state.players) expect(p.hand).toHaveLength(13);
+  });
+
+  it('opens with the lowest card in play when the 3 of Spades is set aside', () => {
+    const ids: PlayerId[] = ['p1', 'p2', 'p3'];
+    const others = [0, 1, 2, 3].filter((i) => i !== holder);
+    const claims = ids.map((playerId, pickIndex) => ({ playerId, pileIndex: others[pickIndex]!, pickIndex }));
+    const state = createNewRound(ids, createRng('r'), 'r', 1, null, {}, { piles, claims });
+    const starter = state.players[state.turnIndex]!;
+    const lowestOf = (hand: Card[]) => Math.min(...hand.map(cardValue));
+    const lowestInPlay = Math.min(...state.players.map((p) => lowestOf(p.hand)));
+    expect(lowestOf(starter.hand)).toBe(lowestInPlay);
+    expect(state.players.some((p) => p.hand.some((c) => c.rank === '3' && c.suit === 'SPADE'))).toBe(false);
+    expect(state.firstPlayPending).toBe(true);
   });
 });

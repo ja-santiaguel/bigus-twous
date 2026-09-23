@@ -7,12 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "npm run test --workspace=@big-two/engine && npm run test --workspace=@big-two/ai && npm run test --workspace=@big-two/session && npm run test --workspace=@big-two/protocol && npm run test --workspace=@big-two/server && npm run test --workspace=@big-two/app",
+    "test": "npm run test --workspace=@big-two/engine && npm run test --workspace=@big-two/ai && npm run test --workspace=@big-two/session && npm run test --workspace=@big-two/campaign && npm run test --workspace=@big-two/protocol && npm run test --workspace=@big-two/server && npm run test --workspace=@big-two/app",
     "test:watch": "npm run test:watch --workspace=@big-two/engine",
     "simulate": "npm run simulate --workspace=@big-two/ai",
     "build": "npm run build --workspace=@big-two/engine && npm run build --workspace=@big-two/ai && npm run build --workspace=@big-two/session && npm run build --workspace=@big-two/protocol && npm run build --workspace=@big-two/server",
     "build:client": "npm run build --workspace=@big-two/app",
-    "typecheck": "npm run typecheck --workspace=@big-two/engine && npm run typecheck --workspace=@big-two/ai && npm run typecheck --workspace=@big-two/session && npm run typecheck --workspace=@big-two/protocol && npm run typecheck --workspace=@big-two/server && npm run typecheck --workspace=@big-two/app",
+    "typecheck": "npm run typecheck --workspace=@big-two/engine && npm run typecheck --workspace=@big-two/ai && npm run typecheck --workspace=@big-two/session && npm run typecheck --workspace=@big-two/campaign && npm run typecheck --workspace=@big-two/protocol && npm run typecheck --workspace=@big-two/server && npm run typecheck --workspace=@big-two/app",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

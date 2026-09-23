@@ -150,6 +150,10 @@ function validateMessage(value: unknown): { ok: true; message: ClientMessage } |
       }
       return { ok: false, reason: 'That is not a match length.' };
     }
+    case 'SET_TURN_TIMER': {
+      if (typeof value['on'] !== 'boolean') return { ok: false, reason: 'The timer is either on or off.' };
+      return { ok: true, message: { type: 'SET_TURN_TIMER', on: value['on'] } };
+    }
     case 'KICK': {
       if (!isIndex(value['seat'], 4)) return { ok: false, reason: 'No such seat.' };
       return { ok: true, message: { type: 'KICK', seat: value['seat'] } };

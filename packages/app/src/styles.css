@@ -13,12 +13,15 @@
 
 /* ── Tokens ──────────────────────────────────────────────────────────── */
 :root {
-  --ink: #1b1f24;
-  --table: #2b3a36;
-  --table-lo: #24312e;
-  --table-hi: #35443f;
-  --bone: #e4dccb;
-  --bone-dim: #c9c0ae;
+  /* A ruin underground: dark slate stone for every surface, bone for cards
+     and words, gold for whatever wants your eye — your turn, your pick, the
+     thing to press — and blood for "no". */
+  --ink: #0b1212;
+  --table: #16211f;
+  --table-lo: #101917;
+  --table-hi: #22322f;
+  --bone: #ddd5c0;
+  --bone-dim: #bdb4a0;
   --back: #4a6670;
   --back-hi: #5e7f8a;
   --gold: #d9a441;
@@ -26,33 +29,35 @@
      fields — except --alert, a deep red chosen to read as a firm "no" rather
      than a pink. It holds 3:1 on every surface, and it is never the only cue:
      it always colours words that say what went wrong. */
-  --alert: #e0665c;
+  --alert: #e0584e;
   --silver: #b9c2c6;
   --bronze: #cc9660;
-  --dim: #95a39e;
-  /* The outline of somewhere you can type: 3:1 against the table, the minimum
-     for telling a control's edge apart (WCAG 1.4.11). */
-  --edge: #6a8a80;
+  --dim: #8fa29c;
+  /* The outline of somewhere you can type: weathered stone, 3:1 against the
+     table — the minimum for telling a control's edge apart (WCAG 1.4.11).
+     Named apart from the layout's --edge, which once overrode it and left
+     every field without a border. */
+  --field-edge: #5f6d67;
   /* An inset surface, darker than any panel it sits on, so a field reads as
      somewhere to type on every screen rather than only on some. */
-  --field: #1e2825;
+  --field: #0e1716;
   --gold-hi: #e6b457;
   /* Text on a gold surface. */
   --on-gold: #241905;
-  --suit-red: #b3322b;
+  --suit-red: #9c2019;
 
   /* Shadows and scrims. Every shadow on the board is cast by the same ink, at
      one of two strengths: resting and lifted things cast --shade, large
      surfaces lying flat on the felt cast --shade-soft. There were fifteen
      hand-written variants on two different inks before, which is how a button
      and a card came to cast visibly different shadows under the same light. */
-  --shade: rgba(8, 12, 11, 0.55);
-  --shade-soft: rgba(8, 12, 11, 0.4);
-  --scrim: rgba(12, 18, 16, 0.72);
-  --scrim-strong: rgba(16, 23, 21, 0.9);
+  --shade: rgba(3, 7, 7, 0.6);
+  --shade-soft: rgba(3, 7, 7, 0.45);
+  --scrim: rgba(5, 10, 10, 0.76);
+  --scrim-strong: rgba(8, 14, 14, 0.92);
   --gold-wash: rgba(217, 164, 65, 0.08);
   --gold-wash-strong: rgba(217, 164, 65, 0.12);
-  --alert-wash: rgba(224, 102, 92, 0.08);
+  --alert-wash: rgba(224, 88, 78, 0.08);
 
   /* Type scale. Four sizes, used by role rather than by feel: xs for incidental
      meta, sm for labels and controls, md for the sentence that matters on a
@@ -96,8 +101,8 @@
 
   /* Passing, refusing, and the texture of "not yet". */
   /* The passed red, deepened for a surface: bone text on it is above 5:1. */
-  --pass: #91352f;
-  --pass-hi: #9b3a34;
+  --pass: #7c2621;
+  --pass-hi: #8a2c26;
 
   /*
    * One knob: --scale is how many device pixels an art pixel occupies. It is
@@ -124,6 +129,21 @@
      tablet and again on a phone, as the controls and the type do, so every
      screen keeps the same rhythm at every width. */
   --space-group: var(--space-lg);
+
+  /* The frame every screen is laid out in (DESIGN.md, "Layout frame").
+     --edge: how far all chrome sits from the viewport's edges — the Log and
+       the Menu in the top corners, the read-out along the top, the run bar
+       along the foot — the same on all four sides.
+     --gutter: how far content sits from the sides of the viewport.
+     --chrome: the height kept for a bar at the top or the foot, the same at
+       both, so what sits between them is centred between them. */
+  --edge: var(--u);
+  /* How far a run's bar sits above the foot of the screen: as far as the top
+     seat's name sits below the read-out, so the table is framed alike above
+     and below. */
+  --foot-clear: calc(var(--edge) + var(--space-lg));
+  --gutter: var(--space-lg);
+  --chrome: calc(var(--u) * 6);
 
   /* Card art is 22x31 pixels; the mini and tray variants are the same drawing
      at smaller whole-number sizes. */
@@ -164,9 +184,23 @@ body,
   height: 100%;
 }
 
+/* A page that runs longer than the window still scrolls — by wheel, by
+   finger, by keys — but without a scrollbar: a bar that came and went pushed
+   every centred screen sideways as it did. Nothing scrolls sideways at all. */
+html {
+  scrollbar-width: none;
+  overflow-x: hidden;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   margin: 0;
+  /* The stone itself. Its light and shade are in the backdrop below, fixed to
+     the screen, so however long a page runs it is lit the same way. */
   background: var(--table);
+  min-height: 100vh;
   color: var(--bone);
   /* One family throughout, ranks included. Silkscreen's digits are
      unambiguous — Pixelify Sans drew '2' as a reversed S, which on a card rank
@@ -182,6 +216,58 @@ body {
   /* No pull-to-refresh and no rubber-banding: a game is dragged across with a
      finger, and every one of those drags used to threaten to reload it. */
   overscroll-behavior: none;
+}
+
+/* The ruin's grain: a two-pixel checker, faint enough to read as stone rather
+   than pattern. Over the page and under everything on it. */
+/* The deep, lit from above, held to the screen so a page taller than it
+   never runs past its shading: a faint wash of bone at the top where the way
+   back up is, the stone darkening in steps as it goes down, the edges falling
+   away into black — and the dither over it all. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    repeating-conic-gradient(rgba(0, 0, 0, 0.1) 0 25%, transparent 0 50%) 0 0 / calc(2 * var(--px)) calc(2 * var(--px)),
+    radial-gradient(ellipse 70% 45% at 50% -8%, rgba(221, 213, 192, 0.05), transparent 70%),
+    linear-gradient(
+      to bottom,
+      transparent 0 40%,
+      rgba(2, 5, 5, 0.12) 40% 55%,
+      rgba(2, 5, 5, 0.24) 55% 70%,
+      rgba(2, 5, 5, 0.38) 70% 85%,
+      rgba(2, 5, 5, 0.52) 85%
+    ),
+    radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(2, 5, 5, 0.55) 100%);
+}
+/* Ruins on the far horizon of the deep: a broken colonnade and arches in
+   silhouette, barely darker than the stone — felt more than seen, in whole
+   art pixels like everything else. They sit at the foot of the screen when the
+   page is scrolled to its end, and lower by a third of whatever is still below
+   (--scroll-rest), so they rise at a third of the page's pace: far behind it. */
+body::after {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(40 * var(--px));
+  z-index: -1;
+  pointer-events: none;
+  background: url('./assets/ruins.svg') repeat-x left bottom / auto 100%;
+  opacity: 0.22;
+  image-rendering: pixelated;
+  /* Never pushed wholly out of sight: at most two thirds below the edge. */
+  transform: translateY(min(calc(var(--scroll-rest, 0) * 0.33px), calc(26 * var(--px))));
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    transform: none;
+  }
 }
 
 .sr-only {
@@ -224,7 +310,9 @@ body {
 
 .pcard--face {
   background: var(--bone);
-  box-shadow: inset 0 0 0 var(--px) var(--bone-dim);
+  box-shadow:
+    inset 0 0 0 var(--px) var(--bone-dim),
+    inset 0 0 0 calc(2 * var(--px)) rgba(120, 100, 70, 0.12);
 }
 .pcard--face.is-red {
   color: var(--suit-red);
@@ -322,7 +410,20 @@ body {
   flex-direction: column;
 }
 
+/* The table's big-play band runs the width of the window; nothing on the
+   table screen may push it sideways into a scrollbar. */
+.screen--table {
+  overflow-x: clip;
+}
+
 /* ── Menu ────────────────────────────────────────────────────────────── */
+/* What a "Continue" carries on, under it: small, dim, one line. */
+.menu__note {
+  display: block;
+  margin-top: var(--space-xs);
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
 .menu {
   flex: 1;
   min-height: 100%;
@@ -508,7 +609,8 @@ body {
   width: 100%;
   background: var(--field);
   color: var(--bone);
-  border: var(--px) solid var(--edge);
+  border: var(--px) solid var(--field-edge);
+  box-shadow: inset 0 var(--px) 0 var(--ink);
 }
 .field input:focus-visible {
   outline: var(--px) solid var(--gold);
@@ -527,9 +629,11 @@ body {
      side seats otherwise ran off to the far edges with an empty plain between
      them and the trick; on a tall or portrait screen the top seat and your
      hand drifted apart the same way. The caps are in card sizes, so they scale
-     with --scale like everything else. */
+     with --scale like everything else. Wide enough, now, that a full desktop
+     window is the table's: the side seats sit out toward the edges, with the
+     trick and its piles given the room between. */
   width: 100%;
-  max-width: calc(var(--card-w) * 20);
+  max-width: calc(var(--card-w) * 26);
   max-height: calc(var(--card-h) * 11);
   margin: auto;
   /* The card layer's coordinate space. Every card on the board is positioned
@@ -1040,8 +1144,8 @@ body {
 /* ── Log drawer ──────────────────────────────────────────────────────── */
 .log {
   position: fixed;
-  top: var(--u);
-  left: var(--u);
+  top: var(--edge);
+  left: var(--edge);
   gap: var(--space-sm);
   z-index: var(--layer-cards);
   display: flex;
@@ -1161,6 +1265,7 @@ body {
 @media (max-width: 720px) {
   :root {
     --scale: 2;
+    --gutter: var(--space-md);
   }
 
   /* Side seats cannot keep their own columns on a phone — the centre would be
@@ -1589,10 +1694,10 @@ body {
   background:
     repeating-linear-gradient(
       -45deg,
-      rgba(224, 102, 92, 0.18) 0 calc(2 * var(--px)),
+      rgba(224, 88, 78, 0.18) 0 calc(2 * var(--px)),
       transparent calc(2 * var(--px)) calc(7 * var(--px))
     ),
-    rgba(224, 102, 92, 0.1);
+    rgba(224, 88, 78, 0.1);
   animation: none;
 }
 /* The reason, as a tag hung inside the outline's top-left corner: the one
@@ -1652,24 +1757,70 @@ textarea {
    Hosting and joining are the same act from opposite ends, so they sit on one
    screen rather than behind a mode switch. Nothing here is required: a name is
    optional, and playing on your own needs neither. */
-.menu__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-sm);
+/* The ways in, in groups: carrying on, playing alone, playing together, and
+   the rules apart at the end. One column read top to bottom, every button the
+   same width and left-aligned so their labels start on one edge. Groups sit --space-lg apart, their options --space-sm. */
+.menu__groups {
+  display: grid;
+  gap: var(--space-lg);
 }
-/* Reference, on a line of its own under the ways to play, still in their
-   group; joining a table is the next group, --space-group on. */
-.menu__more {
-  margin-bottom: var(--space-group);
+.menu__group {
+  display: grid;
+  gap: var(--space-sm);
+}
+.menu__heading {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--dim);
+}
+/* A game's heading: its name in bone, and what it is, small and dim. */
+.menu__heading--mode {
+  display: grid;
+  gap: calc(var(--space-xs) / 2);
+  font-size: var(--text-md);
+  color: var(--bone);
+}
+.menu__option {
+  display: grid;
+  width: min(100%, calc(var(--u) * 28));
+}
+/* A full desktop window: the menu takes the room it is given — a larger
+   title, a wider column of ways in, and a larger card, balanced either side
+   of the middle — rather than a small block marooned in the centre. */
+@media (min-width: 1400px) and (min-height: 820px) {
+  .menu {
+    max-width: 1240px;
+    gap: calc(var(--space-xl) * 3);
+  }
+  .menu .pixeltitle {
+    height: calc(var(--u) * 7);
+  }
+  .menu__blurb {
+    max-width: 44ch;
+    font-size: var(--text-md);
+  }
+  .menu__option {
+    width: min(100%, calc(var(--u) * 30));
+  }
+  .menu__hero .pcard {
+    --px: calc(var(--scale) * 3px);
+  }
+}
+.menu__option > .btn {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  padding-inline: var(--space-md);
+}
+.menu__group--more {
+  justify-items: start;
 }
 .menu__join {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
   gap: var(--space-sm);
-  padding-top: var(--space-lg);
-  border-top: var(--px) solid var(--table-hi);
 }
 .menu__field {
   display: grid;
@@ -1683,7 +1834,8 @@ textarea {
   width: 14ch;
   color: var(--bone);
   background: var(--field);
-  border: var(--px) solid var(--edge);
+  border: var(--px) solid var(--field-edge);
+  box-shadow: inset 0 var(--px) 0 var(--ink);
 }
 .menu__field input:focus-visible {
   outline: var(--px) solid var(--gold);
@@ -1995,16 +2147,37 @@ textarea {
 .btn--icon.btn--small {
   width: var(--control-sm);
 }
+/* Sized to its words over a floor, not stretched to the panel: a bar of a
+   button the width of the screen read as a banner, not something to press. */
 .btn--wide {
   display: flex;
-  width: 100%;
+  justify-content: center;
+  width: auto;
+  min-width: min(100%, calc(var(--u) * 22));
+  max-width: 100%;
   margin-top: var(--space-sm);
+}
+.panel__start > .btn,
+.overlay__actions > .btn--wide {
+  align-self: center;
+}
+.classdetail > .btn--wide {
+  justify-self: start;
 }
 .field input,
 .menu__field input {
   box-sizing: border-box;
   height: var(--control-md);
   padding: 0 var(--space-sm);
+}
+/* Somewhere to type answers the pointer as the buttons do: its edge lights. */
+.field input:hover:not(:disabled),
+.menu__field input:hover {
+  border-color: color-mix(in srgb, var(--gold) 60%, var(--field-edge));
+}
+.field input:focus-visible,
+.menu__field input:focus-visible {
+  border-color: var(--gold);
 }
 .field input:disabled {
   background: var(--table);
@@ -2458,16 +2631,20 @@ textarea {
      cards, the trick and the seats, and over any of them outlined pixel type on
      its own was often unreadable. The band gives it one dark ground to sit on
      wherever it lands, and edges that say how big the play was. */
+  /* Edge to edge of the window, not of the table: on a wide screen the
+     table is narrower than the window, and a band that stopped at its edges
+     read as cut off. */
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 50%;
+  width: 100vw;
+  margin-left: -50vw;
   top: 40%;
   z-index: calc(var(--layer-readout) + 1);
   display: grid;
   justify-items: center;
   padding: var(--space-md) var(--space-sm);
   pointer-events: none;
-  background: rgba(27, 31, 36, 0.95);
+  background: rgba(11, 18, 18, 0.95);
   border-block: var(--px) solid var(--table-hi);
   box-shadow: 0 calc(2 * var(--px)) 0 var(--shade);
   transform: translateY(-50%);
@@ -2965,20 +3142,25 @@ textarea {
   }
 }
 
-/* ── Phone: the table's menu ─────────────────────────────────────────────
-   Top left, where How to play sits on a wide screen. */
+/* ── The corner menu ─────────────────────────────────────────────────────
+   Top right on every played screen — every table at every width, and the
+   campaign between tables — mirroring the log in the top left. */
 .tablemenu {
   position: fixed;
-  top: var(--u);
-  right: var(--u);
+  top: var(--edge);
+  right: var(--edge);
   z-index: var(--layer-readout);
 }
 .tablemenu__toggle {
   font: inherit;
   font-size: var(--text-sm);
   box-sizing: border-box;
+  /* A square holding the three-bar icon. */
+  display: grid;
+  place-items: center;
+  width: var(--control-sm);
   height: var(--control-sm);
-  padding: 0 var(--space-sm);
+  padding: 0;
   background: var(--table-lo);
   color: var(--bone-dim);
   border: var(--px) solid var(--table-hi);
@@ -3028,9 +3210,9 @@ textarea {
    is too narrow for one; clear of both corners either way. */
 .tablebar {
   position: fixed;
-  top: var(--u);
-  left: calc(var(--u) + 72px);
-  right: calc(var(--u) + 72px);
+  top: var(--edge);
+  left: calc(var(--edge) + 72px);
+  right: calc(var(--edge) + 72px);
   z-index: var(--layer-cards);
   display: flex;
   align-items: center;
@@ -3346,4 +3528,2042 @@ textarea {
     position: static;
     transform: none;
   }
+}
+
+/* ── Campaign: the classes' colours ──────────────────────────────────────
+   One accent each, used for the class's name wherever it appears, its card's
+   edge and its emblem. Drawn from the table's own warm-and-muted range so
+   none of them outshouts the gold that marks your move: bronze for the
+   Commoner, a court violet for the Courtier, a blood red for the Tyrant, a
+   cold teal for the Seer who is not here yet. */
+:root {
+  /* Each class's accent: its name, its card's edge, and one small detail in
+     its portrait — rust for the crowd, a muted violet for the court, blood
+     for the throne, grey-teal for the Seer. Muted to sit in the same dark
+     world as everything else; the portraits' cloth is shared and near-
+     colourless (below), so the accent is what tells them apart. */
+  --class-commoner: #b9773f;
+  --class-courtier: #9582b8;
+  --class-tyrant: #b8453b;
+  --class-seer: #7fa6a3;
+  /* The portraits' paint, shared by every class: ink, slate and steel,
+     silver hair, bone, ember, a muted spectral light (never neon: grey-green,
+     low), and each class's cloth. A class's own colour appears
+     only as its accent (--class-*), in one small detail. */
+  --art-ink: #111416;
+  --art-slate: #22282b;
+  --art-slate-mid: #3a4347;
+  --art-slate-hi: #5d686c;
+  --art-hair-lo: #5a7471;
+  --art-hair: #9fb9b4;
+  --art-hair-hi: #dde9e5;
+  --art-spectral-lo: #2f4f4b;
+  --art-spectral: #5f9a90;
+  --art-spectral-hi: #b3dbd1;
+  --art-bone: #c9c6b9;
+  --art-bone-hi: #ebe8dc;
+  --art-ember-lo: #8a4a1c;
+  --art-ember: #d98a2b;
+  --art-ember-hi: #ffd36e;
+  /* Each class's cloth: one steel for all four, as the Ruined King and the
+     Nameless King wear it; the classes' colour is in their equipment. Kept
+     as a token per class so one can be tinted without touching the others. */
+  --cloth-commoner-1: #1f2527;
+  --cloth-commoner-2: #343e41;
+  --cloth-commoner-3: #53615f;
+  --cloth-courtier-1: #1f2527;
+  --cloth-courtier-2: #343e41;
+  --cloth-courtier-3: #53615f;
+  --cloth-tyrant-1: #1f2527;
+  --cloth-tyrant-2: #343e41;
+  --cloth-tyrant-3: #53615f;
+  --cloth-seer-1: #1f2527;
+  --cloth-seer-2: #343e41;
+  --cloth-seer-3: #53615f;
+}
+.classtag {
+  white-space: nowrap;
+}
+.classtag--commoner {
+  color: var(--class-commoner);
+}
+.classtag--courtier {
+  color: var(--class-courtier);
+}
+.classtag--tyrant {
+  color: var(--class-tyrant);
+}
+.emblem {
+  display: block;
+}
+
+/* ── Campaign ────────────────────────────────────────────────────────────
+   The screens between tables: the climb across the top, your gold set large
+   under it — in the campaign it is your life and your stake at once — and
+   below, the lobby's quiet vocabulary: outlined rows, dim facts, one gold
+   action. */
+.campaign .panel__head {
+  align-items: center;
+  gap: var(--space-md);
+}
+.campaign__choices {
+  display: grid;
+  gap: var(--space-sm);
+  margin: var(--space-group) 0 0;
+  padding: 0;
+  list-style: none;
+}
+/* A choice is a row you can read in full before you take it: its name and
+   what it pays on one line, what it is under that, then the facts. */
+.campaign__choice {
+  display: grid;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  font: inherit;
+  text-align: left;
+  color: var(--bone);
+  background: var(--table);
+  border: var(--px) solid var(--table-hi);
+}
+button.campaign__choice {
+  cursor: pointer;
+}
+button.campaign__choice:hover {
+  border-color: var(--bone-dim);
+}
+button.campaign__choice:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+.campaign__choice.is-picked {
+  border-color: var(--gold);
+  background: var(--gold-wash);
+}
+.campaign__choice .btn {
+  justify-self: start;
+  margin-top: var(--space-xs);
+}
+.campaign__choicehead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+.campaign__choicehead strong {
+  font-size: var(--text-md);
+}
+.campaign__choicehead span {
+  font-size: var(--text-xs);
+  color: var(--gold);
+}
+.campaign__passive {
+  font-size: var(--text-sm);
+  color: var(--bone-dim);
+}
+.campaign__facts {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+/* What winning a table pays, in gold, read first; how that is worked out is
+   the dim line under it. */
+.descent__win {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--bone);
+}
+.descent__spoils {
+  color: var(--gold);
+}
+.descent__note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.campaign__lineup {
+  display: grid;
+  /* Space between players, and each player's lines held tight together, so
+     a name is never read as the caption of the line before it. */
+  gap: var(--space-sm);
+}
+.campaign__persona {
+  display: grid;
+  gap: calc(var(--px) / 1.5);
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.campaign__persona > span:first-child {
+  font-size: var(--text-sm);
+  color: var(--bone);
+}
+.campaign__persona .campaign__carried {
+  color: var(--gold);
+}
+.campaign__elite {
+  color: var(--gold);
+}
+.rarity--rare {
+  color: var(--bone);
+}
+.rarity--legendary {
+  color: var(--gold);
+}
+.campaign .field {
+  margin-top: var(--space-group);
+}
+.campaign__abandon {
+  margin-top: var(--space-group);
+}
+.campaign__abandon .overlay__actions {
+  justify-content: flex-start;
+}
+.campaign__slider {
+  width: 100%;
+  accent-color: var(--gold);
+}
+/* A campaign table seats named strangers, not numbered seats: a long name ends
+   in an ellipsis rather than running into the seat beside it. */
+.table--campaign .opp__name {
+  max-width: 100%;
+  min-width: 0;
+}
+.table--campaign .opp__name > span:not(.turndot) {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.campaign__notice {
+  color: var(--dim);
+}
+/* The room's name is on every campaign screen; at the table on a phone the
+   line keeps only what changes. */
+@media (max-width: 720px) {
+  .campaign__tier {
+    display: none;
+  }
+}
+.campaign__showdown {
+  color: var(--gold);
+}
+.campaign__worth {
+  color: var(--bone);
+}
+.overlay__gain.is-loss {
+  color: var(--alert);
+}
+.campaign__handend {
+  max-width: min(460px, calc(100vw - 2 * var(--space-sm)));
+}
+
+/* Wider than a lobby: the class cards stand side by side, and the tables on a
+   rung are compared across, not read down a list. */
+.campaign__choices--grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  align-items: stretch;
+}
+.campaign__choices--grid > li {
+  display: grid;
+}
+
+/* How a table works: the three things that happen, in order. */
+.campaign__steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: var(--space-sm);
+  margin: var(--space-md) 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.campaign__steps li {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-left: var(--px) solid var(--gold);
+  counter-increment: step;
+}
+.campaign__steps strong {
+  font-size: var(--text-sm);
+  color: var(--bone);
+}
+.campaign__steps strong::before {
+  content: counter(step) '  ';
+  color: var(--gold);
+}
+.campaign__steps span {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+
+/* ── Campaign screens: the whole viewport ────────────────────────────────
+   Laid out as a game screen, not a form: the corner Menu top right, as at the
+   table, and the content across the width — led by the climb. */
+.campaignscreen {
+  position: relative;
+  padding: calc(var(--edge) + var(--corner) + var(--space-lg)) var(--gutter) var(--gutter);
+}
+.campaignscreen {
+  display: flex;
+  flex-direction: column;
+}
+/* Short screens sit in the middle of the viewport, as a game's screens do;
+   long ones start at the top and scroll. */
+.campaignscreen__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: min(1560px, 100%);
+  margin: 0 auto;
+}
+@media (max-width: 720px) {
+  .campaignscreen {
+    padding-inline: var(--space-sm);
+  }
+}
+
+/* ── Class cards ─────────────────────────────────────────────────────────
+   The classes are dealt as a hand: four cards in a gentle fan, each a card of
+   its own — its ranks and emblem in the corner as a card carries rank and
+   suit, the emblem large at the centre, its name across the foot. A face in
+   the class's own colour, dark like the felt, framed like the table's cards.
+   The one you point at lifts out of the fan and straightens; the picked one
+   takes the gold edge every chosen thing on the board takes. The fourth lies
+   face down — the game's own card back — a class not yet open to you. */
+.classpick {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-lg);
+}
+.classpick__hand {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-lg);
+  min-width: 0;
+}
+
+.classpick__head {
+  text-align: center;
+  max-width: 60ch;
+}
+.classpick__head h2 {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--text-lg);
+}
+.classhand {
+  /* The hand is what the screen is for: large, centred, above what it says. */
+  --card: clamp(88px, 13vw, 200px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: calc(var(--card) * 0.08);
+  margin: var(--space-md) 0 0;
+  padding: calc(var(--card) * 0.12) 0 0;
+  list-style: none;
+}
+.classhand > li {
+  display: grid;
+}
+.classhand > li:nth-child(1) {
+  transform: rotate(-6deg) translateY(calc(var(--card) * 0.06));
+}
+.classhand > li:nth-child(2) {
+  transform: rotate(-2deg);
+}
+.classhand > li:nth-child(3) {
+  transform: rotate(2deg);
+}
+.classhand > li:nth-child(4) {
+  transform: rotate(6deg) translateY(calc(var(--card) * 0.06));
+}
+.classcard {
+  --accent: var(--gold);
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  width: var(--card);
+  aspect-ratio: 22 / 31;
+  padding: calc(var(--card) * 0.1) calc(var(--card) * 0.08) calc(var(--card) * 0.07);
+  font: inherit;
+  /* Every class card is the same card — one face, one steel edge — and only
+     its name takes the class's colour; what else differs is in its portrait. */
+  color: var(--bone-dim);
+  background: var(--table-lo);
+  border: var(--px) solid var(--ink);
+  box-shadow:
+    inset 0 0 0 var(--px) var(--art-slate-hi),
+    calc(2 * var(--px)) calc(3 * var(--px)) 0 var(--shade);
+  /* The same motion as a card picked from your hand at the table: it rises on
+     the table's SETTLE (220ms, ease-out) and its shadow deepens over 180ms,
+     while the gold edge arrives at once. */
+  transition:
+    transform 220ms ease-out,
+    box-shadow 180ms ease-out;
+}
+button.classcard {
+  cursor: pointer;
+}
+.classcard--commoner {
+  --accent: var(--class-commoner);
+}
+.classcard--courtier {
+  --accent: var(--class-courtier);
+}
+.classcard--tyrant {
+  --accent: var(--class-tyrant);
+}
+/* Pointed at, as a card in your hand is: nudged up, with the raised shadow. */
+button.classcard:hover {
+  transform: translateY(calc(var(--card) * -0.06));
+  box-shadow:
+    inset 0 0 0 var(--px) var(--art-slate-hi),
+    calc(2 * var(--px)) calc(5 * var(--px)) calc(1.5 * var(--px)) var(--shade);
+}
+button.classcard:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: calc(2 * var(--px));
+}
+/* Picked, as a picked card in your hand is: its own edge turns gold, and it
+   rises with the softer, deeper shadow of a card lifted off the felt. */
+.classcard.is-picked,
+button.classcard.is-picked:hover {
+  transform: translateY(calc(var(--card) * -0.14));
+  border-color: var(--gold);
+  box-shadow:
+    inset 0 0 0 var(--px) var(--art-slate-hi),
+    calc(2 * var(--px)) calc(5 * var(--px)) calc(1.5 * var(--px)) var(--shade);
+}
+/* The corner index: the class's ranks over a small emblem, as a card carries
+   its rank over its suit. */
+.classcard__index {
+  position: absolute;
+  top: calc(var(--card) * 0.04);
+  left: calc(var(--card) * 0.06);
+  display: grid;
+  justify-items: center;
+  gap: calc(var(--card) * 0.015);
+  font-size: clamp(9px, calc(var(--card) * 0.075), var(--text-sm));
+  line-height: 1;
+}
+.classcard__art {
+  display: grid;
+  place-items: end center;
+  margin: calc(var(--card) * 0.04) 0 calc(var(--card) * 0.04);
+  overflow: hidden;
+  /* A storm-grey sky for the figure to stand against, the same on every
+     card: slate, a darker band of far ground, and a low spectral mist.
+     Stepped, not smooth, like the rest of the art. */
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 0 52%,
+      color-mix(in srgb, var(--art-slate) 55%, transparent) 52% 60%,
+      color-mix(in srgb, var(--art-spectral-lo) 55%, transparent) 60% 68%,
+      transparent 68%
+    ),
+    var(--art-slate-mid);
+  box-shadow: inset 0 0 0 var(--px) var(--ink);
+}
+.classcard__art .emblem {
+  width: 96%;
+  margin-bottom: -2%;
+}
+.classcard__name {
+  justify-self: center;
+  color: var(--accent);
+  font-size: clamp(9px, calc(var(--card) * 0.08), var(--text-md));
+  text-shadow: var(--px) var(--px) 0 var(--ink);
+}
+/* Sealed: a class not yet at the table. The same card as the others, its
+   figure a shroud with one pale eye, its ranks a question; not to be picked. */
+.classcard--seer {
+  --accent: var(--class-seer);
+}
+.classcard.is-sealed {
+  cursor: default;
+  /* Plainly not to be had: dimmed well below the three that are. */
+  opacity: 0.45;
+  filter: saturate(0.5);
+}
+
+/* What the picked class does, under the hand. */
+.classdetail {
+  display: grid;
+  gap: var(--space-md);
+  width: min(640px, 100%);
+  margin-top: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--table-lo);
+  border: var(--px) solid var(--table-hi);
+  animation: classdetail-in 220ms ease-out;
+}
+/* One thing each: the class play, the figures, how it plays. A small dim
+   heading where a group needs one — the figures carry their own labels — and
+   its lines held close; groups are told apart by space, not rules. */
+/* On a wide screen its groups sit two by two — class play beside the figures,
+   how it plays beside the profile — so the whole class reads at a glance
+   under the hand, and the button to begin is never below the fold. */
+@media (min-width: 960px) {
+  .classpick {
+    gap: var(--space-md);
+  }
+  /* Clear air between the hand and what it says, then the panel tight: its
+     groups told apart by space alone, no rules between them. */
+  .classdetail {
+    margin-top: var(--space-lg);
+    width: min(920px, 100%);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md) var(--space-xl);
+  }
+  .classdetail > .classdetail__title,
+  .classdetail > .btn--wide,
+  .classdetail > .field__hint {
+    grid-column: 1 / -1;
+  }
+  .classdetail > .classdetail__profile {
+    align-self: end;
+  }
+}
+.classdetail__group {
+  display: grid;
+  align-content: start;
+  gap: var(--space-xs);
+}
+.classdetail__group h3 {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: normal;
+  color: var(--dim);
+}
+.classdetail__note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--bone-dim);
+}
+.classdetail__stats {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  justify-content: start;
+  column-gap: var(--space-lg);
+}
+@keyframes classdetail-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.classdetail__title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+.classdetail__title strong {
+  font-size: var(--text-lg);
+  text-shadow: var(--px) var(--px) 0 var(--ink);
+}
+.classdetail__title span {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+/* Each line keeps room for its longest class, so switching classes changes
+   the words and never the layout: nothing under the hand moves. */
+.classdetail__rule,
+.classdetail__style {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  min-height: calc(1.4em * 2);
+  color: var(--bone);
+}
+@media (max-width: 720px) {
+  .classdetail__rule,
+  .classdetail__style {
+    min-height: calc(1.45em * 4);
+  }
+}
+.classdetail__style {
+  color: var(--bone-dim);
+}
+.classdetail__profile {
+  display: grid;
+  gap: calc(2 * var(--px));
+}
+.classdetail--commoner {
+  --accent: var(--class-commoner);
+}
+.classdetail--courtier {
+  --accent: var(--class-courtier);
+}
+.classdetail--tyrant {
+  --accent: var(--class-tyrant);
+}
+.classcard__meter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.classcard__pips {
+  display: flex;
+  gap: var(--px);
+}
+.classcard__pips > span {
+  width: calc(var(--u) * 1.5);
+  height: calc(var(--u) * 1.5);
+  background: var(--table-hi);
+}
+.classcard__pips > span.is-on {
+  background: var(--accent);
+}
+
+/* ── Campaign table flashes ─────────────────────────────────────────────
+   What just happened, said where it happened: a play only a class's passive
+   allowed is named over the trick.
+   Stepped in and eased out, like the table's other moments — they arrive as an
+   event and leave as a fade. Each is taken off by a timer (TableFlashes), so
+   under reduced motion it simply appears and goes. */
+.tableflash {
+  position: absolute;
+  z-index: calc(var(--layer-readout) + 1);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: var(--text-md);
+  text-shadow:
+    var(--px) 0 0 var(--ink),
+    calc(-1 * var(--px)) 0 0 var(--ink),
+    0 var(--px) 0 var(--ink),
+    0 calc(-1 * var(--px)) 0 var(--ink),
+    var(--px) var(--px) 0 var(--ink);
+  animation: tableflash-rise 1700ms forwards;
+}
+.tableflash--passive {
+  display: grid;
+  justify-items: center;
+  font-size: var(--text-lg);
+  animation-duration: 2000ms;
+}
+.tableflash--passive small {
+  font-size: var(--text-xs);
+}
+@keyframes tableflash-rise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -30%) scale(0.8);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-50%, -90%);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -110%);
+  }
+}
+/* A play a passive allowed keeps its class's edge for as long as it stands,
+   in place of the gold edge a standing combo takes, with a glow of the same
+   colour: the one play that bent the rules is never taken for one that did not. */
+.cardlayer__card.is-passive .pcard {
+  border-color: var(--passive);
+  box-shadow:
+    0 0 0 var(--px) var(--passive),
+    0 0 calc(3 * var(--px)) var(--px) color-mix(in srgb, var(--passive) 55%, transparent);
+}
+/* In your hand, on your turn: the cards that make a play only your class
+   allows. The same edge in your class's colour, and every few seconds a small
+   nudge — up two art pixels and back — so the chance is seen, not missed. The
+   nudge is on the card's face, not the card, so it never fights the card's
+   own movement or the lean of a card you are holding. */
+.cardlayer__card.is-passive-ready .pcard {
+  border-color: var(--passive);
+  box-shadow:
+    0 0 0 var(--px) var(--passive),
+    0 0 calc(3 * var(--px)) var(--px) color-mix(in srgb, var(--passive) 55%, transparent);
+  animation: passive-nudge 2600ms ease-in-out infinite;
+}
+@keyframes passive-nudge {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+  }
+  78% {
+    transform: translateY(calc(-2 * var(--px)));
+  }
+  86% {
+    transform: translateY(0);
+  }
+  92% {
+    transform: translateY(calc(-1 * var(--px)));
+  }
+}
+.cardlayer__card.is-passive--commoner {
+  --passive: var(--class-commoner);
+}
+.cardlayer__card.is-passive--courtier {
+  --passive: var(--class-courtier);
+}
+.cardlayer__card.is-passive--tyrant {
+  --passive: var(--class-tyrant);
+}
+
+/* ── Campaign: whose turn, and who has passed ────────────────────────────
+   A campaign seat's name is in its own colour and its class in the class's,
+   so neither is repainted to say what the seat is doing. Its turn is a gold
+   underline that sweeps out under the name, over and over, stepped like the
+   turn marker beside it; a pass keeps its "passed" line, and the seat's own
+   cards drop into shadow — the same dimming a beaten play on the table takes,
+   by tone rather than transparency, so overlapping cards stay solid. */
+.table--campaign .opp.is-turn .opp__name,
+.table--campaign .opp.is-passed .opp__name {
+  color: inherit;
+}
+/* The underline runs under the whole label — name and class — starting past
+   the turn marker, so it underlines who the seat is rather than the marker. */
+.table--campaign .opp__name {
+  position: relative;
+  padding-bottom: calc(2 * var(--px));
+}
+.table--campaign .opp.is-turn .opp__name::after {
+  content: '';
+  position: absolute;
+  left: calc(5 * var(--px) + var(--space-sm));
+  right: 0;
+  bottom: 0;
+  height: var(--px);
+  background: var(--gold);
+  transform-origin: left center;
+  animation: turn-underline 1.4s infinite;
+}
+/* In step with the turn marker beside it (turn-pulse, 1.4s in two steps):
+   the line sweeps out in four steps while the marker is lit, and dims with it
+   for the other half, so the two blink as one. */
+@keyframes turn-underline {
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+    animation-timing-function: steps(4, jump-end);
+  }
+  50% {
+    transform: scaleX(1);
+    opacity: 1;
+    animation-timing-function: steps(1, jump-start);
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .table--campaign .opp.is-turn .opp__name::after {
+    transform: none;
+  }
+}
+.cardlayer__card.is-held-passed {
+  filter: brightness(0.5) saturate(0.6);
+  transition: filter 180ms ease-out;
+}
+
+/* ── Stats: a label over a value ─────────────────────────────────────────
+   The one shape every campaign number takes, at the table and between
+   tables: a small dim label, then the value in bone, larger — the label says
+   what it is once, the value is what the eye comes back for. A large stat is
+   one that changes every hand. */
+.stat {
+  display: grid;
+  gap: calc(2 * var(--px));
+  font-variant-numeric: tabular-nums;
+}
+.stat__label {
+  font-size: var(--text-xs);
+  color: var(--dim);
+  white-space: nowrap;
+}
+.stat__value {
+  font-size: var(--text-md);
+  color: var(--bone);
+  white-space: nowrap;
+}
+.stat__value small {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.stat--large .stat__value {
+  font-size: var(--text-lg);
+  color: var(--gold);
+  text-shadow: var(--px) var(--px) 0 var(--ink);
+}
+.campaign__terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-lg);
+  margin-top: var(--space-xs);
+}
+
+/* ── The campaign table's read-out ───────────────────────────────────────
+   In the top bar, between the corner buttons: the hand as twelve pips (the
+   last, the Showdown, ringed in gold), the pot and your gold as the large
+   numbers, and the target as a bar that fills toward it and turns gold when a
+   Showdown can be called. */
+.hud {
+  /* Two rows shared by every instrument — its label, then a line holding its
+     value and gauge — so the labels sit on one line and every value and gauge
+     is centred on one other. Divided by hairlines, as a panel of instruments. */
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: auto auto;
+  row-gap: var(--space-xs);
+  justify-content: center;
+  align-items: center;
+  text-align: left;
+}
+.hud > .stat {
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  padding-inline: var(--space-lg);
+}
+.hud__line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: calc(var(--u) * 2);
+}
+/* Balanced about the middle: the countdown pressed to the right edge of its
+   gauge, the pot centred, the tribute to the left — each reading toward the
+   pot between them. */
+.hud__hand {
+  justify-items: end;
+  text-align: right;
+}
+.hud__pot {
+  justify-items: center;
+  text-align: center;
+}
+.hud__target {
+  justify-items: start;
+}
+.hud__prize {
+  font-size: var(--text-sm);
+  color: var(--gold);
+}
+.hud__prize small {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.hud__potline--sub > span:first-child {
+  padding-left: var(--space-sm);
+  color: var(--dim);
+}
+.hud > .stat + .stat {
+  border-left: var(--px) solid var(--table-hi);
+}
+.hud .stat__value {
+  line-height: 1;
+}
+/* Every value one size, on one baseline, with no shadow: a count in bone, an
+   amount of gold in gold, a unit small and dim beside it. */
+.hud .stat__value {
+  font-size: var(--text-lg);
+  color: var(--bone);
+  text-shadow: none;
+}
+.hud .stat__value.hud__gold {
+  color: var(--gold);
+}
+.hud .stat__value small {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+/* One gauge for every progress: square blocks in an ink frame, one per thing
+   counted (a hand; an ante of tribute). Empty is the stone, done is bone, now
+   is gold, and a ringed block marks the Showdown. */
+.hud__gauge {
+  display: flex;
+  align-self: center;
+  gap: var(--px);
+  padding: var(--px);
+  background: var(--ink);
+  box-shadow: 0 0 0 var(--px) var(--table-hi);
+  justify-self: start;
+}
+.hud__block {
+  display: block;
+  width: calc(var(--u) * 1.25);
+  height: calc(var(--u) * 1.25);
+  background: var(--table-hi);
+}
+.hud__block.is-lit {
+  background: var(--bone-dim);
+}
+.hud__block.is-now {
+  background: var(--gold);
+}
+.hud__block.is-final {
+  box-shadow: inset 0 0 0 var(--px) var(--gold);
+}
+/* The last block is a word to point at: no underline on a square. */
+.hud__gauge .term {
+  display: block;
+  text-decoration: none;
+  line-height: 0;
+}
+.hud__gauge .infotip--term {
+  display: block;
+}
+/* Who is in the pot: a name, and what they put in, on one line each. */
+.hud__potline {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+.hud__potline > span:last-child {
+  color: var(--bone);
+}
+.hud__target.is-ready .stat__label {
+  color: var(--gold);
+}
+.hud__target.is-ready .hud__block {
+  background: var(--gold);
+  animation: turn-pulse 1.4s steps(2, end) infinite;
+}
+.hud__narrow {
+  display: none;
+}
+
+/* ── Gold ────────────────────────────────────────────────────────────────
+   A coin beside every amount of gold, sized to its text, and each change
+   rising off the amount it changed: gains in gold, losses in red. */
+.goldamount {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-variant-numeric: tabular-nums;
+}
+.goldcoin {
+  flex: none;
+  width: 0.75em;
+  height: 0.75em;
+  image-rendering: pixelated;
+}
+.goldamount__change {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  font-size: var(--text-sm);
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 var(--px) 0 var(--ink);
+  animation: gold-change 1.6s steps(14, end) forwards;
+}
+.goldamount__change.is-gain {
+  color: var(--gold-hi);
+}
+.goldamount__change.is-loss {
+  color: var(--alert);
+}
+/* Below the amount where there is no room above it: the read-out along the
+   top of the screen, and a seat's gold under its cards. */
+.goldamount--below .goldamount__change {
+  bottom: auto;
+  top: 100%;
+  animation-name: gold-change-below;
+}
+@keyframes gold-change {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  70% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-3 * var(--u)));
+  }
+}
+@keyframes gold-change-below {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  70% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(3 * var(--u)));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .goldamount__change {
+    transform: translateX(-50%);
+    animation: gold-change-still 1.6s steps(1, end) forwards;
+  }
+  @keyframes gold-change-still {
+    to {
+      opacity: 0;
+    }
+  }
+}
+/* A phone: each stat keeps its label beside its value, two short lines, so
+   the bar stays within the corner buttons' height. */
+@media (max-width: 720px) {
+  .hud {
+    grid-auto-flow: row;
+    grid-template-rows: none;
+    grid-template-columns: auto auto;
+    gap: calc(2 * var(--px)) var(--space-md);
+    align-items: center;
+  }
+  .hud > .stat {
+    display: flex;
+    grid-row: auto;
+    align-items: baseline;
+    gap: var(--space-xs);
+    padding-inline: 0;
+    border-left: 0;
+  }
+  .hud .stat--large .stat__value {
+    font-size: var(--text-md);
+  }
+  .hud__gauge {
+    align-self: center;
+  }
+  /* Numbers only: the gauges do not fit between the corner buttons. */
+  .hud__gauge {
+    display: none;
+  }
+  /* Between the corner buttons a phone has about 230px: the short label, and
+     no note of what is in the pot, keep the read-out inside them. */
+  .hud {
+    column-gap: var(--space-sm);
+  }
+  .hud__wide,
+  .hud__gold .stat__value small {
+    display: none;
+  }
+  .hud__narrow {
+    display: inline;
+  }
+}
+
+/* ── Passive plays buried under the trick ────────────────────────────────
+   A passive play keeps its class's edge while it stands. Once another play
+   covers it, it steps back with the other beaten plays — no edge — and takes
+   the edge again when the trick is opened out to be read. */
+.cardlayer:not(.is-open) .cardlayer__card.is-passive.is-beaten .pcard {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 transparent;
+}
+
+/* ── Your class at the table ─────────────────────────────────────────────
+   In the middle of the row under your hand (between Sort and Clear on a
+   phone): your class's emblem and name in its colour, and its rule — kept in
+   sight rather than remembered from the class screen. */
+.classbadge {
+  --accent: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  max-width: 46ch;
+  text-align: left;
+}
+.classbadge--commoner {
+  --accent: var(--class-commoner);
+}
+.classbadge--courtier {
+  --accent: var(--class-courtier);
+}
+.classbadge--tyrant {
+  --accent: var(--class-tyrant);
+}
+.classbadge__emblem {
+  flex: none;
+  width: calc(var(--u) * 4);
+}
+.classbadge__name {
+  color: var(--accent);
+  white-space: nowrap;
+}
+.classbadge__rule {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.classbadge__rulename {
+  color: var(--accent);
+}
+.classbadge__cost {
+  color: var(--gold);
+}
+
+/* ── The descent ─────────────────────────────────────────────────────────
+   The run's map, read top to bottom: the gate, four rooms of two to four
+   nodes, the throne. Room names in a column down the left; nodes placed by
+   fractions of the field beside it (--x, --y), and the paths drawn in the same
+   field, so a line always meets its node's centre. The way you came is bone,
+   the ways open now gold and dashed, the rest the colour of the stone. The
+   node's detail sits beside the map on a wide screen and under it on a phone. */
+.descent {
+  /* Centred in the screen as one block — map and panel together — rather
+     than the map running to the left edge of a wide window. */
+  width: min(100%, calc(var(--u) * 104));
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, calc(var(--u) * 26));
+  align-items: start;
+  gap: var(--space-lg);
+  margin-top: var(--space-md);
+}
+.descent__map {
+  --label: 0px;
+  position: relative;
+  /* As tall as the screen allows under the header and over the run bar, and
+     no taller than the rows need: the whole descent in view without scrolling. */
+  height: min(calc(var(--slots) * var(--u) * 9.5), max(calc(var(--u) * 30), calc(100dvh - var(--u) * 20)));
+}
+.descent__paths {
+  position: absolute;
+  top: 0;
+  left: var(--label);
+  width: calc(100% - var(--label));
+  height: 100%;
+  overflow: visible;
+}
+.descent__path {
+  stroke: var(--table-hi);
+  stroke-width: var(--px);
+}
+.descent__path.is-open {
+  stroke: var(--gold);
+  stroke-dasharray: 6 4;
+}
+.descent__path.is-passed {
+  stroke: var(--bone-dim);
+}
+.descent__room {
+  position: absolute;
+  left: 0;
+  top: calc(var(--y) * 100%);
+  width: calc(var(--label) - var(--space-sm));
+  transform: translateY(-50%);
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  color: var(--dim);
+}
+.descent__room.is-here {
+  color: var(--bone);
+}
+.descent__node {
+  position: absolute;
+  left: calc(var(--label) + (100% - var(--label)) * var(--x));
+  top: calc(var(--y) * 100%);
+  display: grid;
+  place-items: center;
+  width: calc(15 * var(--px));
+  height: calc(15 * var(--px));
+  padding: 0;
+  font: inherit;
+  color: var(--dim);
+  background: var(--table-lo);
+  border: var(--px) solid var(--table-hi);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+.descent__icon {
+  width: calc(9 * var(--px));
+  height: calc(9 * var(--px));
+}
+.descent__node--gate {
+  width: auto;
+  height: auto;
+  background: none;
+  border: 0;
+  cursor: default;
+}
+.descent__node--gate .descent__icon {
+  height: calc(5 * var(--px));
+}
+.descent__node--throne {
+  width: calc(19 * var(--px));
+  height: calc(19 * var(--px));
+  box-shadow:
+    inset 0 0 0 calc(2 * var(--px)) var(--table-lo),
+    inset 0 0 0 calc(3 * var(--px)) currentColor;
+}
+.descent__node.is-passed {
+  color: var(--bone);
+  border-color: var(--bone-dim);
+}
+.descent__node.is-open {
+  color: var(--gold);
+  border-color: var(--gold);
+  border-style: dashed;
+}
+.descent__short {
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--bone-dim);
+  border-left: var(--px) solid var(--alert);
+  background: var(--alert-wash);
+}
+.descent__detail--empty {
+  align-content: start;
+}
+/* How a table works, as the panel's resting state: one column, read down. */
+.descent__detail--empty .campaign__steps {
+  grid-template-columns: minmax(0, 1fr);
+  margin: var(--space-xs) 0 0;
+}
+.descent__detail--empty .campaign__steps li {
+  padding: var(--space-xs) var(--space-sm);
+}
+
+/* The map screen's header: its title and one line beside it, on a rule —
+   everything else on the screen is the map and the panel. */
+.mapstep__head {
+  width: min(100%, calc(var(--u) * 104));
+  margin-inline: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-lg);
+  row-gap: var(--space-xs);
+  padding-bottom: var(--space-sm);
+  border-bottom: var(--px) solid var(--table-hi);
+}
+.mapstep__head h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+.mapstep__head p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--bone-dim);
+}
+.descent__node.is-behind {
+  opacity: 0.4;
+}
+.descent__node.is-picked {
+  outline: var(--px) solid var(--bone);
+  outline-offset: calc(2 * var(--px));
+}
+.descent__node:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: calc(2 * var(--px));
+}
+/* Where you stand: a caret over the last node passed. */
+.descent__node.is-here::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2 * var(--px));
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: calc(3 * var(--px)) solid transparent;
+  border-right: calc(3 * var(--px)) solid transparent;
+  border-top: calc(3 * var(--px)) solid var(--bone);
+}
+@media (hover: hover) {
+  .descent__node:not(.descent__node--gate):hover {
+    border-color: var(--bone-dim);
+  }
+  .descent__node.is-open:hover {
+    border-color: var(--gold-hi);
+  }
+}
+.descent__detail {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--table-lo);
+  border: var(--px) solid var(--table-hi);
+  animation: classdetail-in 220ms ease-out;
+}
+.descent__detail h2 {
+  margin: 0;
+  font-size: var(--text-md);
+}
+/* The panel reads in groups — where and what; its numbers; what winning it
+   pays; who sits there; the way in — each a rule apart, its lines close. */
+.descent__detail {
+  gap: 0;
+}
+.descent__group {
+  display: grid;
+  gap: var(--space-xs);
+  padding-block: var(--space-sm);
+}
+.descent__group + .descent__group {
+  border-top: var(--px) solid var(--table-hi);
+}
+.descent__group--head {
+  padding-top: 0;
+}
+.descent__group--action {
+  padding-bottom: 0;
+}
+.descent__group p {
+  margin: 0;
+}
+.descent__stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--space-sm);
+}
+.descent__label {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: normal;
+  color: var(--dim);
+}
+.descent__where {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.descent__detail .btn--wide {
+  justify-self: start;
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .descent {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .descent__map {
+    --label: 0px;
+    height: calc(var(--slots) * var(--u) * 6);
+  }
+}
+
+/* ── Game terms ──────────────────────────────────────────────────────────
+   A word the game uses in a sense of its own, in a line of rules: dotted
+   underline, and its meaning on point, focus or tap (Terms, InfoTip). */
+.infotip--term {
+  position: relative;
+  display: inline;
+}
+.term {
+  display: inline;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  text-decoration: underline dotted;
+  text-decoration-thickness: calc(var(--px) / 1.5);
+  text-underline-offset: 0.3em;
+  cursor: help;
+}
+.term:hover,
+.term[aria-expanded='true'] {
+  color: var(--bone);
+  text-decoration-color: var(--gold);
+}
+.term:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+.infotip__panel--float {
+  position: fixed;
+  z-index: var(--layer-toast);
+  width: max-content;
+  max-width: min(calc(var(--u) * 30), calc(100vw - 16px));
+  text-transform: none;
+  pointer-events: auto;
+}
+
+/* ── The run bar ─────────────────────────────────────────────────────────
+   Between tables, what a run is — class, gold, depth, Medallions, the menu —
+   in a bar that floats along the foot of the screen, clear of its edges:
+   ink-edged with a thin gold rule inside, its corners cut a pixel step, so it
+   reads as a frame the screens sit in rather than one more panel. Gold is its
+   largest figure. */
+.runbar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--foot-clear) + env(safe-area-inset-bottom));
+  z-index: var(--layer-readout);
+  box-sizing: border-box;
+  min-height: var(--chrome);
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--space-sm));
+  padding: var(--space-sm) var(--space-md);
+  background: var(--table-lo);
+  border: var(--px) solid var(--ink);
+  box-shadow:
+    inset 0 0 0 var(--px) color-mix(in srgb, var(--gold) 35%, transparent),
+    0 calc(2 * var(--px)) 0 var(--shade);
+  transform: translateX(-50%);
+}
+.runbar__class {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--accent, var(--bone));
+}
+.runbar__class.classtag--commoner {
+  --accent: var(--class-commoner);
+}
+.runbar__class.classtag--courtier {
+  --accent: var(--class-courtier);
+}
+.runbar__class.classtag--tyrant {
+  --accent: var(--class-tyrant);
+}
+.runbar__emblem {
+  width: calc(var(--u) * 3.5);
+}
+.runbar__cell {
+  display: grid;
+  gap: calc(var(--space-xs) / 2);
+  padding-left: var(--space-lg);
+  border-left: var(--px) solid var(--table-hi);
+  font-size: var(--text-sm);
+  color: var(--bone);
+  white-space: nowrap;
+}
+.runbar__label {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.runbar__amount {
+  font-size: var(--text-lg);
+  line-height: 1;
+  color: var(--gold);
+}
+/* A change to your gold rises out of the top of the bar, over its cell,
+   rather than across the cell's own label. */
+.runbar__gold {
+  position: relative;
+}
+.runbar__gold .goldamount {
+  position: static;
+}
+.runbar__gold .goldamount__change {
+  bottom: calc(100% + var(--space-sm));
+  font-size: var(--text-md);
+}
+.runbar__inpot {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+/* Begin: bottom right of the class screen, on the frame's edge, large — the
+   one thing to press once a class is chosen. */
+.classpick__begin {
+  position: fixed;
+  right: calc(var(--edge) + var(--gutter));
+  bottom: calc(var(--edge) + var(--gutter));
+  z-index: var(--layer-readout);
+  height: var(--control-lg);
+  padding-inline: var(--space-lg);
+  font-size: var(--text-md);
+}
+/* The map screen reads from the top: its panel changes height as nodes are
+   pointed at, and a screen centred on its height moved everything with it. */
+.campaignscreen__body:has(.descent) {
+  justify-content: flex-start;
+}
+/* The tree centred on the screen: the panel on its right is balanced by an
+   empty column on its left, as wide as the panel less the room names. */
+/* The tree centred on the screen, the key on its left and the panel on its
+   right, the two side columns equal. */
+.descent__legend {
+  display: none;
+}
+@media (min-width: 1100px) {
+  .descent {
+    width: min(100%, calc(var(--u) * 132));
+    grid-template-columns: calc(var(--u) * 26) minmax(0, 1fr) calc(var(--u) * 26);
+  }
+  .descent__legend {
+    display: grid;
+    align-content: start;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--table-lo);
+    border: var(--px) solid var(--table-hi);
+  }
+  .descent__legend ul {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .descent__legend li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-xs);
+    color: var(--bone-dim);
+  }
+}
+/* The key and the panel hold still while a tall map scrolls under them: each
+   sticks just under the world bar, and a panel taller than the space left
+   scrolls inside itself rather than running under the run bar. */
+@media (min-width: 761px) {
+  .descent__legend,
+  .descent__detail {
+    position: sticky;
+    top: calc(var(--edge) + var(--corner) + var(--space-lg));
+    max-height: calc(100dvh - var(--edge) - var(--corner) - var(--space-lg) - var(--foot-clear) - var(--chrome));
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+}
+/* A key entry: the node's picture at the map's size, standing alone. */
+.descent__node.is-legend {
+  position: static;
+  flex: none;
+  transform: none;
+  cursor: default;
+  color: var(--bone-dim);
+}
+.descent__legendline {
+  flex: none;
+  width: calc(15 * var(--px));
+  height: 0;
+  border-top: var(--px) solid var(--bone-dim);
+}
+.descent__legendline.is-open {
+  border-top: var(--px) dashed var(--gold);
+}
+
+/* The world bar: along the top of every campaign screen of a run, on the
+   Menu's line — the world's name, and how deep you are in it. */
+.worldbar {
+  position: fixed;
+  top: var(--edge);
+  left: calc(var(--edge) + var(--gutter));
+  right: calc(var(--edge) + var(--corner) + var(--gutter));
+  z-index: var(--layer-chrome);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: var(--corner);
+  padding-bottom: var(--space-xs);
+  border-bottom: var(--px) solid var(--table-hi);
+}
+.worldbar h1 {
+  margin: 0;
+  font-size: var(--text-md);
+  color: var(--bone);
+}
+.worldbar span {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.runbar__none {
+  color: var(--dim);
+}
+/* The screens above keep clear of it. */
+.campaignscreen.has-runbar .campaignscreen__body {
+  padding-bottom: calc(var(--foot-clear) + var(--chrome));
+}
+
+/* A campaign table: the read-out along the top and the run bar along the
+   foot keep the same height each, and the table is centred between them —
+   the same space above the top seat as below the row under your hand. */
+@media (min-width: 721px) {
+  .screen--campaign-table {
+    box-sizing: border-box;
+    min-height: 100vh;
+    padding-top: calc(var(--edge) + var(--chrome));
+    padding-bottom: calc(var(--foot-clear) + var(--chrome));
+  }
+  .screen--campaign-table .tablebar {
+    min-height: var(--chrome);
+  }
+  /* Everything between the two bars fits between them: the fan needs no
+     room of its own below it — the run bar frames it — and the table's
+     padding and the gap over the actions come down a step. */
+  .screen--campaign-table .table {
+    padding-block: var(--space-sm);
+  }
+  .screen--campaign-table .handzone {
+    padding-bottom: var(--space-sm);
+  }
+  .screen--campaign-table .controls {
+    margin-top: var(--space-md);
+    /* Sort sits in this row here, so the row is wider to keep the sentence. */
+    width: min(1080px, 100%);
+  }
+  /* The top seat stands a step clear of the read-out. */
+  .screen--campaign-table .opp--top {
+    top: var(--space-md);
+  }
+  /* Every seat's name sits over its fan at the same distance, 16px, at every
+     seat: the fan box keeps slack above the cards for the widest hand, which
+     the name reaches into. */
+  .screen--campaign-table .opp {
+    gap: var(--space-xs);
+  }
+  .screen--campaign-table .opp__name {
+    /* 16px from the name to the top of the cards at every scale: the gap,
+       less the four art pixels of slack the fan box keeps above its cards. */
+    margin-bottom: calc(16px - var(--space-xs) - 4 * var(--px));
+  }
+}
+/* A campaign table's foot: Sort, the run bar, Clear — the two controls
+   outside the bar, either side of it, on its centre line. */
+.tablefoot {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--foot-clear) + env(safe-area-inset-bottom));
+  z-index: var(--layer-readout);
+  /* The run bar alone sets the foot's width, so it is centred on the screen
+     exactly as it is on the map; Sort and Clear hang off either side of it,
+     however wide each is. */
+  transform: translateX(-50%);
+}
+.tablefoot > :first-child,
+.tablefoot > :last-child {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+.tablefoot > :first-child {
+  right: calc(100% + var(--space-md));
+}
+.tablefoot > :last-child {
+  left: calc(100% + var(--space-md));
+}
+/* Sort and Clear, held in their places unseen while the piles are picked. */
+.tablefoot__hold {
+  visibility: hidden;
+}
+.runbar--inline {
+  position: static;
+  transform: none;
+}
+/* On a phone the table has no room for a foot; Sort and Clear stay in the
+   rows by the hand, and the class rides between them. */
+@media (max-width: 720px) {
+  .tablefoot {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .runbar {
+    gap: var(--space-md);
+    padding: var(--space-xs) var(--space-sm);
+  }
+  .runbar__name,
+  .runbar__room {
+    display: none;
+  }
+  .runbar__cell {
+    padding-left: var(--space-md);
+  }
+}
+
+/* ── A run's welcome ─────────────────────────────────────────────────────
+   Before the map: the dark, and your name out of it. The world's name dim at
+   the top, "Welcome, Sunk Wake." large, one line of who you are, and the way
+   down — each rising out of the black in turn, once. */
+.welcome {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--gutter);
+  box-sizing: border-box;
+  cursor: pointer;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 45%, rgba(221, 213, 192, 0.04), transparent 70%),
+    radial-gradient(ellipse 120% 100% at 50% 50%, rgba(2, 5, 5, 0.6), rgba(2, 5, 5, 0.95) 80%), var(--ink);
+}
+/* The fall: streaks of the deep rushing up past you, the welcome torn
+   upward with them, and the screen closing to black. */
+.welcome {
+  position: relative;
+  overflow: hidden;
+}
+.welcome__streaks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  /* Bands of the deep's dark rushing up past you: no lines, only the stone
+     darkening as it goes by. */
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0 25%,
+    rgba(11, 18, 18, 0.55) 25% 40%,
+    rgba(11, 18, 18, 0.9) 40% 60%,
+    rgba(11, 18, 18, 0.55) 60% 75%,
+    transparent 75% 100%
+  );
+  background-size: 100% 45vh;
+}
+.welcome.is-falling .welcome__streaks {
+  animation:
+    fall-streaks-in 1600ms ease-in both,
+    fall-streaks-rush 420ms linear infinite;
+}
+.welcome.is-falling .welcome__body {
+  animation: fall-away 1600ms cubic-bezier(0.5, 0, 0.9, 0.3) both;
+}
+.welcome.is-falling::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--ink);
+  pointer-events: none;
+  animation: fall-dark 1600ms ease-in both;
+}
+@keyframes fall-away {
+  to {
+    opacity: 0;
+    transform: translateY(-70vh) scaleY(1.4);
+    filter: blur(3px);
+  }
+}
+@keyframes fall-streaks-in {
+  from {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fall-streaks-rush {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 -45vh;
+  }
+}
+@keyframes fall-dark {
+  0%,
+  55% {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* ...and the map comes up out of the dark to meet you. */
+.campaignscreen.is-arriving .campaignscreen__body,
+.campaignscreen.is-arriving .worldbar,
+.campaignscreen.is-arriving .runbar {
+  animation: arrive-rise 1500ms cubic-bezier(0.15, 0.7, 0.25, 1) both;
+}
+.campaignscreen.is-arriving .runbar {
+  animation-name: arrive-rise-bar;
+}
+@keyframes arrive-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22vh);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes arrive-rise-bar {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 22vh);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .campaignscreen.is-arriving .campaignscreen__body,
+  .campaignscreen.is-arriving .worldbar,
+  .campaignscreen.is-arriving .runbar {
+    animation: none;
+  }
+}
+.welcome__body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-lg);
+  max-width: 44ch;
+  text-align: center;
+}
+.welcome__world {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--dim);
+  letter-spacing: 0.2em;
+  animation: welcome-in 900ms ease-out both;
+}
+.welcome__name {
+  margin: 0;
+  font-size: calc(var(--text-lg) * 1.75);
+  line-height: 1.2;
+  color: var(--bone);
+  text-shadow: 0 calc(2 * var(--px)) 0 var(--ink);
+  animation: welcome-in 1400ms ease-out 500ms both;
+}
+.welcome__line {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--bone-dim);
+  animation: welcome-in 1100ms ease-out 1500ms both;
+}
+.welcome__go {
+  margin-top: var(--space-md);
+  animation: welcome-in 900ms ease-out 2300ms both;
+}
+@keyframes welcome-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(2 * var(--px)));
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome__world,
+  .welcome__name,
+  .welcome__line,
+  .welcome__go {
+    animation: none;
+  }
+}
+/* Who you are, in the run bar: your run's name over your class's. */
+.runbar__who {
+  display: grid;
+  gap: calc(var(--space-xs) / 2);
+  text-align: left;
+  line-height: 1.1;
+}
+.runbar__runname {
+  font-size: var(--text-sm);
+  color: var(--bone);
+}
+.runbar__who .runbar__name {
+  font-size: var(--text-xs);
+  color: var(--accent, var(--bone));
+}
+
+/* ── The broke ───────────────────────────────────────────────────────────
+   A pile no one will pick — a broke seat's — fades further than a taken one,
+   greyed, its owner's name struck through under it. */
+.cpile.is-forsaken {
+  opacity: 0.18;
+  filter: grayscale(1);
+  transition:
+    opacity 900ms ease-out,
+    filter 900ms ease-out;
+}
+.cpile__forsaken {
+  color: var(--dim);
+}
+/* A broke seat: a stone where the cards were, the name struck and faded,
+   "Broke" in red over an empty purse. */
+.opp.is-broke .opp__who {
+  color: var(--dim);
+  text-decoration: line-through;
+  text-decoration-thickness: var(--px);
+}
+.opp.is-broke .opp__role {
+  opacity: 0.5;
+}
+.brokeseat__stone {
+  display: grid;
+  place-items: center;
+  width: calc(64 * var(--px));
+  height: calc(33 * var(--px));
+}
+.brokeseat__stone svg {
+  width: calc(22 * var(--px));
+  height: calc(24 * var(--px));
+  image-rendering: pixelated;
+}
+.brokeseat__word {
+  color: var(--alert);
+}
+.brokeseat__gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  color: var(--dim);
+}
+.brokeseat__gold .goldcoin {
+  filter: grayscale(1) brightness(0.6);
+}
+/* The hand after: the stone falls into place and the name fades as you watch. */
+.opp.is-broke.is-fresh .brokeseat__stone svg {
+  animation:
+    stone-fall 700ms cubic-bezier(0.5, 0, 0.75, 0) both,
+    stone-settle 260ms steps(3, end) 700ms both;
+}
+.opp.is-broke.is-fresh .opp__who {
+  animation: broke-fade 1400ms ease-out both;
+}
+@keyframes stone-fall {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-14 * var(--px)));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes stone-settle {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: translateX(var(--px)) translateY(calc(0.5 * var(--px)));
+  }
+}
+@keyframes broke-fade {
+  from {
+    color: var(--alert);
+    text-decoration-color: transparent;
+  }
+  to {
+    color: var(--dim);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .opp.is-broke.is-fresh .brokeseat__stone svg,
+  .opp.is-broke.is-fresh .opp__who {
+    animation: none;
+  }
+}
+
+/* ── A ? event ───────────────────────────────────────────────────────────
+   A scene in the dark: its name, who is there, the thing itself, what to do. */
+.eventscene {
+  display: grid;
+  gap: var(--space-md);
+  justify-items: center;
+  width: min(100%, 720px);
+  margin-inline: auto;
+  text-align: center;
+}
+.eventscene .field__hint--lead {
+  max-width: 60ch;
+}
+.eventscene__cards {
+  display: flex;
+  gap: var(--space-md);
+  min-height: calc(var(--card-h, 93px) * 1.2);
+  align-items: center;
+}
+.eventscene__card .pcard {
+  --px: calc(var(--scale) * 3px);
+}
+.eventscene__card.is-past {
+  opacity: 0.5;
+}
+.eventscene__card.is-lost .pcard {
+  box-shadow: 0 0 0 var(--px) var(--alert);
+}
+.eventscene__stakes {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-size: var(--text-md);
+  color: var(--bone);
+}
+.eventscene__stakes small {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.eventscene__gain {
+  color: var(--gold);
+}
+.eventscene__loss {
+  color: var(--alert);
+}
+.eventscene__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+.eventscene__coffers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.eventscene__coffer {
+  font: inherit;
+  display: grid;
+  gap: var(--space-sm);
+  justify-items: center;
+  width: 100%;
+  padding: var(--space-lg) var(--space-md);
+  color: var(--bone);
+  background: var(--table-lo);
+  border: var(--px) solid var(--table-hi);
+  cursor: pointer;
+}
+.eventscene__coffer:hover:not(:disabled) {
+  border-color: var(--gold);
+}
+.eventscene__coffer:disabled {
+  cursor: default;
+}
+.eventscene__coffer.is-heavy {
+  padding-top: calc(var(--space-lg) + 2 * var(--px));
+}
+.eventscene__coffer.is-opened {
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 var(--px) var(--gold);
+}
+.eventscene__coffer.is-left {
+  opacity: 0.45;
+}
+.eventscene__weight {
+  font-size: var(--text-sm);
+  color: var(--bone-dim);
+}
+.eventscene__holds {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-size: var(--text-sm);
+  color: var(--gold);
 }

@@ -86,6 +86,12 @@ export type ClientMessage =
   | { type: 'KICK'; seat: number }
   /** Set how long the match runs, before the first deal. Host only. */
   | { type: 'SET_MATCH'; rule: WireMatchRule }
+  /**
+   * Turn the turn clock on or off, before the first deal. Host only. With it
+   * off nobody is hurried — a table of friends in one room has no need of it —
+   * and nobody is played for when they are slow.
+   */
+  | { type: 'SET_TURN_TIMER'; on: boolean }
   /** This seat's random share of the next deal's shuffle, answering DEAL_COMMIT (9.18). */
   | { type: 'DEAL_SHARE'; round: number; share: string }
   | { type: 'PLAY'; move: WireMove }
@@ -207,7 +213,15 @@ export interface WireClock {
 
 /** The pile ceremony, as a seat sees it. Blind: claims carry no card data. */
 export type WireCeremony =
-  { kind: 'idle' } | { kind: 'picking'; claims: PileClaim[]; remaining: number[]; picker: PlayerId | null };
+  | { kind: 'idle' }
+  | {
+      kind: 'picking';
+      claims: PileClaim[];
+      remaining: number[];
+      picker: PlayerId | null;
+      /** Piles set aside for seats sitting the round out, once everyone dealt in has picked. */
+      setAside?: { pileIndex: number; playerId: PlayerId }[];
+    };
 
 /**
  * What this seat may do, sent only to the seat on turn.
@@ -245,6 +259,8 @@ export type ServerMessage =
       nextRound: WireCountdown | null;
       /** How long the match runs, and who won it once it is decided. */
       match: WireMatch;
+      /** Whether people are on a clock: the host's call, before the first deal. */
+      turnTimer: boolean;
       /** The table's seed. The same format, and the same deal, as a seed used alone. */
       seed: string;
     }

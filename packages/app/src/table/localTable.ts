@@ -1,6 +1,14 @@
-import type { Card, PlayerId } from '@big-two/engine';
+import type { Card, GameEvent, PlayerId } from '@big-two/engine';
 import type { WireSeat } from '@big-two/protocol';
-import { createGameSession, type MatchRule, type Pacer, type SeatConfig, type SessionSave } from '@big-two/session';
+import {
+  createGameSession,
+  type MatchRule,
+  type Occupant,
+  type Pacer,
+  type SeatConfig,
+  type SessionOptions,
+  type SessionSave,
+} from '@big-two/session';
 import { EMPTY_SNAPSHOT, type TableClient, type TableSnapshot } from './types.js';
 
 /**
@@ -31,9 +39,32 @@ export interface LocalTableOptions {
   resume?: SessionSave;
   /** Handed a fresh save after every change, so a reload loses nothing. */
   onSave?: (save: SessionSave | null) => void;
+  /**
+   * A variant table's turn options (the campaign's class passives). The base
+   * rules when not given — playing on your own never passes this.
+   */
+  turnOptions?: SessionOptions['turnOptions'];
+  /** Seats that sit each round out (a campaign table's broke). Every seat plays when not given. */
+  sittingOut?: SessionOptions['sittingOut'];
+  /** Names for the other seats, read each time the seats are shown. Numbered when not given. */
+  names?: () => Partial<Record<PlayerId, string>>;
+  /**
+   * Told of every turn's events before the screen is, with a way to read any
+   * seat's hand. For a table that runs something around the cards — the
+   * campaign's wagering — in this same tab. Never sent anywhere.
+   */
+  onTurn?: (events: GameEvent[], table: { handOf(id: PlayerId): Card[] }) => void;
 }
 
-export function createLocalTable(options: LocalTableOptions): TableClient {
+/** A table in this tab, with the few extra handles a campaign table uses. */
+export interface LocalTableClient extends TableClient {
+  /** Hand a seat to someone else — the campaign seating a new player. */
+  setOccupant(id: PlayerId, occupant: Occupant): void;
+  /** Re-send the snapshot, after something outside the session changed what it shows. */
+  refresh(): void;
+}
+
+export function createLocalTable(options: LocalTableOptions): LocalTableClient {
   const listeners = new Set<(snapshot: TableSnapshot) => void>();
   const session = createGameSession({
     seats: options.seats,
@@ -41,7 +72,10 @@ export function createLocalTable(options: LocalTableOptions): TableClient {
     ...(options.pacer ? { pacer: options.pacer } : {}),
     ...(options.resume ? { resume: options.resume } : {}),
     ...(options.match ? { match: options.match } : {}),
+    ...(options.turnOptions ? { turnOptions: options.turnOptions } : {}),
+    ...(options.sittingOut ? { sittingOut: options.sittingOut } : {}),
   });
+  const inspect = { handOf: (id: PlayerId) => session.viewFor(id)?.hand ?? [] };
 
   let current: TableSnapshot = { ...EMPTY_SNAPSHOT, you: options.you, status: 'connected' };
   let roundLive = options.resume ? options.resume.state.phase !== 'ROUND_END' : false;
@@ -53,7 +87,7 @@ export function createLocalTable(options: LocalTableOptions): TableClient {
       seat: seat.seat,
       // Plainly numbered. Marking the viewer's own seat is the screen's
       // job, and a seat called 'You' reads as 'You (you)' once it does it.
-      name: seat.id === options.you && name ? name : `Seat ${seat.seat + 1}`,
+      name: seat.id === options.you && name ? name : (options.names?.()[seat.id] ?? `Seat ${seat.seat + 1}`),
       occupant: seat.occupant.kind === 'human' ? 'human' : 'cpu',
       difficulty: seat.occupant.kind === 'cpu' ? seat.occupant.difficulty : 'medium',
       connected: true,
@@ -71,6 +105,7 @@ export function createLocalTable(options: LocalTableOptions): TableClient {
       seats: seatsOf(),
       seed: session.seed(),
       match: session.match(),
+      turnTimer: false,
       events,
       seq: current.seq + 1,
       ...patch,
@@ -84,6 +119,15 @@ export function createLocalTable(options: LocalTableOptions): TableClient {
     if (event.type === 'FAILED') {
       push([], { status: 'closed', error: event.message });
       return;
+    }
+    if (event.type === 'TURN') {
+      // What listens to the turns runs inside the table's own loop: an error
+      // there must not stop the table dead, with no turn for anyone.
+      try {
+        options.onTurn?.(event.events, inspect);
+      } catch (error) {
+        console.error('A turn listener failed', error);
+      }
     }
     push(event.type === 'TURN' ? event.events : [], { pending: false });
     options.onSave?.(session.save());
@@ -124,6 +168,7 @@ export function createLocalTable(options: LocalTableOptions): TableClient {
     takeSeat: () => {},
     kick: () => {},
     setMatch: () => {},
+    setTurnTimer: () => {},
     unready: () => {},
     // Alone, starting and being ready are the same act.
     start: () => {
@@ -140,5 +185,10 @@ export function createLocalTable(options: LocalTableOptions): TableClient {
       listeners.clear();
       session.dispose();
     },
+    setOccupant: (id, occupant) => {
+      session.setOccupant(id, occupant);
+      push([]);
+    },
+    refresh: () => push([]),
   };
 }
