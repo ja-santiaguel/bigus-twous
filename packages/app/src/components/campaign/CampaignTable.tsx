@@ -95,16 +95,6 @@ export function CampaignInfo() {
           )}
         </span>
         <span className="hud__line">
-          <span className="stat__value">
-            {showdown ? (
-              'Now'
-            ) : (
-              <>
-                {left}
-                <small> {left === 1 ? 'hand' : 'hands'}</small>
-              </>
-            )}
-          </span>
           <span className="hud__gauge">
             {Array.from({ length: hands }, (_, i) => {
               const state = `${i < hand - 1 ? 'is-lit' : i === hand - 1 ? 'is-now' : ''} ${i === hands - 1 ? 'is-final' : ''}`;
@@ -119,6 +109,16 @@ export function CampaignInfo() {
                 <span key={i} className={`hud__block ${state}`} aria-hidden="true" />
               );
             })}
+          </span>
+          <span className="stat__value">
+            {showdown ? (
+              'Now'
+            ) : (
+              <>
+                {left}
+                <small> {left === 1 ? 'hand' : 'hands'}</small>
+              </>
+            )}
           </span>
         </span>
       </div>
@@ -138,6 +138,7 @@ export function CampaignInfo() {
             </p>
           </InfoTip>
         </span>
+        <span className="stat__label hud__tablelabel">Table</span>
         <span className="hud__line">
           <InfoTip
             label="Where this pot came from"
@@ -161,37 +162,36 @@ export function CampaignInfo() {
             })}
             <p>Paid out when the hand ends, by where each seat finishes.</p>
           </InfoTip>
-          <span className="hud__prize">
-            <small>Table</small>{' '}
-            <InfoTip
-              label="Where the table's gold came from"
-              word={
-                <GoldAmount
-                  value={prize}
-                  memory={`hud:table:${table.option.id}`}
-                  from={0}
-                  className="goldamount--below"
-                />
-              }
-            >
-              <p>The table, {gold(prize)} gold: every buy-in paid to sit here.</p>
-              {Object.entries(table.stakes).map(([key, staked]) => {
-                const sat = table.seats.find((s) => keyOf(s) === key);
-                const gone = !sat;
-                const name = key === PLAYER_KEY ? 'You' : (sat?.persona?.name ?? personaName(table, key));
-                return (
-                  <p key={key} className="hud__potline hud__potline--sub">
-                    <span>
-                      {name}
-                      {gone ? ' (left)' : ''}
-                    </span>
-                    <span>{gold(staked)}</span>
-                  </p>
-                );
-              })}
-              <p>Paid out when the table ends, by standing: first place is the richest seat, or you if you win it.</p>
-            </InfoTip>
-          </span>
+        </span>
+        <span className="hud__line hud__prize">
+          <InfoTip
+            label="Where the table's gold came from"
+            word={
+              <GoldAmount
+                value={prize}
+                memory={`hud:table:${table.option.id}`}
+                from={0}
+                className="goldamount--below"
+              />
+            }
+          >
+            <p>The table, {gold(prize)} gold: every buy-in paid to sit here.</p>
+            {Object.entries(table.stakes).map(([key, staked]) => {
+              const sat = table.seats.find((s) => keyOf(s) === key);
+              const gone = !sat || sat.broke;
+              const name = key === PLAYER_KEY ? 'You' : (sat?.persona?.name ?? personaName(table, key));
+              return (
+                <p key={key} className="hud__potline hud__potline--sub">
+                  <span>
+                    {name}
+                    {gone ? ' (fallen)' : ''}
+                  </span>
+                  <span>{gold(staked)}</span>
+                </p>
+              );
+            })}
+            <p>Paid out when the table ends, by standing: first place is the richest seat, or you if you win it.</p>
+          </InfoTip>
         </span>
       </div>
       <div className={`stat hud__target ${ready ? 'is-ready' : ''}`}>

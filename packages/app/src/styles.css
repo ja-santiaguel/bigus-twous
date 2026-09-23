@@ -4341,27 +4341,23 @@ button.classcard.is-picked:hover {
   gap: var(--space-sm);
   min-height: calc(var(--u) * 2);
 }
-/* Balanced about the middle: the countdown pressed to the right edge of its
-   gauge, the pot centred, the tribute to the left — each reading toward the
-   pot between them. */
-.hud__hand {
-  justify-items: end;
-  text-align: right;
+/* Every value left-aligned under its label — the countdown after its gauge —
+   and the pot beside the table's gold, each with its own label: the table's
+   centred over its amount, the smaller of the two. */
+.hud > .stat {
+  justify-items: start;
 }
 .hud__pot {
-  justify-items: center;
-  text-align: center;
+  grid-template-columns: auto auto;
+  column-gap: var(--space-lg);
 }
-.hud__target {
-  justify-items: start;
+.hud__tablelabel,
+.hud__prize {
+  justify-self: center;
 }
 .hud__prize {
   font-size: var(--text-sm);
   color: var(--gold);
-}
-.hud__prize small {
-  font-size: var(--text-xs);
-  color: var(--dim);
 }
 .hud__potline--sub > span:first-child {
   padding-left: var(--space-sm);
@@ -4628,13 +4624,24 @@ button.classcard.is-picked:hover {
   align-items: start;
   gap: var(--space-lg);
   margin-top: var(--space-md);
+  /* The map's height: as tall as the screen allows between the world bar and
+     the run bar — every padding of the frame counted, so the page does not
+     scroll — and no taller than the rows need. */
+  --map-h: min(
+    calc(var(--slots) * var(--u) * 9.5),
+    max(
+      calc(var(--u) * 30),
+      calc(
+        100dvh - var(--edge) - var(--corner) - var(--space-lg) - var(--space-md) - var(--gutter) - var(--foot-clear) -
+          var(--chrome)
+      )
+    )
+  );
 }
 .descent__map {
   --label: 0px;
   position: relative;
-  /* As tall as the screen allows under the header and over the run bar, and
-     no taller than the rows need: the whole descent in view without scrolling. */
-  height: min(calc(var(--slots) * var(--u) * 9.5), max(calc(var(--u) * 30), calc(100dvh - var(--u) * 20)));
+  height: var(--map-h);
 }
 .descent__paths {
   position: absolute;
@@ -5019,16 +5026,22 @@ button.classcard.is-picked:hover {
   }
 }
 /* The key and the panel hold still while a tall map scrolls under them: each
-   sticks just under the world bar, and a panel taller than the space left
+   sticks where it first sits, and a panel taller than the space left
    scrolls inside itself rather than running under the run bar. */
 @media (min-width: 761px) {
   .descent__legend,
   .descent__detail {
     position: sticky;
-    top: calc(var(--edge) + var(--corner) + var(--space-lg));
-    max-height: calc(100dvh - var(--edge) - var(--corner) - var(--space-lg) - var(--foot-clear) - var(--chrome));
+    /* Exactly where they sit unscrolled — the body's top padding and the
+       map's own margin — so they never move at all. */
+    top: calc(var(--edge) + var(--corner) + var(--space-lg) + var(--space-md));
+    /* Never taller than the map, so neither can make the page scroll. */
+    max-height: var(--map-h);
     overflow-y: auto;
-    scrollbar-width: none;
+    /* A thin, dim bar: on a short window the panel's way in can sit below
+       its fold, and a hidden bar would hide that there is more. */
+    scrollbar-width: thin;
+    scrollbar-color: var(--table-hi) transparent;
   }
 }
 /* A key entry: the node's picture at the map's size, standing alone. */
@@ -5360,6 +5373,13 @@ button.classcard.is-picked:hover {
   .welcome__go {
     animation: none;
   }
+}
+/* Your name and the "Class play" label in the run bar keep their notes on
+   point or tap, but no underline: they are names and headings, not words to
+   learn, and the bar reads cleaner without it. */
+.runbar__class .term,
+.runbar__play .term {
+  text-decoration: none;
 }
 /* Who you are, in the run bar: your run's name over your class's. */
 .runbar__who {

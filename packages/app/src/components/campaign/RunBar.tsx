@@ -68,7 +68,7 @@ export function RunBar({
         <GoldAmount value={worth - inPot} memory="run:gold" className="runbar__amount" />
       </span>
       {atTable && (
-        <span className="runbar__cell">
+        <span className="runbar__cell runbar__play">
           <span className="runbar__label">
             <Terms>Class play</Terms>
           </span>

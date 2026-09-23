@@ -200,9 +200,9 @@ export function Descent({
   paths.sort((a, b) => order[a.state]! - order[b.state]!);
 
   return (
-    <section className="descent" aria-label="The descent">
+    <section className="descent" aria-label="The descent" style={{ '--slots': slots } as CSSProperties}>
       <Legend />
-      <div className="descent__map" style={{ '--slots': slots } as CSSProperties}>
+      <div className="descent__map">
         <svg className="descent__paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           {paths.map((p) => (
             <line
