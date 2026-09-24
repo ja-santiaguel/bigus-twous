@@ -26,10 +26,10 @@ export function forgetGold(prefix = ''): void {
 }
 
 /** How long the change is shown before the amount starts counting to it. */
-const COUNT_LEAD_MS = 450;
+const COUNT_LEAD_MS = 900;
 
 /** How long a change takes to count through: longer for more, never slow. */
-const countMs = (change: number) => Math.min(1100, 400 + Math.abs(change) * 2);
+const countMs = (change: number) => Math.min(1600, 700 + Math.abs(change) * 2.5);
 
 export function GoldAmount({
   value,
@@ -60,7 +60,7 @@ export function GoldAmount({
     if (previous !== value) {
       const id = ++ids.current;
       setChanges((list) => [...list.slice(-2), { id, amount: value - previous }]);
-      window.setTimeout(() => setChanges((list) => list.filter((c) => c.id !== id)), 1600);
+      window.setTimeout(() => setChanges((list) => list.filter((c) => c.id !== id)), 2000);
     }
     // Count from whatever is on screen now — mid-count if a change lands
     // during another — to the new amount.

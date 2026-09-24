@@ -359,7 +359,9 @@ export function CampaignHandEnd({
                   ? `Tithe: ${who} took ${gold(e.amount)} from the table.`
                   : e.medallion === 'iron-stomach'
                     ? `Iron Stomach: ${who} got ${gold(e.amount)} back.`
-                    : `Last Rites: ${who} kept ${gold(e.amount)} instead of nothing.`;
+                    : e.medallion === 'beggars-cup'
+                      ? `Beggar's Cup: ${who} got ${gold(e.amount)} of the ante back.`
+                      : `Last Rites: ${who} kept ${gold(e.amount)} instead of nothing.`;
               })
               .join(' ')}
           </p>
@@ -376,6 +378,9 @@ export function CampaignHandEnd({
           <p className="overlay__note campaign__swift">
             Reckoning won early: a bounty of {gold(outcome.swift)} gold for the hands left unplayed.
           </p>
+        )}
+        {end?.kind === 'won' && run.phase === 'map' && table.option.reward === 'standard' && (
+          <p className="overlay__note">No Medallion was left on this table.</p>
         )}
         {stake && (
           <p className="overlay__match">

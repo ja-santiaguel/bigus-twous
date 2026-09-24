@@ -82,6 +82,7 @@ as they appear mid-sentence.
 | elite                                       | a harder table (Gilded, Carrion)                                                                     | boss, hard mode                            |
 | Vestige                                     | one of your past winning runs, seated on the Hollow Throne                                           | ghost, phantom (in the interface)          |
 | run name                                    | two words drawn for each run: your name at its tables, and its Vestige's                             | "(you)" at pile select                     |
+| compendium                                  | every Medallion you have come across, in any run; the rest sealed                                    | codex, collection, bestiary                |
 | ? event                                     | a ? node: the Ferryman's Wager, the Drowned Reliquary or the Tithe-Taker                             | random event, mystery                      |
 | bounty                                      | what a won Reckoning pays: an ante for each hand left unplayed                                       | bonus, swift reward                        |
 | welcome                                     | the screen that names you before a run's map                                                         | intro, splash                              |

@@ -213,6 +213,25 @@ describe('the map', () => {
 });
 
 describe('rewards and the shop', () => {
+  it('gives an ordinary table won a chance at one Medallion, and an elite a choice of two', () => {
+    let some = 0;
+    for (let n = 0; n < 400; n++) {
+      const standard = rewardOffers(createRng(`std${n}`), {
+        classId: 'tyrant',
+        loadout: [],
+        reward: 'standard',
+        beaten: [],
+      });
+      expect(standard.length).toBeLessThanOrEqual(1);
+      if (standard.length === 1) some++;
+      const elite = rewardOffers(createRng(`eli${n}`), { classId: 'tyrant', loadout: [], reward: 'elite', beaten: [] });
+      expect(elite).toHaveLength(2);
+      expect(new Set(elite.map((o) => o.id)).size).toBe(2);
+    }
+    expect(some / 400).toBeGreaterThan(0.4);
+    expect(some / 400).toBeLessThan(0.6);
+  });
+
   it('offers only what your class can carry', () => {
     for (let n = 0; n < 30; n++) {
       const rng = createRng(`offer${n}`);
@@ -250,10 +269,10 @@ describe('rewards and the shop', () => {
         ],
       },
     ];
-    const offers = rewardOffers(createRng('loot'), { classId: 'tyrant', loadout: [], reward: 'standard', beaten });
+    const offers = rewardOffers(createRng('loot'), { classId: 'tyrant', loadout: [], reward: 'elite', beaten });
     expect(offers.some((o) => o.kind === 'loot' && o.id === 'iron-crown' && o.from === 'Crowe')).toBe(true);
     // A Commoner can take Crowe's Hoard, never the Tyrant's crown.
-    const loot = rewardOffers(createRng('loot'), { classId: 'commoner', loadout: [], reward: 'standard', beaten });
+    const loot = rewardOffers(createRng('loot'), { classId: 'commoner', loadout: [], reward: 'elite', beaten });
     expect(loot.find((o) => o.kind === 'loot')?.id).toBe('hoard');
   });
 });

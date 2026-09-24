@@ -1,5 +1,5 @@
 import type { ComboType, PlayerId, Rng } from '@big-two/engine';
-import { CLASSES, type ClassId } from './classes.js';
+import { anteShareOf, CLASSES, type ClassId } from './classes.js';
 import {
   applySettlement,
   HAND_WEIGHTS,
@@ -147,7 +147,7 @@ export function stakeFor(
   option: TableOption,
   you: { classId: ClassId; worth: number; medallions: readonly Held[] },
 ): number {
-  const ante = Math.max(1, Math.round(option.ante * CLASSES[you.classId].anteMultiplier));
+  const ante = Math.max(1, Math.round(option.ante * anteShareOf(you.classId, you.medallions)));
   return Math.max(0, Math.min(buyInFor(option, you.medallions), you.worth - SHORT_SEAT_ANTES * ante));
 }
 
@@ -213,7 +213,7 @@ export const you = (table: TableState): TableSeat => seatById(table, PLAYER_SEAT
 
 /** A seat's ante for one hand. */
 export function anteFor(table: TableState, seat: TableSeat, showdown = false): number {
-  const base = table.option.ante * CLASSES[seat.classId].anteMultiplier;
+  const base = table.option.ante * anteShareOf(seat.classId, seat.medallions);
   // Ferryman's Coin: two antes where three are asked.
   const times = showdown ? SHOWDOWN_ANTE - (holds(seat.medallions, 'ferrymans-coin') ? 1 : 0) : 1;
   return Math.max(1, Math.round(base * times));
@@ -468,6 +468,18 @@ function medallionEffects(
     }
     worth[first.id] = (worth[first.id] ?? 0) + taken;
     if (taken > 0) effects.push({ seat: first.id, medallion: 'tithe', amount: taken });
+  }
+
+  // Beggar's Cup: third place is paid back what it anted.
+  const third = placing.length >= 3 ? seat(placing[2]) : undefined;
+  if (third && holds(third.medallions, 'beggars-cup')) {
+    const ante = Math.min(paid[third.id] ?? 0, anteFor(table, third, table.hand?.showdown ?? false));
+    const got = (worth[third.id] ?? 0) - (third.worth - (paid[third.id] ?? 0));
+    const back = Math.max(0, ante - got);
+    if (back > 0) {
+      worth[third.id] = (worth[third.id] ?? 0) + back;
+      effects.push({ seat: third.id, medallion: 'beggars-cup', amount: back });
+    }
   }
 
   const last = seat(placing[placing.length - 1]);

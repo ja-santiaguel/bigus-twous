@@ -24,6 +24,7 @@ import { RunBar } from '../components/campaign/RunBar.js';
 import { medallionName } from '../components/campaign/medallionText.js';
 import { Descent } from '../components/campaign/Descent.js';
 import { EventScene } from '../components/campaign/EventScene.js';
+import { CompendiumSheet } from '../components/campaign/CompendiumSheet.js';
 import { Terms } from '../components/Terms.js';
 import { InfoTip } from '../components/InfoTip.js';
 
@@ -72,7 +73,9 @@ function CampaignFrame({
   const abandon = useCampaignStore((s) => s.abandon);
   const arriving = useCampaignStore((s) => s.arriving);
   const [ending, setEnding] = useState(false);
+  const [compendiumOpen, setCompendiumOpen] = useState(false);
   const menu: MenuItem[] = [
+    { label: 'Compendium', onSelect: () => setCompendiumOpen(true) },
     { label: run ? 'Save and quit to main menu' : 'Back to main menu', onSelect: goToMenu },
     ...(canEnd ? [{ label: 'End this run', onSelect: () => setEnding(true), quiet: true }] : []),
   ];
@@ -91,6 +94,7 @@ function CampaignFrame({
       )}
       {run && <RunBar run={run} />}
       <main className="campaignscreen__body">{children}</main>
+      <CompendiumSheet open={compendiumOpen} onClose={() => setCompendiumOpen(false)} />
       {ending && (
         <div className="overlay overlay--confirm" onClick={(e) => e.target === e.currentTarget && setEnding(false)}>
           <div
@@ -135,6 +139,7 @@ function Welcome({ run }: { run: RunState }) {
   const descendNow = useCampaignStore((s) => s.descend);
   const c = CLASSES[run.classId];
   const [falling, setFalling] = useState(false);
+  const touch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
   // Going down is a fall: the welcome rushes up and away past you, streaked,
   // and only then does the map come up to meet you. Once, whatever is pressed.
   const descend = useCallback(() => {
@@ -168,17 +173,29 @@ function Welcome({ run }: { run: RunState }) {
           A {c.name.toLowerCase()} with {gold(run.worth)} gold and nothing else. The deep takes its toll in gold; go
           down, and do not fall.
         </p>
-        <button
-          className="btn btn--primary welcome__go"
-          onClick={(e) => {
-            e.stopPropagation();
-            descend();
-          }}
-          autoFocus
-        >
-          Descend
-        </button>
       </div>
+      {/* No button to aim for: the whole screen is the way down. The prompt
+          says so, quietly, once the rest has been read — a line and a chevron
+          drifting downward — and is itself a control for keys and readers. */}
+      <button
+        type="button"
+        className="welcome__prompt"
+        onClick={(e) => {
+          e.stopPropagation();
+          descend();
+        }}
+        autoFocus
+      >
+        <span>{touch ? 'Tap' : 'Click'} to descend</span>
+        <svg className="welcome__chevron" viewBox="0 0 7 7" shapeRendering="crispEdges" aria-hidden="true">
+          <path fill="currentColor" d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h1v1H2zM4 2h1v1H4zM3 3h1v1H3z" />
+          <path
+            fill="currentColor"
+            opacity="0.5"
+            d="M0 3h1v1H0zM6 3h1v1H6zM1 4h1v1H1zM5 4h1v1H5zM2 5h1v1H2zM4 5h1v1H4zM3 6h1v1H3z"
+          />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -498,12 +515,19 @@ function MedallionHead({ id, level, tag }: { id: MedallionId; level: number; tag
  */
 function Reward({ run }: { run: RunState }) {
   const claim = useCampaignStore((s) => s.claim);
+  // An ordinary table leaves one Medallion, when it leaves any; an elite
+  // offers a choice of two.
+  const choice = run.rewards.length > 1;
   return (
     <>
       <div className="panel__title">
-        <h2>The spoils</h2>
+        <h2>{choice ? 'The spoils' : 'Among the winnings'}</h2>
       </div>
-      <p className="field__hint field__hint--lead">Take one. It stays with you for the rest of the descent.</p>
+      <p className="field__hint field__hint--lead">
+        {choice
+          ? 'The elite table yields a choice of two. Take one; it stays with you for the rest of the descent.'
+          : 'A Medallion was left on the table. Take it, and it stays with you for the rest of the descent.'}
+      </p>
       <ul className="campaign__choices campaign__choices--grid">
         {run.rewards.map((offer, i) => (
           <li key={`${offer.id}-${offer.kind}`}>
@@ -532,7 +556,7 @@ function Reward({ run }: { run: RunState }) {
       </ul>
       <div className="panel__start">
         <button className="btn btn--quiet" onClick={() => claim(null)}>
-          Take nothing
+          {choice ? 'Take neither' : 'Leave it'}
         </button>
       </div>
     </>

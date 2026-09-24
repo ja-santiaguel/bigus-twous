@@ -69,6 +69,16 @@ export const CLASSES: Record<ClassId, ClassDef> = {
   },
 };
 
+/**
+ * A seat's ante share: its class's, less what Low Road takes off it — the
+ * part of every table's ante the seat pays, and so the part of every pot it
+ * can win.
+ */
+export function anteShareOf(classId: ClassId, medallions: readonly { id: string; level: number }[] = []): number {
+  const lowRoad = medallions.find((m) => m.id === 'low-road')?.level ?? 0;
+  return CLASSES[classId].anteMultiplier - [0, 0.1, 0.2][Math.min(2, lowRoad)]!;
+}
+
 export function isClassId(value: unknown): value is ClassId {
   return typeof value === 'string' && (CLASS_IDS as string[]).includes(value);
 }

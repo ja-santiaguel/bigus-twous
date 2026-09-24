@@ -1,5 +1,6 @@
 import { memo, useState, type CSSProperties, type ReactNode } from 'react';
 import {
+  anteShareOf,
   ARCHETYPES,
   buyInFor,
   choices,
@@ -378,12 +379,13 @@ function NodeDetail({
   const archetype = node.kind === 'throne' ? 'vestige' : node.archetype!;
   const kind = ARCHETYPES[archetype];
   const { ante } = nodeCost(node.tier, archetype);
-  const yourAnte = Math.max(1, Math.round(ante * CLASSES[run.classId].anteMultiplier));
+  const share = anteShareOf(run.classId, run.medallions);
+  const yourAnte = Math.max(1, Math.round(ante * share));
   const mark = tributeOf({ markAntes: Math.round(room.markAntes * kind.markMultiplier), ante }, run.classId);
   const offer = run.offers[node.id];
   const prize = (offer?.buyIn ?? nodeCost(node.tier, archetype).buyIn) * 4;
+  // The most a short seat can take home: first place, of the part it paid into.
   const short = offer && isShort(offer, run);
-  // A short seat shares only the part of the prize it paid into.
   const best = short && offer ? Math.min(prize, (cost ?? 0) * 4) * 0.7 : prize * 0.7;
   return (
     <div className="descent__detail" key={node.id}>
@@ -398,7 +400,29 @@ function NodeDetail({
       <div className="descent__group descent__stats">
         <span className="stat">
           <span className="stat__label">
-            <Terms>Buy-in</Terms>
+            <InfoTip label="What the buy-in pays" word="Buy-in">
+              <p>
+                What a seat here costs, the same for everyone. The four buy-ins make the table&rsquo;s gold, paid when
+                the table ends, by standing:
+              </p>
+              <p className="hud__potline">
+                <span>First</span>
+                <span>70%</span>
+              </p>
+              <p className="hud__potline">
+                <span>Second</span>
+                <span>25%</span>
+              </p>
+              <p className="hud__potline">
+                <span>Third</span>
+                <span>5%</span>
+              </p>
+              <p className="hud__potline">
+                <span>Last</span>
+                <span>nothing</span>
+              </p>
+              <p>Win the table and you stand first.</p>
+            </InfoTip>
           </span>
           <span className="stat__value">{gold(cost ?? 0)}</span>
         </span>
@@ -418,11 +442,15 @@ function NodeDetail({
               )}
               <p className="hud__potline">
                 <span>Your ante share, as {CLASSES[run.classId].name}</span>
-                <span>×{CLASSES[run.classId].anteMultiplier}</span>
+                <span>×{Number(share.toFixed(2))}</span>
               </p>
               <p className="hud__potline">
                 <span>Your ante</span>
                 <span>{gold(yourAnte)}</span>
+              </p>
+              <p>
+                Each hand&rsquo;s antes make its pot, paid as the hand ends by where you finish: 70% to first, 25% to
+                second, 5% to third, nothing to last.
               </p>
             </InfoTip>
           </span>
@@ -438,29 +466,26 @@ function NodeDetail({
           <span className="stat__label">Hands</span>
           <span className="stat__value">{room.hands}</span>
         </span>
+        {/* What winning brings besides the gold, in a line under its numbers —
+            no more than it truly gives. How the gold is split is on Buy-in
+            and Ante. */}
+        <p className="descent__note descent__pays">
+          {node.kind === 'throne'
+            ? 'The last table. Win its Requiem and the run is yours.'
+            : kind.reward === 'elite'
+              ? 'Win it for a choice of two Medallions.'
+              : 'Win it for a chance at a Medallion.'}
+        </p>
       </div>
-      <div className="descent__group">
-        {node.kind === 'throne' ? (
-          <p className="campaign__facts">The last table. Win its Requiem and the run is yours.</p>
-        ) : (
-          <>
-            <p className="descent__win">
-              Win it: <span className="descent__spoils">+{gold(best)} gold</span> and{' '}
-              {kind.reward === 'elite' ? 'a rare Medallion or a level up' : 'a Medallion'}.
-            </p>
-            <p className="descent__note">
-              The table holds {gold(prize)} gold, everyone&rsquo;s buy-in; its winner takes 70%.
-            </p>
-          </>
-        )}
-        {short && offer && (
+      {short && offer && (
+        <div className="descent__group">
           <p className="descent__short">
             Short seat: you cannot cover the {gold(buyInFor(offer, run.medallions))} buy-in. You put in{' '}
-            {gold(cost ?? 0)} and keep {SHORT_SEAT_ANTES} antes to play with, so the prize can pay you at most{' '}
+            {gold(cost ?? 0)} and keep {SHORT_SEAT_ANTES} antes to play with, so the table can pay you at most{' '}
             {gold(best)}.
           </p>
-        )}
-      </div>
+        </div>
+      )}
       {offer && (
         <div className="descent__group">
           <h3 className="descent__label">At the table</h3>

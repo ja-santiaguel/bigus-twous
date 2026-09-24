@@ -1,7 +1,7 @@
 import { cardValue, createDeck, type Card, type Rng } from '@big-two/engine';
-import { CLASSES, type ClassId } from './classes.js';
-import { rewardOffers } from './ladder.js';
-import { type Held, type MedallionId } from './medallions.js';
+import { anteShareOf, type ClassId } from './classes.js';
+import { drawMedallion } from './ladder.js';
+import { RARITY_WEIGHTS, type Held, type MedallionId } from './medallions.js';
 import { TIERS } from './tiers.js';
 
 /**
@@ -109,7 +109,7 @@ export interface EventPurse {
 
 /** Your ante at this depth: what the events count in. */
 export const eventAnte = (purse: EventPurse): number =>
-  Math.max(1, Math.round(TIERS[purse.tier]!.ante * CLASSES[purse.classId].anteMultiplier));
+  Math.max(1, Math.round(TIERS[purse.tier]!.ante * anteShareOf(purse.classId, purse.medallions)));
 
 /** An event for this node: one not met yet this run, where one is left. */
 export function drawEvent(rng: Rng, seen: readonly EventId[], purse: EventPurse): EventState {
@@ -151,15 +151,10 @@ function fillCoffers(rng: Rng, purse: EventPurse): Coffer[] {
     if (rng() < medallion) {
       // A Medallion your class can carry, as a won table would offer; gold if
       // there is none left to offer.
-      const offer = rewardOffers(rng, {
-        classId: purse.classId,
-        loadout: purse.medallions,
-        reward: 'standard',
-        beaten: [],
-      }).find((o) => !taken.includes(o.id));
-      if (offer) {
-        taken.push(offer.id);
-        return { weight, holds: { kind: 'medallion', id: offer.id } };
+      const id = drawMedallion(rng, purse.classId, purse.medallions, RARITY_WEIGHTS.standard, taken);
+      if (id) {
+        taken.push(id);
+        return { weight, holds: { kind: 'medallion', id } };
       }
     }
     return { weight, holds: { kind: 'gold', amount: antes * ante } };

@@ -32,6 +32,7 @@ import {
 import { makeSeed } from '@big-two/session';
 import { campaignClient, useGameStore } from './gameStore.js';
 import { forgetGold } from '../components/GoldAmount.js';
+import { readDiscovered, seenIn, writeDiscovered } from '../lib/compendium.js';
 
 /**
  * The campaign, as the screens see it.
@@ -57,6 +58,8 @@ interface CampaignStore {
   passiveCards: Record<string, ClassId>;
   /** A run just begun, being welcomed before its map is shown. */
   welcoming: boolean;
+  /** Every Medallion discovered, in any run: the compendium. */
+  discovered: MedallionId[];
   /** Just fallen from the welcome to the map: the map rises into place. */
   arriving: boolean;
 
@@ -119,7 +122,16 @@ export const useCampaignStore =
     }
 
     function save(run: RunState | null, vestiges = get().vestiges) {
-      set({ run, vestiges });
+      // Whatever this step shows you goes into the compendium, for good.
+      const known = new Set(get().discovered);
+      const fresh = seenIn(run, vestiges).filter((id) => !known.has(id));
+      if (fresh.length > 0) {
+        const discovered = [...get().discovered, ...fresh];
+        writeDiscovered(discovered);
+        set({ run, vestiges, discovered });
+      } else {
+        set({ run, vestiges });
+      }
       write(RUN_KEY, run);
       write(VESTIGES_KEY, vestiges);
     }
@@ -242,6 +254,7 @@ export const useCampaignStore =
       passivePlay: null,
       passiveCards: {},
       welcoming: false,
+      discovered: initialDiscovered(),
       arriving: false,
 
       begin: (classId) => {
@@ -337,6 +350,16 @@ if (import.meta.hot) {
   import.meta.hot.dispose((data: Record<string, unknown>) => {
     data['campaignStore'] = useCampaignStore;
   });
+}
+
+/** The compendium as saved, with anything the saved run and Vestiges already show. */
+function initialDiscovered(): MedallionId[] {
+  const saved = readDiscovered();
+  const run = named(read<RunState>(RUN_KEY, (v) => (v as RunState | null)?.version === 4));
+  const vestiges = read<VestigeRecord[]>(VESTIGES_KEY, Array.isArray) ?? [];
+  const all = [...new Set([...saved, ...seenIn(run, vestiges)])];
+  if (all.length > saved.length) writeDiscovered(all);
+  return all;
 }
 
 /** A run saved before runs were named takes the name its seed gives it. */

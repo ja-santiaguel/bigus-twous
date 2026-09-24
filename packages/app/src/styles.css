@@ -247,8 +247,8 @@ body::before {
    silhouette, barely darker than the stone — felt more than seen, in whole
    art pixels like everything else. At the top of a long page only their
    tallest tops show over the foot of the screen; scrolling down raises them
-   into full view by the page's end — slower than the page, and in step with
-   how far through it you are (--scroll-left), so they read as far behind it. */
+   into view as you go — never faster than a third of the page, so they
+   read as far behind it (--backdrop-y). */
 body::after {
   content: '';
   position: fixed;
@@ -261,9 +261,10 @@ body::after {
   background: url('./assets/ruins.svg') repeat-x left bottom / auto 100%;
   opacity: 0.2;
   image-rendering: pixelated;
-  /* Up to 56 of the 96 art pixels below the edge at the top of a page: the
-     towers' and spires' tops in view, the rest found on the way down. */
-  transform: translateY(calc(var(--scroll-left, 0) * 56 * var(--px)));
+  /* Up to 56 of the 96 art pixels below the edge at the top of a page — the
+     towers' and spires' tops in view, the rest found on the way down — set
+     by lib/useBackdropScroll, never rising faster than 30% of the page. */
+  transform: translateY(var(--backdrop-y, 0px));
   will-change: transform;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -3669,14 +3670,6 @@ button.campaign__choice:focus-visible {
 }
 /* What winning a table pays, in gold, read first; how that is worked out is
    the dim line under it. */
-.descent__win {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--bone);
-}
-.descent__spoils {
-  color: var(--gold);
-}
 .descent__note {
   margin: 0;
   font-size: var(--text-xs);
@@ -4466,7 +4459,7 @@ button.classcard.is-picked:hover {
   white-space: nowrap;
   pointer-events: none;
   text-shadow: 0 var(--px) 0 var(--ink);
-  animation: gold-change 1.6s steps(14, end) forwards;
+  animation: gold-change 2s steps(16, end) forwards;
 }
 .goldamount__change.is-gain {
   color: var(--gold-hi);
@@ -4510,7 +4503,7 @@ button.classcard.is-picked:hover {
 @media (prefers-reduced-motion: reduce) {
   .goldamount__change {
     transform: translateX(-50%);
-    animation: gold-change-still 1.6s steps(1, end) forwards;
+    animation: gold-change-still 2s steps(1, end) forwards;
   }
   @keyframes gold-change-still {
     to {
@@ -4829,6 +4822,10 @@ button.classcard.is-picked:hover {
 .descent__stats {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   column-gap: var(--space-sm);
+}
+.descent__pays {
+  grid-column: 1 / -1;
+  margin-top: var(--space-xs);
 }
 .descent__label {
   margin: 0;
@@ -5347,9 +5344,67 @@ button.classcard.is-picked:hover {
   color: var(--bone-dim);
   animation: welcome-in 1100ms ease-out 1500ms both;
 }
-.welcome__go {
-  margin-top: var(--space-md);
+/* The way down: a quiet line at the foot of the screen, a pixel chevron
+   drifting under it — no button to aim for; the whole screen is the way. */
+.welcome__prompt {
+  position: absolute;
+  /* Centred by its margins, not a transform, so its entrance and exit can
+     move it freely. */
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin-inline: auto;
+  bottom: calc(var(--space-xl) * 2 + env(safe-area-inset-bottom));
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  font: inherit;
+  font-size: var(--text-xs);
+  letter-spacing: 0.2em;
+  color: var(--bone-dim);
+  background: none;
+  border: 0;
+  cursor: pointer;
   animation: welcome-in 900ms ease-out 2300ms both;
+}
+.welcome.is-falling .welcome__prompt {
+  animation: prompt-away 400ms ease-in both;
+}
+@keyframes prompt-away {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(calc(-4 * var(--u)));
+  }
+}
+.welcome__prompt:hover,
+.welcome__prompt:focus-visible {
+  color: var(--gold);
+}
+.welcome__prompt:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+.welcome__chevron {
+  width: calc(7 * var(--px));
+  height: calc(7 * var(--px));
+  image-rendering: pixelated;
+  animation: chevron-drift 1.6s steps(4, end) 3200ms infinite;
+}
+@keyframes chevron-drift {
+  0%,
+  100% {
+    transform: none;
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(calc(2 * var(--px)));
+    opacity: 1;
+  }
 }
 @keyframes welcome-in {
   from {
@@ -5367,7 +5422,8 @@ button.classcard.is-picked:hover {
   .welcome__world,
   .welcome__name,
   .welcome__line,
-  .welcome__go {
+  .welcome__prompt,
+  .welcome__chevron {
     animation: none;
   }
 }
@@ -5607,4 +5663,109 @@ button.classcard.is-picked:hover {
   color: var(--dim);
   opacity: 0.45;
   user-select: none;
+}
+
+/* ── The compendium ──────────────────────────────────────────────────────
+   Every Medallion by whose pool it is: found ones written out whole, in
+   their rarity's colour; the rest sealed. A sheet like How to play, wider. */
+.rules__box.compendium {
+  width: min(880px, 100%);
+}
+.compendium__title {
+  display: grid;
+  gap: var(--space-xs);
+}
+.compendium__title span {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.compendium__pool + .compendium__pool {
+  margin-top: var(--space-lg);
+}
+.compendium__pool h3 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 0 var(--space-sm);
+  font-size: var(--text-md);
+}
+.compendium__pool h3 small {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.compendium__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.compendium__entry {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-sm);
+  align-items: start;
+  padding: var(--space-sm);
+  background: var(--table);
+  border: var(--px) solid var(--table-hi);
+  color: var(--gold);
+}
+.compendium__entry.rarity--rare {
+  color: var(--bone);
+}
+.compendium__entry.is-sealed {
+  --medal-light: var(--table-hi);
+  color: var(--table-hi);
+  background: transparent;
+  border-style: dashed;
+}
+.compendium__medal {
+  width: calc(9 * var(--px));
+  height: calc(9 * var(--px));
+  image-rendering: pixelated;
+}
+.compendium__text {
+  display: grid;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+.compendium__name {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+}
+.compendium__name small {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.compendium__levels {
+  display: grid;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--bone-dim);
+}
+.compendium__levels li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-sm);
+}
+.compendium__levels li:only-child {
+  grid-template-columns: 1fr;
+}
+.compendium__numeral {
+  color: var(--dim);
+}
+.compendium__entry.is-sealed .compendium__name strong {
+  color: var(--dim);
+}
+.compendium__sealed {
+  font-size: var(--text-xs);
+  color: var(--dim);
 }

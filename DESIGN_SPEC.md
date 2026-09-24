@@ -416,10 +416,14 @@ class plays, their prices, Unbowed on their 2s.
   puts in all but a coin, and you sit short (above).
 - Table types (code name in brackets): **Paupers'** (modest), **Starving**
   (desperation), **Mirror**, **Carrion** (predator), **Gilded**
-  (high-stakes). **Gilded and Carrion are elite**: harder, and their spoils
-  are a level up for a Medallion you carry and a draw that leans rare. The
-  others offer two ordinary draws. The Hollow Throne ends the run and offers
-  none.
+  (high-stakes). **Gilded and Carrion are elite**: harder, and winning one
+  always offers **a choice of two Medallions** — a beaten player's, or a level
+  up for one you carry, or a rare draw; and a draw that leans rare. The others
+  give **a 50% chance of one Medallion** — a beaten player's if your class can
+  carry it, else a draw — and say so when there is none. (Until 2026-09-23 every
+  won table offered two or three; the map now promises only what is true.) The
+  Hollow Throne ends the run and offers none. With fewer Medallions a run ends
+  holding about 3 levels (was 4); runs won held at 17% / 19% / 16%.
 - Computers have a temperament — cautious, steady or reckless — that sets
   where they stake in their range and how often and how high they raise.
 - No campaign table uses the base game's easy computer: it always plays its
@@ -478,6 +482,8 @@ Tyrant's rare and strong.
 | Commoner | Uprising | common | a straight of **4** beats a single 2 | a straight of 6+ also beats a pair of 2s |
 | Commoner | Rabble | common | a triple of 3–10 beats a pair of J–A | — |
 | Commoner | Frugal | common | class plays cost half | class plays are free |
+| Commoner | Low Road | common | ante share ×**0.65** (smaller hands, smaller wins) | ×**0.55** |
+| Commoner | Beggar's Cup | rare | finish a hand **third** and your ante is paid back | — |
 | Courtier | Precedence | common | a court pair beats a triple up to **10** | … up to **Q** |
 | Courtier | Patronage | common | class plays cost half | class plays are free |
 | Courtier | Royal Pair | rare | a pair of Aces beats any triple below 2s | — |

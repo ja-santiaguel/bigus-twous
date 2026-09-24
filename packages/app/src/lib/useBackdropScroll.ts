@@ -1,13 +1,16 @@
 import { useEffect } from 'react';
 
 /**
- * Publishes how far the page can still scroll down — `--scroll-rest` in CSS
- * pixels, and `--scroll-left` as a share of the whole, 1 at the top and 0 at
- * the end — for the backdrop's parallax: the ruins on the horizon rise into
- * full view as the page is scrolled to its end, slower than the page, so they
- * read as far behind it. A page that does not scroll publishes 0, and the
- * ruins stand in full view.
+ * Publishes where the deep's ruins stand, as `--backdrop-y` (how far below
+ * the screen's foot they are sunk), for the backdrop's parallax: they rise as
+ * the page scrolls, at a fraction of its pace, so they read as far behind it.
+ * Also `--scroll-rest`, how far the page can still scroll down, in pixels.
  */
+/** How far the ruins are sunk below the screen's foot at a page's top, as a share of their height. */
+const BACKDROP_SUNK = 56 / 96;
+/** The fastest the ruins rise, as a share of the page's own scrolling. */
+const BACKDROP_SPEED = 0.3;
+
 export function useBackdropScroll(): void {
   useEffect(() => {
     const root = document.documentElement;
@@ -18,9 +21,16 @@ export function useBackdropScroll(): void {
         const max = Math.max(0, root.scrollHeight - root.clientHeight);
         const rest = Math.max(0, max - window.scrollY);
         root.style.setProperty('--scroll-rest', String(Math.round(rest)));
-        // How much of the page is still below, from 1 at the top to 0 at the
-        // end; 0 for a page that does not scroll.
-        root.style.setProperty('--scroll-left', max > 0 ? (rest / max).toFixed(4) : '0');
+        // The ruins: sunk by up to BACKDROP_SUNK of their height at the top
+        // of a page that scrolls, rising as it is scrolled — never faster
+        // than BACKDROP_SPEED of the page, so they always read as far behind
+        // it, and in full view by the end where the page is long enough for
+        // that at that pace. A page that does not scroll shows them whole.
+        const art = parseFloat(getComputedStyle(document.body, '::after').height) || 0;
+        const sunk = art * BACKDROP_SUNK;
+        const speed = max > 0 ? Math.min(BACKDROP_SPEED, sunk / max) : 0;
+        const shift = max > 0 ? Math.max(0, sunk - window.scrollY * speed) : 0;
+        root.style.setProperty('--backdrop-y', `${shift.toFixed(1)}px`);
       });
     };
 

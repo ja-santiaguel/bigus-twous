@@ -226,11 +226,18 @@ export interface RewardOffer {
   from?: string;
 }
 
+/** The chance an ordinary table won leaves a Medallion among the winnings. */
+export const STANDARD_MEDALLION_CHANCE = 0.5;
+
 /**
- * What a won table offers. A standard table: two draws from your class's pool.
- * An elite one: a level up for something you hold, and a draw that leans rare.
- * Either: a Medallion of your class that a player you beat was carrying, if you
- * do not already hold it as high.
+ * What a won table offers.
+ *
+ * An ordinary table: a chance ({@link STANDARD_MEDALLION_CHANCE}) of one
+ * Medallion — what a beaten player carried, when there is something of theirs
+ * your class could take, or one drawn from your class's pool.
+ * An elite table: always a choice of two — the first a beaten player's, or a
+ * level up for one you carry, or a rare draw; the second a rare draw.
+ * The one prize the throne gives is the run itself.
  */
 export function rewardOffers(
   rng: Rng,
@@ -248,24 +255,26 @@ export function rewardOffers(
     const id = drawMedallion(rng, classId, loadout, weights, taken);
     if (id) offer(levelOf(loadout, id) === 0 ? 'new' : 'upgrade', id, levelOf(loadout, id) + 1);
   };
+  // Loot: the strongest piece you could carry that a beaten player had, and you lack.
+  const loot = beaten
+    .flatMap((p) => p.medallions.map((m) => ({ ...m, from: p.name })))
+    .filter((m) => fitsClass(m.id, classId) && m.level > levelOf(loadout, m.id))
+    .sort((a, b) => rarityRank(b.id) - rarityRank(a.id) || b.level - a.level)[0];
 
   if (reward === 'elite') {
     const upgradable = loadout.filter((m) => canGain(loadout, m.id));
     const pick = upgradable[Math.floor(rng() * upgradable.length)];
-    if (pick) offer('upgrade', pick.id, pick.level + 1);
+    if (loot) offer('loot', loot.id, loot.level, loot.from);
+    else if (pick) offer('upgrade', pick.id, pick.level + 1);
+    else draw(RARITY_WEIGHTS.elite);
     draw(RARITY_WEIGHTS.elite);
-    if (offers.length < 2) draw(RARITY_WEIGHTS.elite);
-  } else {
-    draw(RARITY_WEIGHTS.standard);
-    draw(RARITY_WEIGHTS.standard);
+    // A pool so nearly spent that two could not be found: one is still offered.
+    return offers;
   }
 
-  // Loot: the strongest piece you could carry that a beaten player had, and you lack.
-  const loot = beaten
-    .flatMap((p) => p.medallions.map((m) => ({ ...m, from: p.name })))
-    .filter((m) => fitsClass(m.id, classId) && m.level > levelOf(loadout, m.id) && !taken.includes(m.id))
-    .sort((a, b) => rarityRank(b.id) - rarityRank(a.id) || b.level - a.level)[0];
+  if (rng() >= STANDARD_MEDALLION_CHANCE) return [];
   if (loot) offer('loot', loot.id, loot.level, loot.from);
+  else draw(RARITY_WEIGHTS.standard);
   return offers;
 }
 

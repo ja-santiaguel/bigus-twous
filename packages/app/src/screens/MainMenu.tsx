@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { CLASSES, depthNumber, you } from '@big-two/campaign';
+import { CLASSES, depthNumber, MEDALLIONS, you } from '@big-two/campaign';
 import { useGameStore } from '../store/gameStore.js';
 import { useCampaignStore } from '../store/campaignStore.js';
 import { CardFace } from '../components/card/PixelCard.js';
 import { RulesSheet } from '../components/RulesSheet.js';
+import { CompendiumSheet } from '../components/campaign/CompendiumSheet.js';
 import { PixelTitle } from '../components/PixelTitle.js';
 
 /**
@@ -25,6 +26,8 @@ export function MainMenu() {
 
   const [code, setCode] = useState('');
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [compendiumOpen, setCompendiumOpen] = useState(false);
+  const discovered = useCampaignStore((s) => s.discovered);
   // A campaign run in progress: carried on from here, or given up for a new one.
   const run = useCampaignStore((s) => s.run);
   const abandon = useCampaignStore((s) => s.abandon);
@@ -67,6 +70,11 @@ export function MainMenu() {
               ) : (
                 <MenuOption label="Start a run" primary={!savedGame} onClick={goToCampaign} />
               )}
+              <MenuOption
+                label="Compendium"
+                note={`${discovered.filter((id) => id in MEDALLIONS).length} of ${Object.keys(MEDALLIONS).length} Medallions found`}
+                onClick={() => setCompendiumOpen(true)}
+              />
             </div>
 
             <div className="menu__group">
@@ -136,6 +144,7 @@ export function MainMenu() {
       </div>
 
       <RulesSheet open={rulesOpen} onClose={() => setRulesOpen(false)} />
+      <CompendiumSheet open={compendiumOpen} onClose={() => setCompendiumOpen(false)} />
 
       {replacing && (
         <div className="overlay overlay--confirm" onClick={(e) => e.target === e.currentTarget && setReplacing(false)}>

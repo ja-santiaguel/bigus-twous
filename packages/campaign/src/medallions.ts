@@ -21,6 +21,8 @@ export type MedallionId =
   | 'uprising'
   | 'rabble'
   | 'frugal'
+  | 'low-road'
+  | 'beggars-cup'
   | 'precedence'
   | 'royal-pair'
   | 'intrigue'
@@ -69,6 +71,20 @@ export const MEDALLIONS: Record<MedallionId, MedallionDef> = {
     name: 'Frugal',
     rarity: 'common',
     levels: ['Your class plays cost half.', 'Your class plays cost nothing.'],
+  },
+  'low-road': {
+    id: 'low-road',
+    classId: 'commoner',
+    name: 'Low Road',
+    rarity: 'common',
+    levels: ['Your ante share is ×0.65.', 'Your ante share is ×0.55.'],
+  },
+  'beggars-cup': {
+    id: 'beggars-cup',
+    classId: 'commoner',
+    name: "Beggar's Cup",
+    rarity: 'rare',
+    levels: ['Finish a hand third and your ante is paid back.'],
   },
   // The Courtier: a mix, with a rare piece or two.
   precedence: {

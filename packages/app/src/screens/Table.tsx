@@ -37,6 +37,7 @@ import { CLASSES, passiveBeats, playCost, you as yourSeat, type TableState } fro
 import { useCampaignStore } from '../store/campaignStore.js';
 import { RunBar } from '../components/campaign/RunBar.js';
 import { BrokeSeat } from '../components/campaign/BrokeSeat.js';
+import { CompendiumSheet } from '../components/campaign/CompendiumSheet.js';
 import { TurnDot } from '../components/board/TurnDot.js';
 import { TurnClock } from '../components/board/TurnClock.js';
 import { Copyable } from '../components/Copyable.js';
@@ -101,6 +102,7 @@ export function Table() {
   const unready = useGameStore((s) => s.unready);
   const nextRoundIn = useCountdown(nextRound?.remainingMs ?? null);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [compendiumOpen, setCompendiumOpen] = useState(false);
   /** Leaving asks first: one click was enough to end a whole match. */
   const [confirmLeave, setConfirmLeave] = useState(false);
   useEffect(() => {
@@ -787,9 +789,11 @@ export function Table() {
 
       {/* Top right, mirroring the log in the top left, at every width: the
           same corner menu every played screen has. */}
+      <CompendiumSheet open={compendiumOpen} onClose={() => setCompendiumOpen(false)} />
       <TableMenu
         items={[
           { label: 'How to play', onSelect: () => setRulesOpen(true) },
+          ...(campaign ? [{ label: 'Compendium', onSelect: () => setCompendiumOpen(true) }] : []),
           // At a campaign table the way out is ending the run; the run's own
           // screens are reached when the table ends.
           campaign

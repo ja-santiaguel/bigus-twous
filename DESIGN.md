@@ -868,8 +868,11 @@ with friends are untouched by it.
 - **Point to preview, click to select, then confirm.** Every table you could
   go to next is already dealt when you arrive on the map, so pointing at its
   node previews all of it in the panel beside the map (under it on a phone):
-  its depth and kind, its buy-in, ante, tribute and hands, what winning it
-  pays (its share of the table prize, and its Medallion), and who sits there
+  its depth and kind, its buy-in, ante, tribute and hands — Buy-in and Ante
+  each saying on point how their gold is paid out (70 / 25 / 5%, nothing to
+  last), and one line under them for what else winning brings, no more than
+  it truly gives ("Win it for a chance at a Medallion"; "…for a choice of
+  two Medallions" at an elite table) — and who sits there
   — each with class, temperament, gold and any Medallions they carry.
   Clicking a node selects it (a bone outline); only the panel's button —
   **Pay 80 and sit down**, **Go down to the merchant** — commits. A seat you
@@ -878,15 +881,32 @@ with friends are untouched by it.
   can pay you. With nothing selected, the panel holds the three steps of how
   a table works.
 - **The map runs as tall as its rows need** — taller than the window — so the
-  page scrolls and the deep's ruins rise behind it (only their tallest tops
-  show at first; the rest by the page's end); the key and the panel beside it
+  page scrolls and the deep's ruins rise behind it — only their tallest tops
+  show at first, and they rise never faster than 30% of the page, so they
+  read as far behind it; the key and the panel beside it
   stay exactly where they sit, and the world bar stays clear. The ruins are a
   gothic cathedral, its tower snapped, gable half fallen and rose window
   broken; a needle spire with a leaning cross; a fallen arcade; flying
   buttresses; a snapped bell tower; a graveyard and a dead tree — eroded and
   cracked, with a faint pale light in a few windows and over the graves.
+- **The compendium** keeps every Medallion you have come across, in any run:
+  a Medallion is found once the game has shown it to you — carried, on the
+  Bone Merchant's table, among a won table's spoils, in a Reliquary's coffers
+  once opened, or on a player at a table on offer. It opens as a sheet like
+  How to play, from the main menu's Mythic group ("7 of 16 Medallions found"
+  under it) and from the menu on every campaign screen and campaign table.
+  Medallions stand by pool — each class's, then any class's — rarest last;
+  a found one shows its medal in its rarity's colour, its name and rarity, and
+  what every level does; one not yet found is a dashed, dim "???". Saved
+  apart from the run (`bigtwo:compendium`), so it outlasts every run.
+- **A run is welcomed** before its map: a dark screen, the world's name dim,
+  "Welcome, Pale Bell." large, a line of who you are — and no button to aim
+  for. Last, at the foot, a quiet "Click to descend" ("Tap" on a touch
+  screen) over a pixel chevron drifting downward; the whole screen is the
+  way down, and so are Enter, Space and Escape. The fall follows: dark bands
+  rushing up, the welcome torn upward, the map rising to meet you.
 - **The version** sits in the bottom-left corner of every screen, 10px and
-  dim ("v0.2.0"), with the commit it was built from on point — there for
+  dim ("v0.3.0"), with the commit it was built from on point — there for
   telling builds apart when something is reported. It is the app's
   package.json version: bump it with each release.
 - **The page scrolls smoothly.** A wheel notch sets where the page is headed
@@ -963,9 +983,12 @@ with friends are untouched by it.
   common or legendary one and bone for a rare one, with what it does at
   that level under the name. The Bone Merchant tags each offer with its
   rarity — and "any class" for the few any class can carry — or "Level up"
-  for one you carry; **the spoils** of a won table offer two or
-  three — new, a level up, or one a beaten player carried that you can,
-  tagged "Spoils" and saying whose it was — and **Take nothing** beside them.
+  for one you carry. A won ordinary table has a chance of leaving **one
+  Medallion** ("Among the winnings": Take it, or Leave it) — and the hand's
+  end says "No Medallion was left on this table" when it leaves none; an
+  elite table offers **the spoils**, a choice of two (Take neither beside
+  them). Each is new, a level up, or one a beaten player carried that you can,
+  tagged "Spoils" and saying whose it was.
 - **Numbers are stats**: a small dim label over its value, larger, in bone —
   or in gold, larger still, for a number that changes every hand. A node on
   the map shows its buy-in, ante, tribute and hands.
