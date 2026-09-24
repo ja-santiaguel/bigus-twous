@@ -14,13 +14,16 @@ import { ARCHETYPES, FINALE_TIER, type Archetype } from './tiers.js';
  *
  * What every run meets, whichever way it goes:
  *   - **two ordinary tables first**: the first two rows are nothing else;
- *   - **a Bone Merchant in the lower half**, and merchants nowhere above it;
+ *   - **a Bone Merchant in the lower half** on every way down, and one more
+ *     in the upper half on one of the two lanes — an early chance to shop
+ *     for whoever goes that way;
  *   - **an elite table**, and never more elites than ordinary tables in a lane.
  * The merchant and the elite are placed on rows where neither lane splits,
  * one on each lane, so no path can go round them. Sub-lanes may hold extra
  * elites and merchants as optional encounters, and **? events** turn up on
  * about one ordinary spot in five below the first two rows. A merchant never
- * leads to a merchant, nor an event to an event.
+ * leads to a merchant — save the early one, which may sit just above the
+ * lower merchant — nor an event to an event.
  */
 
 export type NodeKind = 'table' | 'merchant' | 'event' | 'throne';
@@ -52,6 +55,12 @@ export const MAP_ROWS = 8;
 const ROWS_PER_TIER = MAP_ROWS / FINALE_TIER;
 /** The first rows, ordinary tables only. */
 export const OPENING_ROWS = 2;
+/**
+ * The first row the elite every way down must meet may stand on: the third
+ * depth. Earlier, it made the second depth a wall — a quarter of runs ended
+ * there. Optional elites in sub-lanes may still come sooner.
+ */
+export const FIRST_ELITE_ROW = 4;
 /** The first row a merchant may stand on: the lower half of the map. */
 export const FIRST_MERCHANT_ROW = MAP_ROWS / 2;
 /** Bridges from one lane into the other: at least one, at most two. */
@@ -82,13 +91,22 @@ export function generateMap(rng: Rng): RunMap {
 
 function drawMap(rng: Rng): RunMap | null {
   // The rows that must hold the lanes' merchant and elite: the merchant in the
-  // lower half, the elite below the opening rows, never on adjacent rows,
+  // lower half, the elite from the third depth, never on adjacent rows,
   // neither split.
   const merchantRow = FIRST_MERCHANT_ROW + Math.floor(rng() * (MAP_ROWS - 1 - FIRST_MERCHANT_ROW)); // rows 4–6
   const eliteRows = Array.from({ length: MAP_ROWS - OPENING_ROWS }, (_, i) => i + OPENING_ROWS).filter(
-    (r) => Math.abs(r - merchantRow) >= 2,
+    (r) => Math.abs(r - merchantRow) >= 2 && r >= FIRST_ELITE_ROW,
   );
+  if (eliteRows.length === 0) return null;
   const eliteRow = pick(rng, eliteRows);
+  // The early merchant: below the opening rows, above the lower half, and
+  // not on the elite row. Either lane: both still meet the lower merchant.
+  const earlyRows = Array.from({ length: FIRST_MERCHANT_ROW - OPENING_ROWS }, (_, i) => i + OPENING_ROWS).filter(
+    (r) => r !== eliteRow,
+  );
+  if (earlyRows.length === 0) return null;
+  const earlyRow = pick(rng, earlyRows);
+  const earlyLane = rng() < 0.5 ? 0 : 1;
 
   // Each row: for each of the two lanes, one node, or two where it splits.
   const shapes: number[][] = [];
@@ -131,11 +149,17 @@ function drawMap(rng: Rng): RunMap | null {
   // What each node holds.
   const parentsOf = (node: MapNode) =>
     node.row === 0 ? [] : rows[node.row - 1]!.filter((p) => p.links.includes(node.id));
+  const earlyInLane = rows[earlyRow]!.filter((n) => n.lane === earlyLane);
+  const early = earlyInLane[Math.floor(rng() * earlyInLane.length)]!;
   for (let r = 0; r < MAP_ROWS; r++) {
     const t = tierOfRow(r);
     const kinds = shuffled(rng, ORDINARY);
     const ordinary = () => kinds.shift() ?? pick(rng, ORDINARY);
     for (const node of rows[r]!) {
+      if (node === early) {
+        node.kind = 'merchant';
+        continue;
+      }
       if (r === merchantRow) {
         node.kind = 'merchant';
         continue;

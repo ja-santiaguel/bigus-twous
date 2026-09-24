@@ -19,7 +19,7 @@ import { TIERS } from './tiers.js';
  *                          heavier, the more gold. Open one, and see after
  *                          what the others held.
  *   The Tithe-Taker        a loss you can only lessen. He takes a quarter of
- *                          your gold. Haggle and he may come down a twentieth
+ *                          your gold, three of your antes at most. Haggle and he may come down a twentieth
  *                          — each time less likely — or go up a tenth and stop
  *                          listening. Or give him a Medallion instead.
  *
@@ -166,8 +166,17 @@ function fillCoffers(rng: Rng, purse: EventPurse): Coffer[] {
   });
 }
 
-/** The Tithe-Taker's cut of this much gold, at this rate. */
-export const titheOf = (worth: number, rate: number): number => Math.floor((worth * rate) / 100);
+/**
+ * How many of your antes his cut may come to, at his opening rate: a
+ * quarter of your gold, but never more than three of your antes — so the
+ * richer you are the smaller a share he takes, and a good run is not
+ * punished for being good. The cap moves with his rate.
+ */
+export const TITHE_CAP_ANTES = 3;
+
+/** The Tithe-Taker's cut: his rate of your gold, capped at his rate's worth of your antes. */
+export const titheOf = (worth: number, rate: number, ante: number): number =>
+  Math.min(Math.floor((worth * rate) / 100), Math.round((ante * TITHE_CAP_ANTES * rate) / TITHE_START));
 
 /** The chance the next haggle brings him down, or null if he will not listen. */
 export const haggleChance = (event: TitheState): number | null =>
@@ -221,7 +230,7 @@ export function actOnEvent(
     case 'tithe-taker': {
       if (event.over) return same;
       if (action.kind === 'pay') {
-        const amount = titheOf(purse.worth, event.rate);
+        const amount = titheOf(purse.worth, event.rate, eventAnte(purse));
         return { event: { ...event, over: { kind: 'paid', amount } }, gold: -amount };
       }
       if (action.kind === 'offer' && purse.medallions.some((m) => m.id === action.id)) {

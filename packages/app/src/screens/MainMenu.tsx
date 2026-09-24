@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CLASSES, TIERS, you } from '@big-two/campaign';
+import { CLASSES, depthNumber, you } from '@big-two/campaign';
 import { useGameStore } from '../store/gameStore.js';
 import { useCampaignStore } from '../store/campaignStore.js';
 import { CardFace } from '../components/card/PixelCard.js';
@@ -31,7 +31,7 @@ export function MainMenu() {
   const liveRun = run && run.phase !== 'won' && run.phase !== 'lost' ? run : null;
   const [replacing, setReplacing] = useState(false);
   const runLine = liveRun
-    ? `${CLASSES[liveRun.classId].name} · depth ${Math.min(liveRun.tier + 1, TIERS.length)} · ${(liveRun.table
+    ? `${CLASSES[liveRun.classId].name} · depth ${depthNumber(liveRun)} · ${(liveRun.table
         ? you(liveRun.table).worth
         : liveRun.worth
       ).toLocaleString('en-GB')} gold`

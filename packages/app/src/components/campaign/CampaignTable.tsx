@@ -131,11 +131,14 @@ export function CampaignInfo() {
               paid out when the hand ends. The <strong>table</strong> is everyone&rsquo;s buy-in, paid out when the
               table ends. Both pay 70% to first, 25% to second, 5% to third and nothing to last.
             </p>
-            <p className="hud__potline">
-              <span>First place takes, now</span>
-              <span>
-                {gold(share(pot, 0))} + {gold(share(prize, 0))}
-              </span>
+            <p>At the amounts in them now:</p>
+            <p className="hud__potline hud__potline--sub">
+              <span>Finish this hand first</span>
+              <span>{gold(share(pot, 0))} from the pot</span>
+            </p>
+            <p className="hud__potline hud__potline--sub">
+              <span>Win the table</span>
+              <span>{gold(share(prize, 0))} from the table</span>
             </p>
           </InfoTip>
         </span>

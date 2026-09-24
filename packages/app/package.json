@@ -1,6 +1,6 @@
 {
   "name": "@big-two/app",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "private": true,
   "description": "React + Vite UI. Presentational only — dispatches intents into the engine's orchestrator and renders the resulting state and event log.",
   "type": "module",

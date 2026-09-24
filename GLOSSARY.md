@@ -68,7 +68,7 @@ as they appear mid-sentence.
 | trick                                       | the plays from one lead to the table clearing                                                        | round                                      |
 | table                                       | four seats and the hands played at them                                                              | match, game, encounter                     |
 | the Hollow Deep                             | the world a run descends through; its depths are numbered, and room names are kept for acts          | the dungeon, the tower                     |
-| depth                                       | how far down the map you are ("Depth 2 of 5")                                                        | room, tier, floor, level                   |
+| depth                                       | how far down the map you are, a node at a time ("Depth 3 of 9")                                      | room, tier, floor, level                   |
 | run, a new run, continue run                | one descent, from choosing a class to the throne or to falling                                       | campaign (for one run), game, save         |
 | the map                                     | the run's route, read from the top down                                                              | ladder, tree, climb                        |
 | descend, go down                            | to move to the next room                                                                             | climb, move up, advance                    |

@@ -280,9 +280,31 @@ Each is a short scene with one decision, drawn from those not met yet this run:
   haggle puts him up 10 and ends the bargaining — or give him a Medallion.
 
 ### Map rules (2026-09-23)
-The first two rows are ordinary tables only; merchants stand only in the lower
-half (rows 5–7); no lane holds more elites than ordinary tables; the two lanes
-are joined by **one or two bridges**; and no way down runs straight.
+The first two rows are ordinary tables only; the two lanes are joined by
+**one or two bridges**; no lane holds more elites than ordinary tables; and no
+way down runs straight. Merchants: one on every way down in the lower half
+(rows 5–7), and **one more in the upper half, on one of the two lanes** (rows
+3–4), an early chance to shop for whoever goes that way — on either lane,
+even just above the lower merchant, since both lanes meet one below anyway.
+**Depth is counted by node** on screen: "Depth 3 of 9", the throne the ninth.
+The five stakes (antes, tributes, hands) still go two rows to each. The elite every way
+down must meet stands at the **third depth or deeper** (row 5 on); optional
+elites in sub-lanes may come sooner.
+
+### The second depth (2026-09-23)
+A quarter of runs ended at the second depth: the ante jumped from 40 to 70,
+and the guaranteed elite could stand there. The antes are now **40 / 60 / 100
+/ 180 / 320**, and the guaranteed elite starts at the third depth. Deaths now
+rise with depth instead of spiking at the second (a Wanderer's 300 runs: 12 /
+40 / 63 / 81 / 104 by depth), and runs won are 18% / 17% / 19% by class.
+Merchant visits rose from 0.6 to 1.1 a run; Medallion levels held at the end
+from 3.5 to about 4. To watch: the Tyrant now ends at the first depth in 11%
+of runs (was 5%).
+
+### The Tithe-Taker's cap (2026-09-23)
+His cut is a quarter of your gold **or three of your antes, whichever is
+less**, the cap moving with his rate. Uncapped, a rich run lost up to 1,800
+gold to him; now at most about 600, about 140 on average.
 
 ### Playtest after these changes (2026-09-23)
 300 runs a class, the harness calling a Reckoning whenever it may with three
@@ -372,9 +394,9 @@ What it found, and what changed:
 | Tier | Ante | Mark (antes) | Hands | Showdown after | Computers play | Computer Worth (× class start) | Computer Medallions |
 |---|---|---|---|---|---|---|---|
 | The Lychgate | 40 | 2 | 5 | 2 | medium | 0.7–1.1 | none |
-| The Ossuary | 70 | 2 | 6 | 2 | medium | 0.9–1.3 | 30% carry one, level I |
-| The Drowned Chapel | 120 | 3 | 7 | 2 | hard | 1.1–1.6 | 50% carry one, level I |
-| The Sunken Crypt | 200 | 3 | 9 | 3 | hard | 1.3–2.0 | 75% carry up to two, up to level II |
+| The Ossuary | 60 | 2 | 6 | 2 | medium | 0.9–1.3 | 30% carry one, level I |
+| The Drowned Chapel | 100 | 3 | 7 | 2 | hard | 1.1–1.6 | 50% carry one, level I |
+| The Sunken Crypt | 180 | 3 | 9 | 3 | hard | 1.3–2.0 | 75% carry up to two, up to level II |
 | The Hollow Throne | 320 | 4 | 11 | 3 | hard | 1.6–2.2 (normalised) | house legends always carry up to two; Vestiges keep their own |
 
 A simulation of a player who finishes in a random place every hand (no

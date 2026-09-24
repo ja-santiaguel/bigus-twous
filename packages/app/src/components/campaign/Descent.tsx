@@ -230,7 +230,7 @@ export function Descent({
                 node.kind === 'throne' ? 'descent__node--throne' : ''
               }`}
               style={at(x(node), y(node.row))}
-              aria-label={`${nodeName(node)}, depth ${node.tier + 1}${
+              aria-label={`${nodeName(node)}, depth ${node.row + 1}${
                 state === 'passed' ? ', passed' : state === 'open' ? ', open to you' : ''
               }`}
               aria-pressed={node.id === picked}
@@ -352,7 +352,7 @@ function NodeDetail({
   if (node.kind === 'merchant') {
     return (
       <div className="descent__detail" key={node.id}>
-        <p className="descent__where">Depth {node.tier + 1}</p>
+        <p className="descent__where">Depth {node.row + 1}</p>
         <h2>The Bone Merchant</h2>
         <p className="campaign__passive">
           Medallions, for gold. No table here: you pass by, buy what you can afford, and go on down.
@@ -365,7 +365,7 @@ function NodeDetail({
   if (node.kind === 'event') {
     return (
       <div className="descent__detail" key={node.id}>
-        <p className="descent__where">Depth {node.tier + 1}</p>
+        <p className="descent__where">Depth {node.row + 1}</p>
         <h2>Something in the dark</h2>
         <p className="campaign__passive">
           A wager, a find, or a toll: you will not know which until you go down. No table here, and no buy-in.
@@ -388,7 +388,7 @@ function NodeDetail({
   return (
     <div className="descent__detail" key={node.id}>
       <div className="descent__group descent__group--head">
-        <p className="descent__where">Depth {node.tier + 1}</p>
+        <p className="descent__where">Depth {node.row + 1}</p>
         <h2>
           {kind.elite && <span className="campaign__elite">Elite · </span>}
           {nodeName(node)}
@@ -407,7 +407,7 @@ function NodeDetail({
             <InfoTip label="How your ante here is set" word="Ante">
               <p>What you pay into the pot for each hand here:</p>
               <p className="hud__potline">
-                <span>Depth {node.tier + 1}</span>
+                <span>Depth {node.row + 1}</span>
                 <span>{gold(room.ante)}</span>
               </p>
               {kind.anteMultiplier !== 1 && (

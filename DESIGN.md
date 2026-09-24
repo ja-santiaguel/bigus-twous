@@ -877,6 +877,22 @@ with friends are untouched by it.
   seat**: what you put in, the three antes you keep, and the most the prize
   can pay you. With nothing selected, the panel holds the three steps of how
   a table works.
+- **The map runs as tall as its rows need** — taller than the window — so the
+  page scrolls and the deep's ruins rise behind it (only their tallest tops
+  show at first; the rest by the page's end); the key and the panel beside it
+  stay exactly where they sit, and the world bar stays clear. The ruins are a
+  gothic cathedral, its tower snapped, gable half fallen and rose window
+  broken; a needle spire with a leaning cross; a fallen arcade; flying
+  buttresses; a snapped bell tower; a graveyard and a dead tree — eroded and
+  cracked, with a faint pale light in a few windows and over the graves.
+- **The version** sits in the bottom-left corner of every screen, 10px and
+  dim ("v0.2.0"), with the commit it was built from on point — there for
+  telling builds apart when something is reported. It is the app's
+  package.json version: bump it with each release.
+- **The page scrolls smoothly.** A wheel notch sets where the page is headed
+  and it eases there; anything that scrolls on its own (the node panel, the
+  log, How to play), trackpads, touch and keys are left as they are, a move
+  made some other way mid-glide wins, and reduced motion turns it off.
 - **The map stays still, and the tree is centred.** The screen reads from
   the top, so the panel changing height as nodes are pointed at moves
   nothing; on a wide screen the tree sits on the screen's centre line, with
@@ -975,7 +991,9 @@ with friends are untouched by it.
     table before it is dealt.
   - **Pot** — this hand's pot, and beside it, small, the **Table** (the
     table's buy-ins): the two amounts a seat can win here, both paid 70% / 25%
-    / 5%. "Pot" says what the two are and what first place takes of each now;
+    / 5%. "Pot" says what the two are, and what first place would take of each at
+    the amounts in them now — "Finish this hand first: 112 from the pot",
+    "Win the table: 224 from the table";
     each amount says where its own gold came from — who put what into this
     pot (ante, class play), and who bought in to the table.
   - **Tribute** — "30 of 70": what you have won here, of what the table asks;

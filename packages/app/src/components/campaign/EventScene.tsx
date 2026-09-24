@@ -6,6 +6,7 @@ import {
   haggleChance,
   MEDALLIONS,
   titheOf,
+  eventAnte,
   type Coffer,
   type EventState,
   type FerrymanState,
@@ -209,14 +210,14 @@ function Reliquary({ event }: { run: RunState; event: ReliquaryState }) {
 /** The Tithe-Taker: pay his cut, haggle it down, or give a Medallion instead. */
 function TitheTaker({ run, event }: { run: RunState; event: TitheState }) {
   const act = useCampaignStore((s) => s.act);
-  const due = titheOf(run.worth, event.rate);
+  const due = titheOf(run.worth, event.rate, eventAnte(run));
   const chance = haggleChance(event);
   return (
     <>
       <p className="field__hint field__hint--lead">
         A clerk of the deep with a ledger and a lantern, blocking the only stair down. &ldquo;A tithe for passage. A
-        quarter of what you carry.&rdquo; He will bargain, each time a little less gladly &mdash; and a bargain that
-        insults him costs more.
+        quarter of what you carry &mdash; or three of your antes, if that is less.&rdquo; He will bargain, each time a
+        little less gladly &mdash; and a bargain that insults him costs more.
       </p>
       <p className="eventscene__stakes">
         {event.over?.kind === 'paid' ? (

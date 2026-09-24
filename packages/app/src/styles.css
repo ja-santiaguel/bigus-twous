@@ -243,25 +243,27 @@ body::before {
     ),
     radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(2, 5, 5, 0.55) 100%);
 }
-/* Ruins on the far horizon of the deep: a broken colonnade and arches in
+/* Ruins on the far horizon of the deep: broken towers, spires and arcades in
    silhouette, barely darker than the stone — felt more than seen, in whole
-   art pixels like everything else. They sit at the foot of the screen when the
-   page is scrolled to its end, and lower by a third of whatever is still below
-   (--scroll-rest), so they rise at a third of the page's pace: far behind it. */
+   art pixels like everything else. At the top of a long page only their
+   tallest tops show over the foot of the screen; scrolling down raises them
+   into full view by the page's end — slower than the page, and in step with
+   how far through it you are (--scroll-left), so they read as far behind it. */
 body::after {
   content: '';
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(40 * var(--px));
+  height: calc(96 * var(--px));
   z-index: -1;
   pointer-events: none;
   background: url('./assets/ruins.svg') repeat-x left bottom / auto 100%;
-  opacity: 0.22;
+  opacity: 0.2;
   image-rendering: pixelated;
-  /* Never pushed wholly out of sight: at most two thirds below the edge. */
-  transform: translateY(min(calc(var(--scroll-rest, 0) * 0.33px), calc(26 * var(--px))));
+  /* Up to 56 of the 96 art pixels below the edge at the top of a page: the
+     towers' and spires' tops in view, the rest found on the way down. */
+  transform: translateY(calc(var(--scroll-left, 0) * 56 * var(--px)));
   will-change: transform;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -4624,18 +4626,14 @@ button.classcard.is-picked:hover {
   align-items: start;
   gap: var(--space-lg);
   margin-top: var(--space-md);
-  /* The map's height: as tall as the screen allows between the world bar and
-     the run bar — every padding of the frame counted, so the page does not
-     scroll — and no taller than the rows need. */
-  --map-h: min(
-    calc(var(--slots) * var(--u) * 9.5),
-    max(
-      calc(var(--u) * 30),
-      calc(
-        100dvh - var(--edge) - var(--corner) - var(--space-lg) - var(--space-md) - var(--gutter) - var(--foot-clear) -
-          var(--chrome)
-      )
-    )
+  /* The map runs as tall as its rows need — taller than the window, so the
+     page scrolls and the deep's backdrop moves behind it — while the key and
+     the node's panel stay put beside it (see below), never taller than the
+     window leaves them. */
+  --map-h: calc(var(--slots) * var(--u) * 9.5);
+  --panel-room: calc(
+    100dvh - var(--edge) - var(--corner) - var(--space-lg) - var(--space-md) - var(--foot-clear) - var(--chrome) -
+      var(--space-md)
   );
 }
 .descent__map {
@@ -5035,8 +5033,8 @@ button.classcard.is-picked:hover {
     /* Exactly where they sit unscrolled — the body's top padding and the
        map's own margin — so they never move at all. */
     top: calc(var(--edge) + var(--corner) + var(--space-lg) + var(--space-md));
-    /* Never taller than the map, so neither can make the page scroll. */
-    max-height: var(--map-h);
+    /* Never taller than the window leaves them, above the run bar. */
+    max-height: var(--panel-room);
     overflow-y: auto;
     /* A thin, dim bar: on a short window the panel's way in can sit below
        its fold, and a hidden bar would hide that there is more. */
@@ -5075,7 +5073,6 @@ button.classcard.is-picked:hover {
   gap: var(--space-md);
   min-height: var(--corner);
   padding-bottom: var(--space-xs);
-  border-bottom: var(--px) solid var(--table-hi);
 }
 .worldbar h1 {
   margin: 0;
@@ -5596,4 +5593,18 @@ button.classcard.is-picked:hover {
   font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--bone-dim);
+}
+
+/* The version: the bottom-left corner, small and dim, under everything that
+   matters and never in its way. */
+.version {
+  position: fixed;
+  left: var(--edge);
+  bottom: calc(var(--edge) / 2 + env(safe-area-inset-bottom));
+  z-index: var(--layer-readout);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--dim);
+  opacity: 0.45;
+  user-select: none;
 }

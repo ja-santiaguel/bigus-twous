@@ -3,7 +3,7 @@ import { CLASSES, type ClassId } from './classes.js';
 import { LEGEND_NAMES } from './ladder.js';
 import { CPU_NAMES } from './personas.js';
 import { finaleOption, nodeCost, rewardOffers, shopOffers, tableOption, type RewardOffer } from './ladder.js';
-import { depthOf, generateMap, nodeById, reachable, type MapNode, type RunMap } from './map.js';
+import { depthOf, generateMap, MAP_ROWS, nodeById, reachable, type MapNode, type RunMap } from './map.js';
 import { gain, levelOf, medallionPrice, type Held, type MedallionId } from './medallions.js';
 import {
   beginHand,
@@ -179,6 +179,21 @@ export function startRun(seed: string, classId: ClassId, vestiges: VestigeRecord
     },
     vestiges,
   );
+}
+
+/** How deep the map goes, counted by node: its rows, then the throne. */
+export const DEPTHS = MAP_ROWS + 1;
+
+/**
+ * How deep you are, counted by node rather than by the five stakes: on the
+ * map, the row you are choosing in; anywhere else, the row of the node you
+ * are at. 1 at the gate's first row, DEPTHS at the throne.
+ */
+export function depthNumber(run: RunState): number {
+  if (run.phase === 'map') return Math.min(run.path.length + 1, DEPTHS);
+  const at = run.nodeId ?? run.path[run.path.length - 1];
+  const node = at ? nodeById(run.map, at) : undefined;
+  return node ? node.row + 1 : Math.min(run.path.length + 1, DEPTHS);
 }
 
 /** The nodes you may choose now. */

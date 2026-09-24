@@ -4,9 +4,11 @@ import { useGameStore } from './store/gameStore.js';
 import { readJoinLink } from './lib/joinLink.js';
 import { MainMenu } from './screens/MainMenu.js';
 import { CopyToast } from './components/CopyToast.js';
+import { Version } from './components/Version.js';
 import { DisabledHint } from './components/DisabledHint.js';
 import { useViewportHeight } from './lib/useViewportHeight.js';
 import { useBackdropScroll } from './lib/useBackdropScroll.js';
+import { useSmoothScroll } from './lib/useSmoothScroll.js';
 import { devDemo, devSeed } from './lib/devFlags.js';
 
 /*
@@ -123,6 +125,7 @@ function useDevDemo() {
 export function App() {
   useViewportHeight();
   useBackdropScroll();
+  useSmoothScroll();
   useJoinOnLoad();
   usePreloadScreens();
   useDevDemo();
@@ -143,6 +146,7 @@ export function App() {
       </Suspense>
       <CopyToast />
       <DisabledHint />
+      <Version />
     </LazyMotion>
   );
 }

@@ -1,4 +1,4 @@
-import { CLASSES, PLAYER_SEAT, playCost, TIERS, you, type RunState } from '@big-two/campaign';
+import { CLASSES, DEPTHS, depthNumber, PLAYER_SEAT, playCost, you, type RunState } from '@big-two/campaign';
 import { ClassEmblem } from './ClassArt.js';
 import { medallionEffect, medallionName } from './medallionText.js';
 import { InfoTip } from '../InfoTip.js';
@@ -88,7 +88,7 @@ export function RunBar({
       <span className="runbar__cell">
         <span className="runbar__label">Depth</span>
         <span>
-          {Math.min(run.tier + 1, TIERS.length)} of {TIERS.length}
+          {depthNumber(run)} of {DEPTHS}
         </span>
       </span>
       <span className="runbar__cell">

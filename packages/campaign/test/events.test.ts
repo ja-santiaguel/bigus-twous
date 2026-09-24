@@ -10,8 +10,10 @@ import {
   leaveEvent,
   openEvent,
   startRun,
+  TITHE_CAP_ANTES,
   TITHE_START,
   titheOf,
+  eventAnte,
   type EventPurse,
   type FerrymanState,
   type RunState,
@@ -87,7 +89,13 @@ describe('the Tithe-Taker', () => {
   it('takes a quarter if paid at once', () => {
     const event = openEvent(createRng('t'), 'tithe-taker', purse);
     const paid = actOnEvent(createRng('t1'), event, { kind: 'pay' }, purse);
-    expect(paid.gold).toBe(-titheOf(purse.worth, TITHE_START));
+    expect(paid.gold).toBe(-titheOf(purse.worth, TITHE_START, eventAnte(purse)));
+  });
+
+  it('never takes more than three of your antes, however rich you are', () => {
+    const rich: EventPurse = { ...purse, worth: 100_000 };
+    const paid = actOnEvent(createRng('t1'), openEvent(createRng('t'), 'tithe-taker', rich), { kind: 'pay' }, rich);
+    expect(-paid.gold).toBe(TITHE_CAP_ANTES * eventAnte(rich));
   });
 
   it('comes down for a haggle that lands, and goes up and stops listening for one that does not', () => {

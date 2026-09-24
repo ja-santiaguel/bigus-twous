@@ -4,6 +4,7 @@ import {
   ARCHETYPES,
   fitsClass,
   bridgesOf,
+  FIRST_ELITE_ROW,
   FIRST_MERCHANT_ROW,
   generateMap,
   neverStraight,
@@ -130,11 +131,21 @@ describe('the map', () => {
     }
   });
 
-  it('keeps the merchants to the lower half', () => {
+  it('puts one merchant in the upper half, on one lane, and the rest in the lower half', () => {
     for (const map of maps) {
-      for (const node of map.rows.flat()) {
-        if (node.kind === 'merchant') expect(node.row).toBeGreaterThanOrEqual(FIRST_MERCHANT_ROW);
-      }
+      const upper = map.rows.flat().filter((n) => n.kind === 'merchant' && n.row < FIRST_MERCHANT_ROW);
+      expect(upper).toHaveLength(1);
+      expect(upper[0]!.row).toBeGreaterThanOrEqual(OPENING_ROWS);
+    }
+  });
+
+  it('keeps the elite every way down meets to the third depth or deeper', () => {
+    for (const map of maps) {
+      const walls = map.rows
+        .slice(0, MAP_ROWS)
+        .filter((row) => row.every((n) => n.kind === 'table' && ARCHETYPES[n.archetype!].elite));
+      expect(walls.length).toBeGreaterThanOrEqual(1);
+      for (const row of walls) expect(row[0]!.row).toBeGreaterThanOrEqual(FIRST_ELITE_ROW);
     }
   });
 
@@ -190,11 +201,11 @@ describe('the map', () => {
     }
   });
 
-  it('never puts a merchant under a merchant', () => {
+  it('never puts a merchant under a merchant, save the early one', () => {
     for (const map of maps) {
       const nodes = byId(map.rows);
       for (const node of map.rows.flat()) {
-        if (node.kind !== 'merchant') continue;
+        if (node.kind !== 'merchant' || node.row < FIRST_MERCHANT_ROW) continue;
         expect(node.links.some((id) => nodes.get(id)!.kind === 'merchant')).toBe(false);
       }
     }

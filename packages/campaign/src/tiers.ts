@@ -72,7 +72,7 @@ export const TIERS: TierDef[] = [
   {
     index: 1,
     name: 'The Ossuary',
-    ante: 70,
+    ante: 60,
     markAntes: 2,
     hands: 6,
     showdownWait: 2,
@@ -83,7 +83,7 @@ export const TIERS: TierDef[] = [
   {
     index: 2,
     name: 'The Drowned Chapel',
-    ante: 120,
+    ante: 100,
     markAntes: 3,
     hands: 7,
     showdownWait: 2,
@@ -94,7 +94,7 @@ export const TIERS: TierDef[] = [
   {
     index: 3,
     name: 'The Sunken Crypt',
-    ante: 200,
+    ante: 180,
     markAntes: 3,
     hands: 9,
     showdownWait: 3,

@@ -1,6 +1,8 @@
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import {
+  DEPTHS,
+  depthNumber,
   CLASS_IDS,
   CLASSES,
   levelOf,
@@ -8,7 +10,6 @@ import {
   medallionPrice,
   PASSIVE_COST_ANTES,
   SHOWDOWN_ANTE,
-  TIERS,
   WORLD_NAME,
   type ClassId,
   type MedallionId,
@@ -84,7 +85,7 @@ function CampaignFrame({
         <header className="worldbar">
           <h1>{WORLD_NAME}</h1>
           <span>
-            Depth {Math.min(run.tier + 1, TIERS.length)} of {TIERS.length}
+            Depth {depthNumber(run)} of {DEPTHS}
           </span>
         </header>
       )}
@@ -549,7 +550,7 @@ function RunOver({ run }: { run: RunState }) {
       <p className="field__hint field__hint--lead">
         {won
           ? 'You won the Hollow Throne. This run now waits there, a Vestige, for the runs that come after it.'
-          : `Your gold ran out at depth ${run.tier + 1} of ${TIERS.length}.`}
+          : `Your gold ran out at depth ${depthNumber(run)} of ${DEPTHS}.`}
       </p>
       <p className="campaign__facts">
         Tables won {run.stats.tablesWon} · hands played {run.stats.handsPlayed} · most gold {gold(run.stats.bestWorth)}
