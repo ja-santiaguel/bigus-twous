@@ -70,6 +70,12 @@ export interface RunState {
   /** Its table. */
   chosen: TableOption | null;
   table: TableState | null;
+  /**
+   * The table just over, as it closed, kept until the next seat is taken: a
+   * table lost, or won with nothing to choose, sends the run straight back to
+   * the map, and its end is still told from this.
+   */
+  lastTable?: TableState | null;
   shopOffers: MedallionId[];
   /** What the table just won offers, while choosing. */
   rewards: RewardOffer[];
@@ -290,6 +296,7 @@ export function enterNode(run: RunState, nodeId: string): RunState {
     chosen,
     offers: {},
     table,
+    lastTable: null,
     worth: 0,
     lastHand: null,
   };
@@ -324,7 +331,7 @@ export function endHand(run: RunState, result: HandResult, vestiges: VestigeReco
   if (!outcome.end) return next;
 
   // The table is over. Your Worth comes off it.
-  next = { ...next, worth: seat.worth };
+  next = { ...next, worth: seat.worth, lastTable: table };
   if (outcome.end.kind === 'broke') return { ...next, phase: 'lost' };
   // Won or lost, a table is over and you go on down: the map never sends you
   // back. A table lost costs its gold and gives no spoils.

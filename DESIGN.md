@@ -848,8 +848,8 @@ with friends are untouched by it.
 - **The run bar** holds what a run is, on every screen between tables: your
   class (emblem and name, in its colour), your gold — its largest figure,
   because it is your life and your stake at once — your depth (room and
-  "2/5"), how many Medallions you carry (their names and effects on point or
-  tap), and the Menu. It floats along the foot of the screen, clear of its
+  "2/5"), your Medallions — a row of their emblems, each on a small plate,
+  its name and what it does on point or tap of that one — and the Menu. It floats along the foot of the screen, clear of its
   edges: an ink edge with a thin gold rule inside it, cells split by
   hairlines, so it reads as the frame the screens sit in. On a phone it drops
   the class name and the room's name. The Menu is not in it: the Menu is in
@@ -864,7 +864,9 @@ with friends are untouched by it.
   two below it. The way you came is bone, with a caret over where you stand;
   the ways open now are gold and dashed, their nodes on gold dashed frames;
   a node you cannot afford has a red dashed frame; everything else is the
-  colour of the stone, and the ways you did not take fade.
+  colour of the stone, and the ways you did not take fade. A node no way down
+  from where you stand can reach any more is **out of reach**: grey and faint,
+  it and the paths to it, so what is left of the map reads at a glance.
 - **Point to preview, click to select, then confirm.** Every table you could
   go to next is already dealt when you arrive on the map, so pointing at its
   node previews all of it in the panel beside the map (under it on a phone):
@@ -895,10 +897,14 @@ with friends are untouched by it.
   once opened, or on a player at a table on offer. It opens as a sheet like
   How to play, from the main menu's Mythic group ("7 of 16 Medallions found"
   under it) and from the menu on every campaign screen and campaign table.
-  Medallions stand by pool — each class's, then any class's — rarest last;
-  a found one shows its medal in its rarity's colour, its name and rarity, and
-  what every level does; one not yet found is a dashed, dim "???". Saved
-  apart from the run (`bigtwo:compendium`), so it outlasts every run.
+  Medallions stand by pool — each class's, then any class's — rarest last,
+  and **every level is a card of its own** ("Uprising", then "Uprising II"),
+  all one size in an even grid. A level is found when it has been shown at
+  that level or a higher one; a level not yet found is sealed — a dashed
+  card, its emblem a flat shadow, "???" and "Not yet found" — so an upgrade's
+  effect stays hidden until it is met. The count is of levels ("8 of 25
+  Medallions found"). Saved apart from the run (`bigtwo:compendium`, which
+  keeps the highest level seen of each), so it outlasts every run.
 - **A run is welcomed** before its map: a dark screen, the world's name dim,
   "Welcome, Pale Bell." large, a line of who you are — and no button to aim
   for. Last, at the foot, a quiet "Click to descend" ("Tap" on a touch
@@ -906,7 +912,7 @@ with friends are untouched by it.
   way down, and so are Enter, Space and Escape. The fall follows: dark bands
   rushing up, the welcome torn upward, the map rising to meet you.
 - **The version** sits in the bottom-left corner of every screen, 10px and
-  dim ("v0.3.0"), with the commit it was built from on point — there for
+  dim ("v0.4.0"), with the commit it was built from on point — there for
   telling builds apart when something is reported. It is the app's
   package.json version: bump it with each release.
 - **The page scrolls smoothly.** A wheel notch sets where the page is headed
@@ -979,11 +985,17 @@ with friends are untouched by it.
   order: on the buy-in of your first table. The merchant's wares and a won
   table's spoils sit side by side on a wide screen, to be compared across,
   each with its own button (Buy, Take it).
-- **Medallions are named with their level** ("Uprising II"), in gold for a
-  common or legendary one and bone for a rare one, with what it does at
-  that level under the name. The Bone Merchant tags each offer with its
-  rarity — and "any class" for the few any class can carry — or "Level up"
-  for one you carry. A won ordinary table has a chance of leaving **one
+- **A Medallion is a card**, one size wherever it is offered: its emblem —
+  a twelve-pixel picture of what it is (Uprising's rising bars, Rabble's
+  three hoods, Intrigue's dagger, Blood Rite's drop, Hoard's chest…) — struck
+  on a dark plate edged in its rarity (dim bone common, bone rare, gold
+  legendary); its name with its level ("Uprising II"), room kept for a name
+  on two lines so every card's lines start level; a small line of what kind
+  it is; what it does at that level, each level's line whole on its own; a
+  note; and its button on the bottom edge. The merchant's wares and a won
+  table's spoils are a row of these cards, side by side, to be compared
+  across. The Bone Merchant tags each offer with its rarity — and "any
+  class" for the few any class can carry — or "Level up" for one you carry. A won ordinary table has a chance of leaving **one
   Medallion** ("Among the winnings": Take it, or Leave it) — and the hand's
   end says "No Medallion was left on this table" when it leaves none; an
   elite table offers **the spoils**, a choice of two (Take neither beside
@@ -1054,10 +1066,19 @@ with friends are untouched by it.
   play covers them they step back with the other beaten plays, edgeless, and
   take the edge again when the trick is opened out to be read.
 - **Your class's play is pointed out**: on your turn, the cards that make a
-  play only your class allows — never plays the base rules allow anyway —
-  take your class's edge and glow in your hand and
-  nudge up two pixels every few seconds — so a Tyrant holding a 2 against a
-  short straight sees the chance.
+  play only your class allows — never plays the base rules allow anyway, and
+  counting the ones a Medallion allows — take your class's edge and glow in
+  your hand and nudge up two pixels every few seconds — so a Tyrant holding a
+  2 against a short straight sees the chance. Every ready card nudges on one
+  shared clock: the cards of a play of several rise as one, and plays of one
+  card each ripple left to right, a beat apart. Each play is named once, over
+  its left-most card, in a small label in the class's colour — the class
+  play's name ("Uprising") or the Medallion's ("Rabble"); the colour says
+  whose it is, the label what it is. A card in more than one special play
+  carries a small count in its bottom-left corner — the corner a fanned hand
+  never covers — and names every play on point.
+- **Passing lets go of your picked cards**: they drop back into the hand with
+  the pass.
 - **Seat states keep the seat's colours** at a campaign table: its turn is a
   gold underline that sweeps out under the whole label, name and class, in
   step with the turn marker: out in four steps while the marker is lit, dim
@@ -1065,11 +1086,22 @@ with friends are untouched by it.
   and a seat that has passed keeps its "passed" line while its cards drop into
   shadow — the dimming a beaten play takes, by tone rather than transparency.
   Your own hand is never dimmed: you still arrange it while you wait.
-- **The end of a hand** replaces the round-end standings with the reckoning:
-  each seat in finishing order with what it gained or lost and its gold, any
-  any-class Medallion that moved gold ("Tithe: Crowe took 90 from the
-  table"), who went broke and who sat down, and what comes
-  next — Next hand, Call a Showdown once you are past the Mark, or the
-  table's end.
+- **The end of a hand** replaces the round-end standings with the reckoning,
+  read in columns rather than sentences: each seat in finishing order — place
+  and name on the left edge, what it gained or lost and its gold on the right
+  edge. Under it, anything that moved gold, each a line with a tag
+  (a Medallion's name, Fallen, Bounty) and its amount at the right. Then
+  three figures side by side: the **Tribute** won of what the table asks,
+  with its bar; the **Hands left**, as pips; and what is **Next** (a hand, or
+  the Requiem). What is on offer is a row of short chips — "Everyone ×3",
+  "First wins the table" for the Requiem; "They ×3", "You ×1", "Whole pot",
+  the bounty and "Once" for a Reckoning — over its buttons.
+- **The end of a table** is its ledger: the buy-in, what the hands brought,
+  what the table paid you ("Table, first" or "Table, by standing"), any
+  bounty, and the net under a rule — then your gold before and after, the
+  after large, gold for a gain and red for a loss, and the spoils. A table
+  lost, or won with nothing to choose, has sent the run back to the map
+  already; its end is told from the table as it closed, which the run keeps
+  until the next seat is taken.
 - Leaving mid-hand, or reloading, counts as finishing that hand last, and the
   leave confirmation says so.

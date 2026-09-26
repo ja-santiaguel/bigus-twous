@@ -9,7 +9,7 @@ import {
   type TurnOptions,
 } from '@big-two/engine';
 import type { ClassId } from './classes.js';
-import { levelOf, type Held } from './medallions.js';
+import { levelOf, type Held, type MedallionId } from './medallions.js';
 
 /**
  * Class plays: the beats a class — and the Medallions it has built — adds to
@@ -38,19 +38,28 @@ const rank = (combo: Combo) => RANK_ORDER[combo.cards[0]!.rank];
 const lengthOf = (combo: Combo) => combo.length ?? combo.cards.length;
 const allTwos = (combo: Combo) => combo.cards.every((c) => c.rank === '2');
 
+/** Which rule lets a seat make this beat: its class play, or a Medallion. */
+export type PassiveSource = 'class' | MedallionId;
+
 /**
- * Whether a seat of this class, holding these Medallions, may beat `pile`
- * with `combo` by a class play. Every beat here is one the base rules do not
- * allow, so a class play is always a rule bent.
+ * Which rule lets a seat of this class, holding these Medallions, beat `pile`
+ * with `combo` — its class play, or a Medallion — or null if none does.
+ * Every beat here is one the base rules do not allow, so a class play is
+ * always a rule bent.
  */
-export function passiveBeats(classId: ClassId, pile: Combo, combo: Combo, medallions: readonly Held[] = []): boolean {
+export function passiveSource(
+  classId: ClassId,
+  pile: Combo,
+  combo: Combo,
+  medallions: readonly Held[] = [],
+): PassiveSource | null {
   const level = (id: Parameters<typeof levelOf>[1]) => levelOf(medallions, id);
   switch (classId) {
     case 'commoner': {
       // Uprising: a long straight topples a single 2 — four long with the Medallion.
       const shortest = level('uprising') >= 1 ? 4 : 5;
       if (pile.type === 'SINGLE' && allTwos(pile) && combo.type === 'STRAIGHT' && lengthOf(combo) >= shortest)
-        return true;
+        return 'class';
       // ...and at level 2, six or more topples a pair of 2s.
       if (
         level('uprising') >= 2 &&
@@ -59,7 +68,7 @@ export function passiveBeats(classId: ClassId, pile: Combo, combo: Combo, medall
         combo.type === 'STRAIGHT' &&
         lengthOf(combo) >= 6
       )
-        return true;
+        return 'uprising';
       // Rabble: a common triple over a court pair.
       if (
         level('rabble') >= 1 &&
@@ -69,8 +78,8 @@ export function passiveBeats(classId: ClassId, pile: Combo, combo: Combo, medall
         combo.type === 'TRIPLE' &&
         rank(combo) <= RANK_ORDER['10']
       )
-        return true;
-      return false;
+        return 'rabble';
+      return null;
     }
     case 'courtier': {
       // Allegiance: a court card over a higher card of its own suit, 2s excepted.
@@ -83,7 +92,7 @@ export function passiveBeats(classId: ClassId, pile: Combo, combo: Combo, medall
         combo.cards[0]!.suit === pile.cards[0]!.suit &&
         rank(pile) > rank(combo)
       )
-        return true;
+        return 'class';
       // ...and with the Medallion, a court pair over a common triple — higher at level 2.
       const reach = [null, RANK_ORDER['10'], RANK_ORDER['Q']][level('precedence')] ?? null;
       if (
@@ -95,7 +104,7 @@ export function passiveBeats(classId: ClassId, pile: Combo, combo: Combo, medall
         rank(combo) > rank(pile) &&
         !allTwos(combo)
       )
-        return true;
+        return 'precedence';
       // Royal Pair: Aces over any triple below 2s.
       if (
         level('royal-pair') >= 1 &&
@@ -104,7 +113,7 @@ export function passiveBeats(classId: ClassId, pile: Combo, combo: Combo, medall
         combo.type === 'PAIR' &&
         combo.cards[0]!.rank === 'A'
       )
-        return true;
+        return 'royal-pair';
       // Intrigue: Kings or Aces over a chain of three pairs.
       if (
         level('intrigue') >= 1 &&
@@ -113,19 +122,28 @@ export function passiveBeats(classId: ClassId, pile: Combo, combo: Combo, medall
         combo.type === 'PAIR' &&
         (combo.cards[0]!.rank === 'K' || combo.cards[0]!.rank === 'A')
       )
-        return true;
-      return false;
+        return 'intrigue';
+      return null;
     }
     case 'tyrant': {
       // Decree: a single 2 over a short straight — longer with the Medallion.
       const longest = [5, 7, Infinity][level('decree')] ?? Infinity;
       if (pile.type === 'STRAIGHT' && lengthOf(pile) <= longest && combo.type === 'SINGLE' && allTwos(combo))
-        return true;
+        return 'class';
       // Iron Crown: a pair of 2s over any straight.
-      if (level('iron-crown') >= 1 && pile.type === 'STRAIGHT' && combo.type === 'PAIR' && allTwos(combo)) return true;
-      return false;
+      if (level('iron-crown') >= 1 && pile.type === 'STRAIGHT' && combo.type === 'PAIR' && allTwos(combo))
+        return 'iron-crown';
+      return null;
     }
   }
+}
+
+/**
+ * Whether a seat of this class, holding these Medallions, may beat `pile`
+ * with `combo` by a class play — its own, or one a Medallion gives it.
+ */
+export function passiveBeats(classId: ClassId, pile: Combo, combo: Combo, medallions: readonly Held[] = []): boolean {
+  return passiveSource(classId, pile, combo, medallions) !== null;
 }
 
 /**

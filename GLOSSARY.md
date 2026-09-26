@@ -71,6 +71,7 @@ as they appear mid-sentence.
 | depth                                       | how far down the map you are, a node at a time ("Depth 3 of 9")                                      | room, tier, floor, level                   |
 | run, a new run, continue run                | one descent, from choosing a class to the throne or to falling                                       | campaign (for one run), game, save         |
 | the map                                     | the run's route, read from the top down                                                              | ladder, tree, climb                        |
+| out of reach                                | a node on the map no way down from where you stand can reach any more; shown grey                    | locked, blocked, unreachable               |
 | descend, go down                            | to move to the next room                                                                             | climb, move up, advance                    |
 | the Bone Merchant                           | the node that sells Medallions                                                                       | shop, store                                |
 | the spoils                                  | what a won table offers you                                                                          | reward, loot screen                        |
@@ -82,7 +83,7 @@ as they appear mid-sentence.
 | elite                                       | a harder table (Gilded, Carrion)                                                                     | boss, hard mode                            |
 | Vestige                                     | one of your past winning runs, seated on the Hollow Throne                                           | ghost, phantom (in the interface)          |
 | run name                                    | two words drawn for each run: your name at its tables, and its Vestige's                             | "(you)" at pile select                     |
-| compendium                                  | every Medallion you have come across, in any run; the rest sealed                                    | codex, collection, bestiary                |
+| compendium                                  | every Medallion you have come across, each level its own card; the rest sealed                       | codex, collection, bestiary                |
 | ? event                                     | a ? node: the Ferryman's Wager, the Drowned Reliquary or the Tithe-Taker                             | random event, mystery                      |
 | bounty                                      | what a won Reckoning pays: an ante for each hand left unplayed                                       | bonus, swift reward                        |
 | welcome                                     | the screen that names you before a run's map                                                         | intro, splash                              |

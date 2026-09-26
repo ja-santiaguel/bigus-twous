@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { CLASSES, depthNumber, MEDALLIONS, you } from '@big-two/campaign';
+import { CLASSES, depthNumber, you } from '@big-two/campaign';
 import { useGameStore } from '../store/gameStore.js';
 import { useCampaignStore } from '../store/campaignStore.js';
 import { CardFace } from '../components/card/PixelCard.js';
 import { RulesSheet } from '../components/RulesSheet.js';
 import { CompendiumSheet } from '../components/campaign/CompendiumSheet.js';
+import { foundCount, levelCount } from '../lib/compendium.js';
 import { PixelTitle } from '../components/PixelTitle.js';
 
 /**
@@ -72,7 +73,7 @@ export function MainMenu() {
               )}
               <MenuOption
                 label="Compendium"
-                note={`${discovered.filter((id) => id in MEDALLIONS).length} of ${Object.keys(MEDALLIONS).length} Medallions found`}
+                note={`${foundCount(discovered)} of ${levelCount()} Medallions found`}
                 onClick={() => setCompendiumOpen(true)}
               />
             </div>

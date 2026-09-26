@@ -1511,6 +1511,7 @@ body::after {
    snapping. `none` cannot be eased from, so resting is a zero shadow. */
 /* The box a carried card leans in, about the point it is held (CardLayer). */
 .cardlayer__tilt {
+  position: relative;
   display: block;
 }
 .cardlayer__card .pcard {
@@ -3609,57 +3610,6 @@ textarea {
   align-items: center;
   gap: var(--space-md);
 }
-.campaign__choices {
-  display: grid;
-  gap: var(--space-sm);
-  margin: var(--space-group) 0 0;
-  padding: 0;
-  list-style: none;
-}
-/* A choice is a row you can read in full before you take it: its name and
-   what it pays on one line, what it is under that, then the facts. */
-.campaign__choice {
-  display: grid;
-  gap: var(--space-xs);
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  font: inherit;
-  text-align: left;
-  color: var(--bone);
-  background: var(--table);
-  border: var(--px) solid var(--table-hi);
-}
-button.campaign__choice {
-  cursor: pointer;
-}
-button.campaign__choice:hover {
-  border-color: var(--bone-dim);
-}
-button.campaign__choice:focus-visible {
-  outline: var(--px) solid var(--gold);
-  outline-offset: var(--px);
-}
-.campaign__choice.is-picked {
-  border-color: var(--gold);
-  background: var(--gold-wash);
-}
-.campaign__choice .btn {
-  justify-self: start;
-  margin-top: var(--space-xs);
-}
-.campaign__choicehead {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--space-sm);
-}
-.campaign__choicehead strong {
-  font-size: var(--text-md);
-}
-.campaign__choicehead span {
-  font-size: var(--text-xs);
-  color: var(--gold);
-}
 .campaign__passive {
   font-size: var(--text-sm);
   color: var(--bone-dim);
@@ -3749,16 +3699,6 @@ button.campaign__choice:focus-visible {
 }
 .campaign__handend {
   max-width: min(460px, calc(100vw - 2 * var(--space-sm)));
-}
-
-/* Wider than a lobby: the class cards stand side by side, and the tables on a
-   rung are compared across, not read down a list. */
-.campaign__choices--grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-  align-items: stretch;
-}
-.campaign__choices--grid > li {
-  display: grid;
 }
 
 /* How a table works: the three things that happen, in order. */
@@ -4187,6 +4127,60 @@ button.classcard.is-picked:hover {
     0 0 0 var(--px) var(--passive),
     0 0 calc(3 * var(--px)) var(--px) color-mix(in srgb, var(--passive) 55%, transparent);
   animation: passive-nudge 2600ms ease-in-out infinite;
+  /* On the table's shared clock: every card of a play nudges together, and
+     separate plays ripple left to right (Table: specialPlays). */
+  animation-delay: var(--nudge-delay, 0ms);
+}
+/* A special play's name, over its left-most card, in the class's colour: the
+   class play's own name, or the Medallion's that allows it. It rides with the
+   card's nudge. */
+.cardlayer__tag {
+  position: absolute;
+  /* Centred by its margins: the nudge animates its transform. */
+  left: -50%;
+  right: -50%;
+  width: max-content;
+  margin-inline: auto;
+  bottom: calc(100% + var(--space-xs));
+  padding: var(--px) var(--space-xs);
+  font-size: var(--text-xs);
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink);
+  background: var(--passive);
+  box-shadow: 0 var(--px) 0 var(--ink);
+  pointer-events: none;
+  animation: passive-nudge 2600ms ease-in-out infinite;
+  animation-delay: var(--nudge-delay, 0ms);
+  z-index: 2;
+}
+/* A card in more than one special play: how many, in its bottom-left corner —
+   the corner a fanned hand never covers, clear of the rank — and which, on point. */
+.cardlayer__plays {
+  position: absolute;
+  bottom: calc(-1 * var(--space-xs));
+  left: calc(-1 * var(--space-xs));
+  /* Over the card's face, which is positioned too. */
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  min-width: calc(7 * var(--px));
+  height: calc(7 * var(--px));
+  font-size: var(--text-xs);
+  line-height: 1;
+  color: var(--ink);
+  background: var(--passive);
+  border: var(--px) solid var(--ink);
+  pointer-events: none;
+}
+.cardlayer__card:not(.is-passive-ready) .cardlayer__tag,
+.cardlayer__card:not(.is-passive-ready) .cardlayer__plays {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cardlayer__tag {
+    animation: none;
+  }
 }
 @keyframes passive-nudge {
   0%,
@@ -4757,6 +4751,15 @@ button.classcard.is-picked:hover {
 }
 .descent__node.is-behind {
   opacity: 0.4;
+}
+/* Ahead, but beyond reach from where you stand: greyed and faded, below the
+   ways still open to you. */
+.descent__node.is-lost {
+  opacity: 0.22;
+  filter: grayscale(1);
+}
+.descent__path.is-lost {
+  opacity: 0.25;
 }
 .descent__node.is-picked {
   outline: var(--px) solid var(--bone);
@@ -5693,79 +5696,396 @@ button.classcard.is-picked:hover {
   font-size: var(--text-xs);
   color: var(--dim);
 }
+/* Each pool an even grid of cards, all one size. */
 .compendium__list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, var(--medcard-w));
+  justify-content: start;
   gap: var(--space-sm);
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.compendium__entry {
+.compendium__list > li {
   display: grid;
-  grid-template-columns: auto 1fr;
+}
+
+/* ── A campaign hand's end ───────────────────────────────────────────────
+   The standings share one set of columns, so every place and name starts on
+   one left edge and every gain and total ends on one right edge. Under them,
+   no paragraphs: a strip of three figures, the choice on offer as a card of
+   facts, and at a table's end, its ledger. */
+.campaign__handend {
+  width: min(480px, calc(100vw - 2 * var(--space-sm)));
+  max-width: none;
+  text-align: left;
+}
+.campaign__handend h2 {
+  text-align: center;
+}
+.handend__scores {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  column-gap: var(--space-md);
+}
+.handend__scores li {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+.handend__scores .overlay__gain,
+.handend__scores strong {
+  justify-self: end;
+  text-align: right;
+}
+/* Events beside the cards: a tag, who, and the gold. */
+.handend__events {
+  display: grid;
+  gap: var(--space-xs);
+  margin: 0 0 var(--space-md);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+}
+.handend__events li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
   gap: var(--space-sm);
-  align-items: start;
+  color: var(--bone-dim);
+}
+.handend__tag {
+  padding: 0 var(--space-xs);
+  color: var(--gold);
+  border: var(--px) solid color-mix(in srgb, var(--gold) 50%, transparent);
+}
+.handend__events li.is-fallen .handend__tag {
+  color: var(--alert);
+  border-color: color-mix(in srgb, var(--alert) 50%, transparent);
+}
+.handend__amount {
+  justify-self: end;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.handend__events li.is-fallen .handend__amount {
+  color: var(--dim);
+}
+/* Three figures: the tribute, the hands left, what comes next. */
+.handend__status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-md);
+}
+.handend__stat {
+  display: grid;
+  align-content: start;
+  gap: var(--space-xs);
   padding: var(--space-sm);
   background: var(--table);
   border: var(--px) solid var(--table-hi);
-  color: var(--gold);
 }
-.compendium__entry.rarity--rare {
-  color: var(--bone);
+.handend__stat.is-held {
+  border-color: var(--gold);
 }
-.compendium__entry.is-sealed {
-  --medal-light: var(--table-hi);
-  color: var(--table-hi);
-  background: transparent;
-  border-style: dashed;
-}
-.compendium__medal {
-  width: calc(9 * var(--px));
-  height: calc(9 * var(--px));
-  image-rendering: pixelated;
-}
-.compendium__text {
-  display: grid;
-  gap: var(--space-xs);
-  min-width: 0;
-}
-.compendium__name {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-sm);
-  font-size: var(--text-sm);
-}
-.compendium__name small {
+.handend__label {
   font-size: var(--text-xs);
   color: var(--dim);
 }
-.compendium__levels {
+.handend__stat.is-held .handend__label {
+  color: var(--gold);
+}
+.handend__value {
+  font-size: var(--text-md);
+  line-height: 1;
+  color: var(--bone);
+  font-variant-numeric: tabular-nums;
+}
+.handend__value small,
+.handend__sub {
+  font-size: var(--text-xs);
+  color: var(--dim);
+}
+.handend__bar {
+  display: block;
+  height: calc(2 * var(--px));
+  background: var(--table-hi);
+}
+.handend__bar > span {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  background: var(--gold);
+}
+.handend__pips {
+  display: flex;
+  gap: var(--px);
+}
+.handend__pips > span {
+  width: calc(3 * var(--px));
+  height: calc(3 * var(--px));
+  background: var(--bone-dim);
+}
+.handend__pips > span.is-played {
+  background: var(--table-hi);
+}
+.handend__pips > span.is-final {
+  box-shadow: 0 0 0 var(--px) var(--gold);
+}
+/* The choice on offer: its name, and its terms as chips. */
+.handend__offer {
   display: grid;
   gap: var(--space-xs);
+  margin: 0 0 var(--space-md);
+  padding: var(--space-sm);
+  border-left: var(--px) solid var(--gold);
+  background: var(--gold-wash);
+}
+.handend__offer.is-requiem {
+  border-left-color: var(--alert);
+  background: var(--alert-wash);
+}
+.handend__offername {
+  font-size: var(--text-sm);
+  color: var(--gold);
+}
+.handend__offer.is-requiem .handend__offername {
+  color: var(--alert);
+}
+.handend__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+.handend__chips > span {
+  padding: 0 var(--space-xs);
+  font-size: var(--text-xs);
+  color: var(--bone);
+  border: var(--px) solid var(--table-hi);
+  background: var(--table-lo);
+}
+.handend__chips > span.is-gold {
+  color: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 50%, transparent);
+}
+/* A table's end: its ledger, the gold before and after, and the spoils. */
+.handend__earnings {
+  margin: 0 0 var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--table);
+  border: var(--px) solid var(--table-hi);
+}
+.handend__earnings h3 {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--text-xs);
+  font-weight: normal;
+  color: var(--dim);
+}
+.handend__ledger {
+  display: grid;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: var(--text-xs);
-  line-height: 1.5;
+  font-size: var(--text-sm);
+}
+.handend__ledger li {
+  display: flex;
+  justify-content: space-between;
+  padding: calc(var(--px)) 0;
   color: var(--bone-dim);
 }
-.compendium__levels li {
-  display: grid;
-  grid-template-columns: auto 1fr;
+.handend__ledger li > span:last-child {
+  font-variant-numeric: tabular-nums;
+}
+.handend__ledger .is-gain {
+  color: var(--gold);
+}
+.handend__ledger .is-loss {
+  color: var(--alert);
+}
+.handend__ledger li.is-total {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: var(--px) solid var(--table-hi);
+  color: var(--bone);
+  font-size: var(--text-md);
+}
+.handend__journey {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
   gap: var(--space-sm);
-}
-.compendium__levels li:only-child {
-  grid-template-columns: 1fr;
-}
-.compendium__numeral {
+  margin: var(--space-sm) 0 0;
+  font-size: var(--text-sm);
   color: var(--dim);
+  font-variant-numeric: tabular-nums;
 }
-.compendium__entry.is-sealed .compendium__name strong {
-  color: var(--dim);
+.handend__journey strong {
+  font-size: var(--text-lg);
+  font-weight: normal;
 }
-.compendium__sealed {
+.handend__journey strong.is-gain {
+  color: var(--gold);
+}
+.handend__journey strong.is-loss {
+  color: var(--alert);
+}
+.handend__journey small {
+  font-size: var(--text-xs);
+}
+.handend__spoils {
+  margin: var(--space-sm) 0 0;
+  font-size: var(--text-sm);
+  color: var(--bone);
+}
+
+/* ── Medallions as cards ─────────────────────────────────────────────────
+   One size wherever a Medallion is offered or recorded: its emblem struck on
+   a dark plate edged in its rarity (dim bone, bone, gold), its name, a small
+   line of what kind it is, what it does, and — when it can be taken — the
+   button, always on the card's bottom edge so a row of them lines up. */
+:root {
+  --medcard-w: 184px;
+  --medcard-h: 248px;
+}
+.medcards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: var(--space-md);
+  margin: var(--space-group) 0 0;
+}
+.medcard {
+  --edge: var(--bone-dim);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  width: var(--medcard-w);
+  min-height: var(--medcard-h);
+  padding: var(--space-md) var(--space-sm) var(--space-sm);
+  text-align: center;
+  background: var(--table);
+  border: var(--px) solid var(--table-hi);
+  box-shadow: 0 calc(2 * var(--px)) 0 var(--shade);
+}
+.medcard:has(.btn) {
+  min-height: calc(var(--medcard-h) + 40px);
+}
+.medcard.rarity--rare {
+  --edge: var(--bone);
+}
+.medcard.rarity--legendary {
+  --edge: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 45%, var(--table-hi));
+}
+.medcard__plate {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-xs);
+  /* Lit from above, so the emblem's ink outline reads against it. */
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--edge) 22%, var(--table-hi)), var(--table));
+  border: var(--px) solid var(--edge);
+  box-shadow: inset 0 0 0 var(--px) var(--ink);
+}
+.medcard__plate .medsprite {
+  width: 48px;
+  height: 48px;
+}
+.medcard__name {
+  /* Room for a name on two lines, set to the bottom: every card's tag and
+     effect start at one height, however long its name. */
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 2.6em;
+  line-height: 1.3;
+  font-size: var(--text-sm);
+  color: var(--edge);
+}
+.medcard.rarity--common .medcard__name {
+  color: var(--bone);
+}
+.medcard__tag {
   font-size: var(--text-xs);
   color: var(--dim);
+}
+.medcard__effect {
+  margin: var(--space-xs) 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--bone-dim);
+}
+.medcard__note {
+  margin-top: auto;
+  padding-top: var(--space-xs);
+  font-size: var(--text-xs);
+  color: var(--gold);
+}
+.medcard .btn {
+  align-self: stretch;
+  margin-top: var(--space-sm);
+}
+.medcard__effect + .btn {
+  margin-top: auto;
+}
+.medcard.is-sealed {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+  color: var(--table-hi);
+}
+.medcard.is-sealed .medcard__plate {
+  --edge: var(--table-hi);
+  background: transparent;
+  box-shadow: none;
+}
+.medcard.is-sealed .medcard__name {
+  color: var(--dim);
+}
+
+/* An emblem, drawn at whole-pixel multiples of its twelve art pixels. */
+.medsprite {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+.medsprite.is-sealed {
+  color: var(--table-hi);
+}
+
+/* The run bar's Medallions: each emblem on its own, explained on point. */
+.runbar__medals {
+  display: flex;
+  gap: var(--space-xs);
+}
+.runbar__medals .term {
+  display: block;
+  text-decoration: none;
+  cursor: help;
+}
+.runbar__medal {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: var(--table-hi);
+  border: var(--px) solid var(--table-hi);
+  transition: border-color 90ms steps(2);
+}
+.runbar__medals .term:hover .runbar__medal,
+.runbar__medals .term[aria-expanded='true'] .runbar__medal {
+  border-color: var(--gold);
+}
+.runbar__medals .term:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+.runbar__medal .medsprite {
+  width: 24px;
+  height: 24px;
 }

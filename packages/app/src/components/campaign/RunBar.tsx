@@ -4,7 +4,9 @@ import { medallionEffect, medallionName } from './medallionText.js';
 import { InfoTip } from '../InfoTip.js';
 import { IDENTITY } from './classIdentity.js';
 import { Terms } from '../Terms.js';
+import { shownTable } from '../../store/campaignStore.js';
 import { GoldAmount } from '../GoldAmount.js';
+import { MedallionSprite } from './MedallionArt.js';
 
 const gold = (n: number) => Math.round(n).toLocaleString('en-GB');
 
@@ -39,7 +41,8 @@ export function RunBar({
   const c = CLASSES[run.classId];
   const worth = run.table ? you(run.table).worth : run.worth;
   const count = run.medallions.length;
-  const price = run.table ? playCost(run.table, you(run.table)) : 0;
+  const table = shownTable({ run });
+  const price = table ? playCost(table, you(table)) : 0;
   const inPot = dealt ? (run.table?.hand?.pot.contributions[PLAYER_SEAT] ?? 0) : 0;
   return (
     <nav className={`runbar ${atTable ? 'runbar--table' : ''} ${inline ? 'runbar--inline' : ''}`} aria-label="Your run">
@@ -96,13 +99,24 @@ export function RunBar({
         {count === 0 ? (
           <span className="runbar__none">None yet</span>
         ) : (
-          <InfoTip label="Your Medallions" word={<span>{count}</span>}>
+          <span className="runbar__medals">
             {run.medallions.map((m) => (
-              <p key={m.id}>
-                <strong>{medallionName(m.id, m.level)}</strong> — {medallionEffect(m.id, m.level)}
-              </p>
+              <InfoTip
+                key={m.id}
+                label={medallionName(m.id, m.level)}
+                word={
+                  <span className="runbar__medal">
+                    <MedallionSprite id={m.id} />
+                  </span>
+                }
+              >
+                <p>
+                  <strong>{medallionName(m.id, m.level)}</strong>
+                </p>
+                <p>{medallionEffect(m.id, m.level)}</p>
+              </InfoTip>
             ))}
-          </InfoTip>
+          </span>
         )}
       </span>
     </nav>

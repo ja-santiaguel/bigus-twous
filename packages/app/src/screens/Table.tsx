@@ -33,8 +33,17 @@ import {
   TableFlashes,
   type TableRect,
 } from '../components/campaign/CampaignTable.js';
-import { CLASSES, passiveBeats, playCost, you as yourSeat, type TableState } from '@big-two/campaign';
-import { useCampaignStore } from '../store/campaignStore.js';
+import {
+  CLASSES,
+  MEDALLIONS,
+  passiveBeats,
+  passiveSource,
+  playCost,
+  you as yourSeat,
+  type TableState,
+} from '@big-two/campaign';
+import { shownTable, useCampaignStore } from '../store/campaignStore.js';
+import { specialPlays } from '../lib/specialPlays.js';
 import { RunBar } from '../components/campaign/RunBar.js';
 import { BrokeSeat } from '../components/campaign/BrokeSeat.js';
 import { CompendiumSheet } from '../components/campaign/CompendiumSheet.js';
@@ -57,11 +66,13 @@ const NO_HISTORY: GameEvent[] = [];
 export function Table() {
   const playerView = useGameStore((s) => s.view);
   const online = useGameStore((s) => s.online);
+  /** When each ready card's nudge was put on the shared clock (see PassiveReady). */
+  const nudgePhases = useRef(new Map<string, number>());
   /** A campaign table: the same table, with the campaign's gold around it. */
   const campaign = useGameStore((s) => s.campaign);
-  const campaignSeats = useCampaignStore((s) => (campaign ? (s.run?.table?.seats ?? null) : null));
+  const campaignSeats = useCampaignStore((s) => (campaign ? (shownTable(s)?.seats ?? null) : null));
   const passiveCards = useCampaignStore((s) => s.passiveCards);
-  const campaignTable = useCampaignStore((s) => (campaign ? (s.run?.table ?? null) : null));
+  const campaignTable = useCampaignStore((s) => (campaign ? shownTable(s) : null));
   const endRun = useCampaignStore((s) => s.endRun);
   const campaignRun = useCampaignStore((s) => (campaign ? s.run : null));
   /** Ending the run from the table asks first, as leaving does. */
@@ -322,13 +333,24 @@ export function Table() {
    */
   const mySeat = campaignSeats?.find((s) => s.id === HUMAN_ID) ?? null;
   const myClass = mySeat?.classId ?? null;
-  const passiveReady = new Map<string, string>();
-  if (campaign && mySeat && myClass && isMyTurn && self.pile) {
-    for (const move of legalMoves) {
-      if (!passiveBeats(myClass, self.pile, move, mySeat.medallions)) continue;
-      for (const card of move.cards) passiveReady.set(cardId(card), myClass);
-    }
-  }
+  const passiveReady = specialPlays(
+    campaign && mySeat && myClass && isMyTurn && self.pile
+      ? legalMoves.flatMap((move) => {
+          const source = passiveSource(myClass, self.pile!, move, mySeat.medallions);
+          return source
+            ? [
+                {
+                  cards: move.cards.map(cardId),
+                  name: source === 'class' ? CLASSES[myClass].passiveName : MEDALLIONS[source].name,
+                },
+              ]
+            : [];
+        })
+      : [],
+    myClass ?? '',
+    handCards.map(cardId),
+    nudgePhases.current,
+  );
   /**
    * When the cards picked make a class play, Play says so, and its price: the
    * rule bent and what it costs are read before the button is pressed.

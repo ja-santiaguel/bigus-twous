@@ -169,6 +169,9 @@ describe('a table', () => {
     for (let i = 0; i < 20 && run.phase === 'table'; i++) run = endHand(startHand(run, false), youThird);
     expect(run.lastHand?.end?.kind).toBe('closed');
     expect(run.phase).toBe('map');
+    // The table is gone from the run, but kept as it closed, for its end to be told from.
+    expect(run.table).toBeNull();
+    expect(run.lastTable && you(run.lastTable).worth).toBe(run.worth);
     expect(run.path).toEqual([start.nodeId]);
     expect(run.tier).toBe(run.map.rows[1]![0]!.tier);
     expect(run.medallions).toEqual([]);

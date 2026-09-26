@@ -95,7 +95,7 @@ export function CardLayer({
    * A class name for a card in your hand that a campaign passive would let you
    * play right now, so the chance is seen before it is missed.
    */
-  readyOf?: ((id: string) => string | null) | undefined;
+  readyOf?: ((id: string) => PassiveReady | null) | undefined;
   /** Seats whose held cards are shown dimmed — at a campaign table, the seats that have passed. */
   dimmedSeats?: ReadonlySet<number> | undefined;
 }) {
@@ -250,7 +250,7 @@ export function CardLayer({
               } ${v?.interactive ? 'is-live' : ''} ${v?.raised ? 'is-raised' : ''} ${
                 dragging ? 'is-dragging' : ''
               } ${standing ? 'is-standing' : ''} ${piled} ${accent ? `is-passive is-passive--${accent}` : ''} ${dimmed ? 'is-held-passed' : ''} ${
-                ready ? `is-passive-ready is-passive--${ready}` : ''
+                ready ? `is-passive-ready is-passive--${ready.classId}` : ''
               }`}
               z={v?.z ?? to.z}
               x={to.x + (v?.dx ?? 0)}
@@ -276,6 +276,10 @@ export function CardLayer({
               instant={instant}
               reduced={reduced}
               on={on}
+              nudgeDelay={ready?.delayMs}
+              tag={ready?.tag}
+              plays={ready?.plays.length ?? 0}
+              playsTitle={ready && ready.plays.length > 1 ? ready.plays.join(' · ') : undefined}
             />
           );
         })}
@@ -397,6 +401,24 @@ interface CardHandlers {
 }
 
 /**
+ * A card in your hand that a special play would use, on your turn: its class
+ * (for its colour), when its nudge runs, and what it is for.
+ *
+ * The nudge runs on one clock shared by every card: \`delayMs\` is a negative
+ * offset fixed when the card first became ready, which lines every nudge up
+ * whenever it started — a play of several cards moves as one — plus a small
+ * ripple, so separate one-card plays nudge left to right.
+ */
+export interface PassiveReady {
+  classId: string;
+  delayMs: number;
+  /** The play's name, on the left-most card that makes it. */
+  tag?: string | undefined;
+  /** Every special play this card is part of, by name. */
+  plays: string[];
+}
+
+/**
  * One card in the layer, drawn only when something about *it* changes.
  *
  * The layer re-renders on every pointer move — a finger sliding along the hand,
@@ -440,6 +462,10 @@ const LayerCard = memo(function LayerCard({
   instant,
   reduced,
   on,
+  nudgeDelay,
+  tag,
+  plays = 0,
+  playsTitle,
 }: {
   id: string;
   card: Card | null;
@@ -466,6 +492,13 @@ const LayerCard = memo(function LayerCard({
   instant: boolean;
   reduced: boolean;
   on: CardHandlers;
+  /** When this card's class-play nudge runs, on the shared clock (see PassiveReady). */
+  nudgeDelay?: number | undefined;
+  /** The special play this card leads, named over it: on the left-most card of each. */
+  tag?: string | undefined;
+  /** How many special plays this card is part of; two or more shows a count. */
+  plays?: number;
+  playsTitle?: string | undefined;
 }) {
   /*
    * The lean of a card being carried (see TILT_PER_SPEED). Read from the
@@ -514,7 +547,12 @@ const LayerCard = memo(function LayerCard({
           { role: 'button' as const, tabIndex: 0, 'aria-label': label, 'aria-pressed': marked }
         : { 'aria-hidden': true })}
       className={className}
-      style={{ zIndex: z }}
+      style={
+        nudgeDelay === undefined
+          ? { zIndex: z }
+          : ({ zIndex: z, '--nudge-delay': `${Math.round(nudgeDelay)}ms` } as unknown as { zIndex: number })
+      }
+      title={playsTitle}
       onPointerDown={interactive ? (e: React.PointerEvent) => on.down(e, id) : undefined}
       onPointerMove={interactive ? on.move : undefined}
       onPointerUp={interactive ? (e: React.PointerEvent) => on.up(e, id) : undefined}
@@ -564,6 +602,12 @@ const LayerCard = memo(function LayerCard({
         style={dragging ? { transformOrigin: `calc(50% + ${gripX}px) calc(50% + ${gripY}px)` } : undefined}
       >
         {faceUp && card ? <CardFace card={card} /> : <CardBack />}
+        {tag && <span className="cardlayer__tag">{tag}</span>}
+        {plays > 1 && (
+          <span className="cardlayer__plays" aria-hidden="true">
+            {plays}
+          </span>
+        )}
       </span>
     </m.div>
   );

@@ -12,6 +12,7 @@ import {
   playCost,
   PLAYER_KEY,
   PLAYER_SEAT,
+  MEDALLIONS,
   SHOWDOWN_ANTE,
   keyOf,
   inPlay,
@@ -22,7 +23,7 @@ import {
 } from '@big-two/campaign';
 import type { PlayerId } from '@big-two/engine';
 import { SETTLE } from '../../design/motion.js';
-import { useCampaignStore } from '../../store/campaignStore.js';
+import { shownTable, useCampaignStore } from '../../store/campaignStore.js';
 import { ClassEmblem } from './ClassArt.js';
 import { InfoTip } from '../InfoTip.js';
 import { GoldAmount } from '../GoldAmount.js';
@@ -65,7 +66,7 @@ function potOf(table: TableState) {
  * bar.
  */
 export function CampaignInfo() {
-  const table = useCampaignStore((s) => s.run?.table ?? null);
+  const table = useCampaignStore(shownTable);
   if (!table) return null;
   const { pot } = potOf(table);
   const hands = table.option.hands;
@@ -303,7 +304,7 @@ export function CampaignHandEnd({
     if (unsettled) settleFinished(finishOrder);
   }, [unsettled, settleFinished, finishOrder]);
   const outcome: HandOutcome | null = run?.lastHand ?? null;
-  const table = run?.table ?? null;
+  const table = run ? shownTable({ run }) : null;
   if (!run || !table || !outcome) return null;
 
   const end = outcome.end;
@@ -327,7 +328,12 @@ export function CampaignHandEnd({
     const seat = table.seats.find((s) => s.id === id);
     return seat ? [{ seat, line: outcome.ledger[id], place: placing.indexOf(id) }] : [];
   });
-  const stake = end?.stakes[PLAYER_KEY];
+  const fallen = outcome.left.flatMap((l) => (l.persona ? [l.persona.name] : []));
+  // The tribute as gold won here: what it asks, and what you have won so far.
+  const asks = tributeOf(table.option, you(table).classId);
+  const won = Math.max(0, Math.min(asks, you(table).worth - (table.mark - asks)));
+  const held = you(table).worth >= table.mark;
+  const handsLeft = table.option.hands - table.handsPlayed;
 
   return (
     <m.div className="overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={SETTLE}>
@@ -338,7 +344,7 @@ export function CampaignHandEnd({
         transition={{ ...SETTLE, delay: 0.12 }}
       >
         <h2>{headline}</h2>
-        <ul className="overlay__scores">
+        <ul className="overlay__scores handend__scores">
           {rows.map(({ seat, line, place }) => (
             <li key={seat.id} className={seat.id === PLAYER_SEAT ? 'is-you' : ''}>
               <span className="overlay__place">{PLACES[place] ?? ''}</span>
@@ -350,54 +356,107 @@ export function CampaignHandEnd({
             </li>
           ))}
         </ul>
-        {outcome.effects.length > 0 && (
-          <p className="overlay__note">
-            {outcome.effects
-              .map((e) => {
-                const who = e.seat === PLAYER_SEAT ? 'You' : nameOf(e.seat);
-                return e.medallion === 'tithe'
-                  ? `Tithe: ${who} took ${gold(e.amount)} from the table.`
-                  : e.medallion === 'iron-stomach'
-                    ? `Iron Stomach: ${who} got ${gold(e.amount)} back.`
-                    : e.medallion === 'beggars-cup'
-                      ? `Beggar's Cup: ${who} got ${gold(e.amount)} of the ante back.`
-                      : `Last Rites: ${who} kept ${gold(e.amount)} instead of nothing.`;
-              })
-              .join(' ')}
-          </p>
+
+        {/* What happened besides the cards, as tagged lines: a Medallion that
+            moved gold, a player who fell, a bounty. */}
+        {(outcome.effects.length > 0 || fallen.length > 0 || (outcome.swift ?? 0) > 0) && (
+          <ul className="handend__events">
+            {outcome.effects.map((e, i) => (
+              <li key={`e${i}`}>
+                <span className="handend__tag">{MEDALLIONS[e.medallion].name}</span>
+                <span>{e.seat === PLAYER_SEAT ? 'You' : nameOf(e.seat)}</span>
+                <span className="handend__amount">+{gold(e.amount)}</span>
+              </li>
+            ))}
+            {fallen.map((name) => (
+              <li key={`f${name}`} className="is-fallen">
+                <span className="handend__tag">Fallen</span>
+                <span>{name}</span>
+                <span className="handend__amount">chair empty</span>
+              </li>
+            ))}
+            {(outcome.swift ?? 0) > 0 && (
+              <li className="is-gain">
+                <span className="handend__tag">Bounty</span>
+                <span>Reckoning won early</span>
+                <span className="handend__amount">+{gold(outcome.swift!)}</span>
+              </li>
+            )}
+          </ul>
         )}
-        {outcome.left.length > 0 && (
-          <p className="overlay__note">
-            {outcome.left
-              .filter((l) => l.persona)
-              .map((l) => `${l.persona!.name} has fallen. Their chair stays empty.`)
-              .join(' ')}
-          </p>
+
+        {end ? (
+          <TableEarnings
+            table={table}
+            end={end}
+            swift={outcome.swift ?? 0}
+            spoils={
+              end.kind !== 'won'
+                ? 'None'
+                : run.phase === 'reward'
+                  ? run.rewards.length > 1
+                    ? 'A choice of two'
+                    : 'A Medallion'
+                  : table.option.reward === 'none'
+                    ? 'The run'
+                    : 'None this time'
+            }
+          />
+        ) : (
+          <>
+            <div className="handend__status">
+              <div className={`handend__stat ${held ? 'is-held' : ''}`}>
+                <span className="handend__label">{held ? 'Tribute held' : 'Tribute'}</span>
+                <span className="handend__value">
+                  {gold(won)}
+                  <small> / {gold(asks)}</small>
+                </span>
+                <span className="handend__bar" aria-hidden="true">
+                  <span style={{ width: `${Math.round((won / Math.max(1, asks)) * 100)}%` }} />
+                </span>
+              </div>
+              <div className="handend__stat">
+                <span className="handend__label">Hands left</span>
+                <span className="handend__value">{handsLeft}</span>
+                <span className="handend__pips" aria-hidden="true">
+                  {Array.from({ length: table.option.hands }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`${i < table.handsPlayed ? 'is-played' : ''} ${i === table.option.hands - 1 ? 'is-final' : ''}`}
+                    />
+                  ))}
+                </span>
+              </div>
+              <div className="handend__stat">
+                <span className="handend__label">Next</span>
+                <span className="handend__value">{lastCall ? 'Requiem' : 'A hand'}</span>
+                <span className="handend__sub">{lastCall ? 'the last' : `Requiem in ${handsLeft - 1}`}</span>
+              </div>
+            </div>
+            {lastCall && (
+              <div className="handend__offer is-requiem">
+                <span className="handend__offername">Requiem</span>
+                <span className="handend__chips">
+                  <span>Everyone ×{SHOWDOWN_ANTE}</span>
+                  <span>First wins the table</span>
+                </span>
+              </div>
+            )}
+            {ready && (
+              <div className="handend__offer">
+                <span className="handend__offername">Reckoning</span>
+                <span className="handend__chips">
+                  <span>They ×{SHOWDOWN_ANTE}</span>
+                  <span>You ×1</span>
+                  <span>Whole pot</span>
+                  <span className="is-gold">+{gold(bounty)} bounty</span>
+                  <span>Once</span>
+                </span>
+              </div>
+            )}
+          </>
         )}
-        {outcome.swift !== undefined && outcome.swift > 0 && (
-          <p className="overlay__note campaign__swift">
-            Reckoning won early: a bounty of {gold(outcome.swift)} gold for the hands left unplayed.
-          </p>
-        )}
-        {end?.kind === 'won' && run.phase === 'map' && table.option.reward === 'standard' && (
-          <p className="overlay__note">No Medallion was left on this table.</p>
-        )}
-        {stake && (
-          <p className="overlay__match">
-            Table prize: you take {gold(stake.got)} for your {gold(stake.staked)} buy-in.
-            {end?.kind === 'closed' &&
-              ' You did not win the Requiem, so the table is shared by gold, and you go on down with no spoils.'}
-          </p>
-        )}
-        {!end && (
-          <p className="overlay__match">
-            {lastCall
-              ? `Last hand: the Requiem. Everyone antes ${SHOWDOWN_ANTE} times, and finishing first wins the table.`
-              : ready
-                ? `You hold the tribute. Call a Reckoning: the others ante ${SHOWDOWN_ANTE} times, you once, and you play for the whole pot. Finish first and the table is yours, with ${gold(bounty)} more for the hands left unplayed. Once a table. Or play on: hold the tribute to the Requiem and the table is yours anyway.`
-                : `Win the tribute — ${gold(tributeOf(table.option, you(table).classId))} gold at this table — and hold it to the Requiem to win the table${table.reckoned ? '' : ', or call a Reckoning to win it sooner'}. ${table.option.hands - table.handsPlayed} hands left.`}
-          </p>
-        )}
+
         <div className="overlay__actions">
           {end ? (
             <button className="btn btn--primary" onClick={leave}>
@@ -426,6 +485,63 @@ export function CampaignHandEnd({
 }
 
 /**
+ * A table's end, told as a ledger: what you paid to sit, what the hands
+ * brought, what the table's gold paid you by standing, any bounty — and the
+ * net, with your gold before and after. Then the spoils.
+ */
+function TableEarnings({
+  table,
+  end,
+  swift,
+  spoils,
+}: {
+  table: TableState;
+  end: NonNullable<HandOutcome['end']>;
+  swift: number;
+  spoils: string;
+}) {
+  const stake = end.stakes[PLAYER_KEY] ?? { staked: 0, got: 0 };
+  // Gold on sitting down, after the buy-in: where the tribute was counted from.
+  const seated = table.mark - tributeOf(table.option, you(table).classId);
+  const before = seated + stake.staked;
+  const after = you(table).worth;
+  const hands = after - stake.got - swift - seated;
+  const net = after - before;
+  const line = (label: string, amount: number, className = '') => (
+    <li className={className}>
+      <span>{label}</span>
+      <span className={amount < 0 ? 'is-loss' : 'is-gain'}>
+        {amount >= 0 ? '+' : '−'}
+        {gold(Math.abs(amount))}
+      </span>
+    </li>
+  );
+  return (
+    <div className="handend__earnings">
+      <h3>The table</h3>
+      <ul className="handend__ledger">
+        {line('Buy-in', -stake.staked)}
+        {line('Hands', hands)}
+        {line(end.kind === 'won' ? 'Table, first' : 'Table, by standing', stake.got)}
+        {swift > 0 && line('Bounty', swift)}
+        {line('Net', net, 'is-total')}
+      </ul>
+      <p className="handend__journey">
+        <span>{gold(before)}</span>
+        <span className="handend__arrow" aria-hidden="true">
+          →
+        </span>
+        <strong className={net < 0 ? 'is-loss' : 'is-gain'}>{gold(after)}</strong>
+        <small>gold</small>
+      </p>
+      <p className="handend__spoils">
+        <span className="handend__label">Spoils</span> {spoils}
+      </p>
+    </div>
+  );
+}
+
+/**
  * Who you are at this table: your class's emblem and name in its colour, and
  * its rule — the one thing you can do that the others cannot, kept in sight
  * rather than remembered from the class screen. On a phone, where the row is
@@ -433,7 +549,7 @@ export function CampaignHandEnd({
  */
 export function ClassBadge({ compact = false }: { compact?: boolean }) {
   const classId = useCampaignStore((s) => s.run?.classId ?? null);
-  const table = useCampaignStore((s) => s.run?.table ?? null);
+  const table = useCampaignStore(shownTable);
   if (!classId) return null;
   const c = CLASSES[classId];
   const cost = table ? playCost(table, you(table)) : 0;

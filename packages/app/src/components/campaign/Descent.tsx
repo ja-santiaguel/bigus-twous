@@ -145,12 +145,34 @@ export function nodeName(node: MapNode): string {
 
 const gold = (n: number) => Math.round(n).toLocaleString('en-GB');
 
-type NodeState = 'passed' | 'open' | 'ahead' | 'behind';
+type NodeState = 'passed' | 'open' | 'ahead' | 'behind' | 'lost';
 
-function stateOf(run: RunState, node: MapNode, open: MapNode[]): NodeState {
+/** Every node still reachable from where you stand: the ways down from the last node taken. */
+function reachableFrom(run: RunState): Set<string> {
+  const byId = new Map(run.map.rows.flat().map((n) => [n.id, n] as const));
+  const last = run.path[run.path.length - 1];
+  const start = last ? (byId.get(last)?.links ?? []) : (run.map.rows[0] ?? []).map((n) => n.id);
+  const seen = new Set<string>();
+  const queue = [...start];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    queue.push(...(byId.get(id)?.links ?? []));
+  }
+  return seen;
+}
+
+/**
+ * How a node stands to you: taken, open now, still ahead of you, passed by
+ * on a row behind you — or lost: ahead, but on a way down you can no longer
+ * reach from where you are.
+ */
+function stateOf(run: RunState, node: MapNode, open: MapNode[], reachable: Set<string>): NodeState {
   if (run.path.includes(node.id)) return 'passed';
   if (open.includes(node)) return 'open';
-  return node.row < run.path.length ? 'behind' : 'ahead';
+  if (node.row < run.path.length) return 'behind';
+  return reachable.has(node.id) ? 'ahead' : 'lost';
 }
 
 export function Descent({
@@ -164,6 +186,7 @@ export function Descent({
   idle?: ReactNode;
 }) {
   const open = choices(run);
+  const reachable = reachableFrom(run);
   const [picked, setPicked] = useState<string | null>(null);
   const [pointed, setPointed] = useState<string | null>(null);
   const nodes = run.map.rows.flat();
@@ -187,7 +210,14 @@ export function Descent({
     for (const id of node.links) {
       const to = nodes.find((n) => n.id === id)!;
       const i = run.path.indexOf(node.id);
-      const state = i >= 0 && run.path[i + 1] === id ? 'passed' : node.id === last ? 'open' : 'ahead';
+      const state =
+        i >= 0 && run.path[i + 1] === id
+          ? 'passed'
+          : node.id === last
+            ? 'open'
+            : reachable.has(node.id) && reachable.has(id)
+              ? 'ahead'
+              : 'lost';
       paths.push({
         key: `${node.id}-${id}`,
         from: { x: x(node), y: y(node.row) },
@@ -197,7 +227,7 @@ export function Descent({
     }
   }
   // Drawn dim first, so a lit path is never crossed by a dim one.
-  const order = { ahead: 0, open: 1, passed: 2 } as Record<string, number>;
+  const order = { lost: -1, ahead: 0, open: 1, passed: 2 } as Record<string, number>;
   paths.sort((a, b) => order[a.state]! - order[b.state]!);
 
   return (
@@ -221,7 +251,7 @@ export function Descent({
           <Icon id="gate" />
         </span>
         {nodes.map((node) => {
-          const state = stateOf(run, node, open);
+          const state = stateOf(run, node, open, reachable);
           const here = node.id === last;
           return (
             <button
@@ -232,7 +262,13 @@ export function Descent({
               }`}
               style={at(x(node), y(node.row))}
               aria-label={`${nodeName(node)}, depth ${node.row + 1}${
-                state === 'passed' ? ', passed' : state === 'open' ? ', open to you' : ''
+                state === 'passed'
+                  ? ', passed'
+                  : state === 'open'
+                    ? ', open to you'
+                    : state === 'lost'
+                      ? ', out of reach'
+                      : ''
               }`}
               aria-pressed={node.id === picked}
               onClick={() => setPicked(node.id)}
@@ -248,7 +284,7 @@ export function Descent({
         <NodeDetail
           run={run}
           node={shown}
-          state={stateOf(run, shown, open)}
+          state={stateOf(run, shown, open, reachable)}
           picked={shown.id === picked}
           onTake={onTake}
         />
@@ -346,7 +382,9 @@ function NodeDetail({
           ? 'Behind you.'
           : state === 'behind'
             ? 'A way you did not take.'
-            : 'Not reachable from where you stand yet.'}
+            : state === 'lost'
+              ? 'Out of reach: no way down from where you stand leads here.'
+              : 'Not reachable from where you stand yet.'}
       </p>
     );
 

@@ -666,3 +666,46 @@ describe('a seat sitting the round out', () => {
     s.dispose();
   });
 });
+
+describe('a table that picks by placing', () => {
+  /** Plays a first round out, then deals a second and returns its pick order and the first's placing. */
+  async function twoRounds(pickByPlacing: boolean, seed: string) {
+    const s = createGameSession({ seats: seats(), seed, ...(pickByPlacing ? { pickByPlacing } : {}) });
+    await playOut(s);
+    const first = s.viewFor('seat-1')!;
+    const placing = [...first.finishOrder, ...SEAT_IDS.filter((id) => !first.finishOrder.includes(id))];
+    const second: SessionEvent[] = [];
+    s.subscribe((e) => second.push(e));
+    s.startNextRound();
+    const startedAt = Date.now();
+    while (!second.some((e) => e.type === 'ROUND_STARTED')) {
+      if (Date.now() - startedAt > 5_000) throw new Error('second round never started');
+      await new Promise((r) => setTimeout(r, 2));
+    }
+    const picks = s
+      .viewFor('seat-1')!
+      .history.filter((e) => e.type === 'PILE_CLAIMED')
+      .map((e) => (e as { playerId: PlayerId }).playerId);
+    s.dispose();
+    return { picks, placing };
+  }
+
+  it('picks in the order the last round finished: first, second, third, last', async () => {
+    let unlikeClockwise = 0;
+    for (const seed of ['placing-a', 'placing-b', 'placing-c', 'placing-d']) {
+      const { picks, placing } = await twoRounds(true, seed);
+      expect(picks).toEqual(placing);
+      const start = SEAT_IDS.indexOf(placing[0]!);
+      const clockwise = [...SEAT_IDS.slice(start), ...SEAT_IDS.slice(0, start)];
+      if (placing.join() !== clockwise.join()) unlikeClockwise++;
+    }
+    // Some of these rounds finish out of seat order, so the two rules differ.
+    expect(unlikeClockwise).toBeGreaterThan(0);
+  });
+
+  it('leaves the base game clockwise from the winner (9.13)', async () => {
+    const { picks, placing } = await twoRounds(false, 'placing-a');
+    const start = SEAT_IDS.indexOf(placing[0]!);
+    expect(picks).toEqual([...SEAT_IDS.slice(start), ...SEAT_IDS.slice(0, start)]);
+  });
+});

@@ -45,7 +45,7 @@ export interface MedallionDef {
   classId: ClassId | null;
   name: string;
   rarity: Rarity;
-  /** What each level does, as a player reads it: the first line is level 1. */
+  /** What each level does, as a player reads it: the first line is level 1. Each line is whole on its own. */
   levels: string[];
 }
 
@@ -56,7 +56,10 @@ export const MEDALLIONS: Record<MedallionId, MedallionDef> = {
     classId: 'commoner',
     name: 'Uprising',
     rarity: 'common',
-    levels: ['Uprising needs only a straight of four.', 'A straight of six or more can also beat a pair of 2s.'],
+    levels: [
+      'Uprising needs only a straight of four.',
+      'Uprising needs only a straight of four, and a straight of six or more can beat a pair of 2s.',
+    ],
   },
   rabble: {
     id: 'rabble',

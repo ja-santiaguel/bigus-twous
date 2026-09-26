@@ -1,14 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { CLASS_IDS, CLASSES, MEDALLIONS, type ClassId, type MedallionDef } from '@big-two/campaign';
 import { useCampaignStore } from '../../store/campaignStore.js';
-import { Terms } from '../Terms.js';
-import { pathsOf, type Drawing } from './ClassArt.js';
+import { foundCount, levelCount } from '../../lib/compendium.js';
+import { MedallionCard } from './MedallionCard.js';
 
 /**
- * The compendium: every Medallion there is, by whose pool it belongs to —
- * the ones you have found written out whole, every level of them, and the
- * rest sealed. Found means the game has shown it to you, in any run: carried,
- * sold, won, in a coffer, or on a player at a table you could choose.
+ * The compendium: every Medallion there is, by whose pool it belongs to, and
+ * every level of each as a card of its own — the ones you have found written
+ * out, the rest sealed. Found means the game has shown it to you at that
+ * level (or a higher one), in any run: carried, sold, won, in a coffer, or on
+ * a player at a table you could choose. Every card is one size, so a pool
+ * reads as an even row of them however much each one says.
  *
  * Opened from the main menu, and from the menu during a run. It reads like
  * How to play: a sheet over the screen, closed by its button, Escape, or a
@@ -16,25 +18,6 @@ import { pathsOf, type Drawing } from './ClassArt.js';
  */
 
 const RARITY_ORDER = { common: 0, rare: 1, legendary: 2 } as const;
-const RARITY_NAMES = { common: 'Common', rare: 'Rare', legendary: 'Legendary' } as const;
-const NUMERALS = ['I', 'II', 'III', 'IV'];
-
-/** A medallion on its ribbon, nine art pixels wide: struck in its rarity's colour, or sealed. */
-const MEDAL: Drawing = {
-  rows: [
-    '.rr...rr.',
-    '..rr.rr..',
-    '...###...',
-    '..#mmm#..',
-    '.#mmhmm#.',
-    '.#mhmmm#.',
-    '.#mmmmm#.',
-    '..#mmm#..',
-    '...###...',
-  ],
-  palette: { r: 'var(--table-hi)', '#': 'var(--ink)', m: 'currentColor', h: 'var(--medal-light, var(--bone))' },
-};
-const MEDAL_PATHS = pathsOf(MEDAL);
 
 /** The pools, in the order the classes are chosen, then the Medallions any class can carry. */
 const POOLS: { classId: ClassId | null; name: string; medallions: MedallionDef[] }[] = [
@@ -68,9 +51,9 @@ export function CompendiumSheet({ open, onClose }: { open: boolean; onClose: () 
   }, [open]);
 
   if (!open) return null;
-  const found = new Set(discovered);
-  const total = Object.keys(MEDALLIONS).length;
-  const count = Object.keys(MEDALLIONS).filter((id) => found.has(id as keyof typeof MEDALLIONS)).length;
+  const levelFound = (m: MedallionDef) => Math.min(discovered[m.id] ?? 0, m.levels.length);
+  const count = foundCount(discovered);
+  const total = levelCount();
 
   return (
     <div
@@ -97,42 +80,17 @@ export function CompendiumSheet({ open, onClose }: { open: boolean; onClose: () 
               <h3 className={pool.classId ? `classtag--${pool.classId}` : undefined}>
                 {pool.name}
                 <small>
-                  {pool.medallions.filter((m) => found.has(m.id)).length} of {pool.medallions.length}
+                  {pool.medallions.reduce((n, m) => n + levelFound(m), 0)} of{' '}
+                  {pool.medallions.reduce((n, m) => n + m.levels.length, 0)}
                 </small>
               </h3>
               <ul className="compendium__list">
-                {pool.medallions.map((m) =>
-                  found.has(m.id) ? (
-                    <li key={m.id} className={`compendium__entry rarity--${m.rarity}`}>
-                      <Medal />
-                      <div className="compendium__text">
-                        <span className="compendium__name">
-                          <strong>{m.name}</strong>
-                          <small>{RARITY_NAMES[m.rarity]}</small>
-                        </span>
-                        <ol className="compendium__levels">
-                          {m.levels.map((line, i) => (
-                            <li key={i}>
-                              {m.levels.length > 1 && <span className="compendium__numeral">{NUMERALS[i]}</span>}
-                              <span>
-                                <Terms>{line}</Terms>
-                              </span>
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
+                {pool.medallions.flatMap((m) =>
+                  m.levels.map((_, i) => (
+                    <li key={`${m.id}-${i + 1}`}>
+                      <MedallionCard id={m.id} level={i + 1} sealed={i + 1 > levelFound(m)} />
                     </li>
-                  ) : (
-                    <li key={m.id} className="compendium__entry is-sealed" aria-label="A Medallion not yet found">
-                      <Medal />
-                      <div className="compendium__text">
-                        <span className="compendium__name">
-                          <strong>???</strong>
-                        </span>
-                        <span className="compendium__sealed">Not yet found</span>
-                      </div>
-                    </li>
-                  ),
+                  )),
                 )}
               </ul>
             </section>
@@ -140,15 +98,5 @@ export function CompendiumSheet({ open, onClose }: { open: boolean; onClose: () 
         </div>
       </div>
     </div>
-  );
-}
-
-function Medal() {
-  return (
-    <svg className="compendium__medal" viewBox="0 0 9 9" shapeRendering="crispEdges" aria-hidden="true">
-      {MEDAL_PATHS.map(({ color, d }) => (
-        <path key={color} d={d} fill={color} />
-      ))}
-    </svg>
   );
 }

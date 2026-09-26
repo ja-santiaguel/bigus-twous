@@ -6,13 +6,11 @@ import {
   CLASS_IDS,
   CLASSES,
   levelOf,
-  MEDALLIONS,
   medallionPrice,
   PASSIVE_COST_ANTES,
   SHOWDOWN_ANTE,
   WORLD_NAME,
   type ClassId,
-  type MedallionId,
   type RunState,
 } from '@big-two/campaign';
 import { useCampaignStore } from '../store/campaignStore.js';
@@ -24,6 +22,7 @@ import { RunBar } from '../components/campaign/RunBar.js';
 import { medallionName } from '../components/campaign/medallionText.js';
 import { Descent } from '../components/campaign/Descent.js';
 import { EventScene } from '../components/campaign/EventScene.js';
+import { MedallionCard } from '../components/campaign/MedallionCard.js';
 import { CompendiumSheet } from '../components/campaign/CompendiumSheet.js';
 import { Terms } from '../components/Terms.js';
 import { InfoTip } from '../components/InfoTip.js';
@@ -458,53 +457,33 @@ function Shop({ run }: { run: RunState }) {
         Medallions for a {CLASSES[run.classId].name}, and now and then one any class can carry. Gold spent here is gold
         you cannot lose at a table — or win with.
       </p>
-      <ul className="campaign__choices campaign__choices--grid">
+      <div className="medcards">
         {run.shopOffers.map((id) => {
           const price = medallionPrice(id, run.tier);
           const level = levelOf(run.medallions, id) + 1;
           return (
-            <li key={id}>
-              <div className="campaign__choice">
-                <MedallionHead id={id} level={level} tag={level > 1 ? 'Level up' : undefined} />
-                <span className="campaign__passive">
-                  <Terms>{MEDALLIONS[id].levels[level - 1]!}</Terms>
-                </span>
-                <button
-                  className="btn"
-                  onClick={() => buy(id)}
-                  disabled={run.worth <= price}
-                  data-hint="Not enough gold"
-                >
-                  Buy for {gold(price)}
-                </button>
-              </div>
-            </li>
+            <MedallionCard
+              key={id}
+              id={id}
+              level={level}
+              tag={level > 1 ? 'Level up' : undefined}
+              action={{
+                label: `Buy for ${gold(price)}`,
+                onClick: () => buy(id),
+                disabled: run.worth <= price,
+                hint: 'Not enough gold',
+              }}
+            />
           );
         })}
-        {run.shopOffers.length === 0 && <li className="field__hint">Nothing left to buy.</li>}
-      </ul>
+        {run.shopOffers.length === 0 && <p className="field__hint">Nothing left to buy.</p>}
+      </div>
       <div className="panel__start">
         <button className="btn btn--primary btn--wide" onClick={leave}>
           Go on down
         </button>
       </div>
     </>
-  );
-}
-
-/** A Medallion's name at the level on offer, and its rarity — or what else to say of it. */
-function MedallionHead({ id, level, tag }: { id: MedallionId; level: number; tag?: string | undefined }) {
-  const rarity = MEDALLIONS[id].rarity;
-  return (
-    <span className="campaign__choicehead">
-      <strong className={`rarity rarity--${rarity}`}>{medallionName(id, level)}</strong>
-      <span>
-        {tag ??
-          `${rarity === 'legendary' ? 'Legendary' : rarity === 'rare' ? 'Rare' : 'Common'}${
-            MEDALLIONS[id].classId === null ? ' · any class' : ''
-          }`}
-      </span>
-    </span>
   );
 }
 
@@ -528,32 +507,24 @@ function Reward({ run }: { run: RunState }) {
           ? 'The elite table yields a choice of two. Take one; it stays with you for the rest of the descent.'
           : 'A Medallion was left on the table. Take it, and it stays with you for the rest of the descent.'}
       </p>
-      <ul className="campaign__choices campaign__choices--grid">
+      <div className="medcards">
         {run.rewards.map((offer, i) => (
-          <li key={`${offer.id}-${offer.kind}`}>
-            <div className="campaign__choice">
-              <MedallionHead
-                id={offer.id}
-                level={offer.level}
-                tag={offer.kind === 'upgrade' ? 'Level up' : offer.kind === 'loot' ? 'Spoils' : undefined}
-              />
-              <span className="campaign__passive">
-                <Terms>{MEDALLIONS[offer.id].levels[offer.level - 1]!}</Terms>
-              </span>
-              <span className="campaign__facts">
-                {offer.kind === 'loot'
-                  ? `Carried by ${offer.from ?? 'a player you beat'}.`
-                  : offer.kind === 'upgrade'
-                    ? `You carry ${medallionName(offer.id, offer.level - 1)}.`
-                    : 'New.'}
-              </span>
-              <button className="btn" onClick={() => claim(i)}>
-                Take it
-              </button>
-            </div>
-          </li>
+          <MedallionCard
+            key={`${offer.id}-${offer.kind}`}
+            id={offer.id}
+            level={offer.level}
+            tag={offer.kind === 'upgrade' ? 'Level up' : offer.kind === 'loot' ? 'Spoils' : undefined}
+            note={
+              offer.kind === 'loot'
+                ? `Carried by ${offer.from ?? 'a player you beat'}.`
+                : offer.kind === 'upgrade'
+                  ? `You carry ${medallionName(offer.id, offer.level - 1)}.`
+                  : 'New.'
+            }
+            action={{ label: 'Take it', onClick: () => claim(i), primary: true }}
+          />
         ))}
-      </ul>
+      </div>
       <div className="panel__start">
         <button className="btn btn--quiet" onClick={() => claim(null)}>
           {choice ? 'Take neither' : 'Leave it'}

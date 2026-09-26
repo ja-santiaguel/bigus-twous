@@ -27,12 +27,13 @@ import {
   type HandResult,
   type MedallionId,
   type RunState,
+  type TableState,
   type VestigeRecord,
 } from '@big-two/campaign';
 import { makeSeed } from '@big-two/session';
 import { campaignClient, useGameStore } from './gameStore.js';
 import { forgetGold } from '../components/GoldAmount.js';
-import { readDiscovered, seenIn, writeDiscovered } from '../lib/compendium.js';
+import { merged, readDiscovered, seenIn, writeDiscovered, type Discovered } from '../lib/compendium.js';
 
 /**
  * The campaign, as the screens see it.
@@ -58,8 +59,8 @@ interface CampaignStore {
   passiveCards: Record<string, ClassId>;
   /** A run just begun, being welcomed before its map is shown. */
   welcoming: boolean;
-  /** Every Medallion discovered, in any run: the compendium. */
-  discovered: MedallionId[];
+  /** Every Medallion discovered, in any run, by the highest level seen: the compendium. */
+  discovered: Discovered;
   /** Just fallen from the welcome to the map: the map rises into place. */
   arriving: boolean;
 
@@ -112,6 +113,14 @@ let flashes = 0;
  */
 const kept = import.meta.hot?.data['campaignStore'] as UseBoundStore<StoreApi<CampaignStore>> | undefined;
 
+/**
+ * The table the screen is showing: the one you sit at, or — once a hand has
+ * ended it — the table as it closed, which a table lost or won without spoils
+ * has already left the run for the map.
+ */
+export const shownTable = (s: { run: RunState | null }): TableState | null =>
+  s.run?.table ?? (s.run?.lastHand?.end ? (s.run.lastTable ?? null) : null);
+
 export const useCampaignStore =
   kept ??
   create<CampaignStore>((set, get) => {
@@ -123,10 +132,8 @@ export const useCampaignStore =
 
     function save(run: RunState | null, vestiges = get().vestiges) {
       // Whatever this step shows you goes into the compendium, for good.
-      const known = new Set(get().discovered);
-      const fresh = seenIn(run, vestiges).filter((id) => !known.has(id));
-      if (fresh.length > 0) {
-        const discovered = [...get().discovered, ...fresh];
+      const discovered = merged(get().discovered, seenIn(run, vestiges));
+      if (discovered) {
         writeDiscovered(discovered);
         set({ run, vestiges, discovered });
       } else {
@@ -237,7 +244,7 @@ export const useCampaignStore =
         }),
         names: () =>
           Object.fromEntries(
-            (get().run?.table?.seats ?? []).flatMap((s) => (s.persona ? [[s.id, s.persona.name]] : [])),
+            (shownTable(get())?.seats ?? []).flatMap((s) => (s.persona ? [[s.id, s.persona.name]] : [])),
           ),
         onTurn,
         onLeave: forfeit,
@@ -353,13 +360,13 @@ if (import.meta.hot) {
 }
 
 /** The compendium as saved, with anything the saved run and Vestiges already show. */
-function initialDiscovered(): MedallionId[] {
+function initialDiscovered(): Discovered {
   const saved = readDiscovered();
   const run = named(read<RunState>(RUN_KEY, (v) => (v as RunState | null)?.version === 4));
   const vestiges = read<VestigeRecord[]>(VESTIGES_KEY, Array.isArray) ?? [];
-  const all = [...new Set([...saved, ...seenIn(run, vestiges)])];
-  if (all.length > saved.length) writeDiscovered(all);
-  return all;
+  const all = merged(saved, seenIn(run, vestiges));
+  if (all) writeDiscovered(all);
+  return all ?? saved;
 }
 
 /** A run saved before runs were named takes the name its seed gives it. */

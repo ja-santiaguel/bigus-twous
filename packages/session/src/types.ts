@@ -171,6 +171,13 @@ export interface SessionOptions {
    * not given.
    */
   sittingOut?: () => PlayerId[];
+  /**
+   * Pick piles in the order the last round finished — its winner first, then
+   * second place, third, and last — rather than clockwise from the winner
+   * (9.13). A campaign table's rule; the base game leaves it off. The opening
+   * round is unchanged either way.
+   */
+  pickByPlacing?: boolean;
 }
 
 /**

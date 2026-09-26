@@ -46,6 +46,8 @@ export interface LocalTableOptions {
   turnOptions?: SessionOptions['turnOptions'];
   /** Seats that sit each round out (a campaign table's broke). Every seat plays when not given. */
   sittingOut?: SessionOptions['sittingOut'];
+  /** Pick piles by the last round's placing (a campaign table). Clockwise from the winner when not given. */
+  pickByPlacing?: boolean;
   /** Names for the other seats, read each time the seats are shown. Numbered when not given. */
   names?: () => Partial<Record<PlayerId, string>>;
   /**
@@ -74,6 +76,7 @@ export function createLocalTable(options: LocalTableOptions): LocalTableClient {
     ...(options.match ? { match: options.match } : {}),
     ...(options.turnOptions ? { turnOptions: options.turnOptions } : {}),
     ...(options.sittingOut ? { sittingOut: options.sittingOut } : {}),
+    ...(options.pickByPlacing ? { pickByPlacing: true } : {}),
   });
   const inspect = { handOf: (id: PlayerId) => session.viewFor(id)?.hand ?? [] };
 

@@ -8,9 +8,10 @@ export function medallionName(id: MedallionId, level: number): string {
   return level > 1 ? `${name} ${NUMERALS[level] ?? level}` : name;
 }
 
-/** What a Medallion does at a level: every line up to that level, the lower ones first. */
+/** What a Medallion does at a level: that level's line, which says all of it. */
 export function medallionEffect(id: MedallionId, level: number): string {
-  return MEDALLIONS[id].levels.slice(0, Math.max(1, level)).join(' ');
+  const levels = MEDALLIONS[id].levels;
+  return levels[Math.min(Math.max(1, level), levels.length) - 1] ?? '';
 }
 
 export const heldNames = (loadout: readonly Held[]): string =>

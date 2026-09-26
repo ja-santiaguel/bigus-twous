@@ -249,6 +249,14 @@ The Showdown is two things now.
 - **Requiem** — the table's last hand: everyone antes three times, first place
   wins the table. Holding the tribute still wins before it is dealt.
 
+### Pile picks by placing (2026-09-26)
+At a campaign table the piles are picked in the order the last hand finished —
+its winner first, then second place, third, and last — rather than clockwise
+from the winner as the base game does (Section 9.13, unchanged for Classic).
+The fallen pick nothing. The first hand at each table is as in the base game:
+you pick first. (A session option, `pickByPlacing`, that only the campaign
+sets.)
+
 ### The fallen (2026-09-23)
 - A player who runs out of gold has **fallen**: out of the table for good.
   **No one takes their chair.** The rest play on three-handed (or two), each

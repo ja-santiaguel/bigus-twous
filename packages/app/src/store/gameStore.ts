@@ -558,6 +558,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         turnOptions,
         names,
         sittingOut,
+        // A campaign table picks piles by the last hand's placing.
+        pickByPlacing: true,
         onTurn,
       });
       attach(client, { readyNow: true });
@@ -911,6 +913,8 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     pass: () => {
       if (!get().canPass) return;
+      // Passing is out of the trick: whatever was picked is let go with it.
+      set({ selection: [] });
       table?.pass();
     },
 

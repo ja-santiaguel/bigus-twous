@@ -86,6 +86,8 @@ export function createGameSession(options: SessionOptions): GameSession {
   let piles: Card[][] = [];
   let roundNumber = options.resume?.roundNumber ?? 0;
   let previousWinner: PlayerId | null = options.resume?.previousWinner ?? null;
+  /** How the last round finished, best first, for a table that picks by placing. */
+  let previousPlacing: PlayerId[] | null = null;
   let pickResolver: ((pileIndex: number | null) => void) | null = null;
   let pendingPicker: PlayerId | null = null;
   /**
@@ -282,6 +284,10 @@ export function createGameSession(options: SessionOptions): GameSession {
 
       if (next.phase === 'ROUND_END') {
         previousWinner = next.winnerOfRound;
+        previousPlacing = [
+          ...next.finishOrder,
+          ...next.players.map((p) => p.id).filter((id) => !next.finishOrder.includes(id)),
+        ];
         // Decided before the round's end is announced, so the snapshot that
         // shows the scores already knows whether they finished the match.
         const matchWinner = decideMatch(
@@ -312,6 +318,12 @@ export function createGameSession(options: SessionOptions): GameSession {
    */
   function pickOrder(): PlayerId[] {
     const ids = seats.map((s) => s.config.id);
+    // A table that picks by placing: the last round's order, and anyone who
+    // was not in it (sitting out) after.
+    if (options.pickByPlacing && previousPlacing) {
+      const placed = previousPlacing.filter((id) => ids.includes(id));
+      return [...placed, ...ids.filter((id) => !placed.includes(id))];
+    }
     if (previousWinner) {
       const start = ids.indexOf(previousWinner);
       return start === -1 ? ids : [...ids.slice(start), ...ids.slice(0, start)];
