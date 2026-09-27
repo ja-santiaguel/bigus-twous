@@ -6170,60 +6170,6 @@ button.classcard.is-picked:hover {
   height: 21px;
 }
 
-/* What sitting takes of you: your souls as a bar, the buy-in and the first
-   ante marked off it, and what is left. Beyond your souls, the bar runs out
-   into red. */
-.descent__toll {
-  display: grid;
-  gap: var(--space-xs);
-}
-.descent__tollhead {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-.descent__tollfigure {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3em;
-  font-size: var(--text-sm);
-  color: var(--soul);
-}
-.soulbar {
-  position: relative;
-  display: block;
-  height: calc(6 * var(--px));
-  background: var(--alert-wash);
-  border: var(--px) solid var(--ink);
-  box-shadow: inset 0 0 0 var(--px) var(--table-hi);
-}
-.soulbar > span {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-}
-.soulbar__have {
-  background: var(--soul-lo);
-}
-/* The buy-in, then the first ante after it: what the seat takes. */
-.soulbar__stake {
-  background: repeating-linear-gradient(90deg, var(--soul-rim) 0 2px, transparent 2px 4px);
-}
-.soulbar__ante {
-  background: var(--soul-rim);
-}
-.descent__toll.is-beyond .soulbar__stake,
-.descent__toll.is-beyond .soulbar__ante {
-  background: repeating-linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--alert) 55%, transparent) 0 2px,
-    transparent 2px 4px
-  );
-}
-.descent__toll.is-beyond .descent__note {
-  color: var(--alert);
-}
 /* A table your souls cannot pay for: open, and death to take. */
 .descent__beyond {
   margin: 0;

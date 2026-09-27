@@ -895,10 +895,7 @@ with friends are untouched by it.
   souls are paid out (70 / 25 / 5%, nothing to last) and that a player who
   cannot pay dies; one line under them for what else winning brings, no more
   than it truly gives ("Win it for a chance at a Medallion"; "…for a choice
-  of two Medallions" at an elite table); **your souls** as a bar, the buy-in
-  hatched off its start and the first ante after it, with what is left to
-  live on — or, beyond your souls, the bar running out into red and how far
-  short you are; and who sits there — each with class, temperament, souls and
+  of two Medallions" at an elite table); and who sits there — each with class, temperament, souls and
   any Medallions they carry. Clicking a node selects it (a bone outline);
   only the panel's button — **Pay 80 souls and sit down**, **Go down to the
   merchant** — commits; a table beyond your souls has no button, only a

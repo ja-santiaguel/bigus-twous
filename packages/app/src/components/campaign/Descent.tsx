@@ -538,7 +538,6 @@ function NodeDetail({
               : 'Win it for a chance at a Medallion.'}
         </p>
       </div>
-      {(state === 'open' || state === 'ahead') && <SoulToll worth={run.worth} cost={cost ?? 0} stake={stake} />}
       {offer && (
         <div className="descent__group">
           <h3 className="descent__label">At the table</h3>
@@ -559,35 +558,4 @@ function yourAnteAt(run: RunState, node: MapNode): number {
   if (node.kind === 'merchant' || node.kind === 'event') return 0;
   const { ante } = nodeCost(node.tier, node.kind === 'throne' ? 'vestige' : node.archetype!);
   return Math.max(1, Math.round(ante * anteShareOf(run.classId, run.medallions)));
-}
-
-/**
- * What sitting takes of your souls, as a bar: all you have, the buy-in and
- * the first ante marked off it, and what is left to play with — or, when it
- * runs past the end, how far beyond your souls the seat is.
- */
-function SoulToll({ worth, cost, stake }: { worth: number; cost: number; stake: number }) {
-  const beyond = cost > worth;
-  const whole = Math.max(worth, cost, 1);
-  const pct = (n: number) => `${(Math.min(n, whole) / whole) * 100}%`;
-  return (
-    <div className={`descent__group descent__toll ${beyond ? 'is-beyond' : ''}`}>
-      <span className="descent__tollhead">
-        <span className="descent__label">Your souls</span>
-        <span className="descent__tollfigure">
-          <GoldCoin /> {gold(worth)}
-        </span>
-      </span>
-      <span className="soulbar" aria-hidden="true">
-        <span className="soulbar__have" style={{ width: pct(worth) }} />
-        <span className="soulbar__stake" style={{ width: pct(stake) }} />
-        <span className="soulbar__ante" style={{ left: pct(stake), width: pct(cost - stake) }} />
-      </span>
-      <p className="descent__note">
-        {beyond
-          ? `Sitting takes ${gold(cost)}, buy-in and first ante: ${gold(cost - worth)} more than you have.`
-          : `Sitting takes ${gold(cost)}, buy-in and first ante. ${gold(worth - cost)} left to live on.`}
-      </p>
-    </div>
-  );
 }
