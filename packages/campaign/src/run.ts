@@ -6,9 +6,10 @@ import { finaleOption, nodeCost, rewardOffers, shopOffers, tableOption, type Rew
 import { depthOf, generateMap, MAP_ROWS, nodeById, reachable, type MapNode, type RunMap } from './map.js';
 import { gain, levelOf, medallionPrice, type Held, type MedallionId } from './medallions.js';
 import {
-  beginHand,
-  stakeFor,
+  canSit,
+  costToSit,
   finishHand,
+  openHand,
   openTable,
   PLAYER_KEY,
   raiseHand,
@@ -206,19 +207,27 @@ export function depthNumber(run: RunState): number {
 export const choices = (run: RunState): MapNode[] => reachable(run.map, run.path);
 
 /**
- * What sitting at a node would take from you: its buy-in (less an ante with
- * Hoard), or, short of that, all but three of your antes. Null for a merchant.
+ * What sitting at a node would take from you before a card is dealt: its
+ * buy-in (less an ante with Hoard) and your first ante. Null for a merchant
+ * or a ? event, which cost nothing to walk into.
  */
 export function entryCost(run: RunState, node: MapNode): number | null {
   if (node.kind === 'merchant' || node.kind === 'event') return null;
   const offer = run.offers[node.id];
-  if (offer) return stakeFor(offer, run);
+  if (offer) return costToSit(offer, run);
   const { ante, buyIn } = nodeCost(node.tier, node.kind === 'throne' ? 'vestige' : node.archetype!);
-  return Math.max(0, buyIn - (levelOf(run.medallions, 'hoard') >= 1 ? ante : 0));
+  return Math.max(0, buyIn - (levelOf(run.medallions, 'hoard') >= 1 ? ante : 0)) + ante;
 }
 
-/** Whether you can take a node now: any gold buys a seat, if only a short one. */
-export const canEnter = (run: RunState, _node: MapNode): boolean => run.worth > 0;
+/**
+ * Whether you can take a node now. A table only if you can pay its buy-in
+ * and live through its first ante: there is no sitting short.
+ */
+export function canEnter(run: RunState, node: MapNode): boolean {
+  if (node.kind === 'merchant' || node.kind === 'event') return true;
+  const offer = run.offers[node.id];
+  return offer ? canSit(offer, run) : run.worth >= (entryCost(run, node) ?? 0);
+}
 
 /**
  * Onto the map: every table you could go to next is dealt now, so its players
@@ -302,17 +311,25 @@ export function enterNode(run: RunState, nodeId: string): RunState {
   };
 }
 
-export function startHand(run: RunState, showdown: boolean): RunState {
-  if (run.phase !== 'table' || !run.table) return run;
-  return { ...run, table: beginHand(run.table, showdown) };
-}
-
 export function raiseInHand(run: RunState, seat: PlayerId, size: number, stillPlaying: PlayerId[]): RunState {
   if (!run.table?.hand) return run;
   const table = raiseHand(run.table, seat, size, stillPlaying);
   if (table === run.table) return run;
   const raises = seat === 'seat-1' ? run.stats.raises + 1 : run.stats.raises;
   return { ...run, table, stats: { ...run.stats, raises } };
+}
+
+/**
+ * Deal the next hand: every seat antes, and any that cannot pay dies trying.
+ * If that is you — or everyone else — the table ends here, before a card is
+ * dealt, and the run moves on as it would at the end of a hand.
+ */
+export function startHand(run: RunState, showdown: boolean, vestiges: VestigeRecord[] = []): RunState {
+  if (run.phase !== 'table' || !run.table) return run;
+  const { table, outcome } = openHand(run.table, showdown);
+  if (!outcome) return { ...run, table };
+  const lastRitesUsed = run.lastRitesUsed || table.spent.includes(`${PLAYER_KEY}:last-rites`);
+  return tableOver({ ...run, table, lastHand: outcome, lastRitesUsed }, table, outcome, vestiges);
 }
 
 /** Settle the hand just played, and move the run on if the table ended. */
@@ -327,11 +344,16 @@ export function endHand(run: RunState, result: HandResult, vestiges: VestigeReco
     bestWorth: Math.max(drawn.stats.bestWorth, seat.worth),
   };
   const lastRitesUsed = run.lastRitesUsed || table.spent.includes(`${PLAYER_KEY}:last-rites`);
-  let next: RunState = { ...drawn, table, lastHand: outcome, stats, lastRitesUsed };
-  if (!outcome.end) return next;
+  const next: RunState = { ...drawn, table, lastHand: outcome, stats, lastRitesUsed };
+  return outcome.end ? tableOver(next, table, outcome, vestiges) : next;
+}
 
-  // The table is over. Your Worth comes off it.
-  next = { ...next, worth: seat.worth, lastTable: table };
+/** A table is over: your souls come off it, and the run goes on down, to its spoils, or ends. */
+function tableOver(run: RunState, table: TableState, outcome: HandOutcome, vestiges: VestigeRecord[]): RunState {
+  if (!outcome.end) return run;
+  const seat = you(table);
+  const stats = run.stats;
+  let next: RunState = { ...run, worth: seat.worth, lastTable: table };
   if (outcome.end.kind === 'broke') return { ...next, phase: 'lost' };
   // Won or lost, a table is over and you go on down: the map never sends you
   // back. A table lost costs its gold and gives no spoils.

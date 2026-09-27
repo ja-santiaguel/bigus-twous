@@ -35,8 +35,8 @@ Tokens live in `packages/app/src/styles.css` (`:root`). Card sizes live in
 
 The world is a ruin underground — grim gothic fantasy, played by candle and
 bone rather than neon. Every surface is dark slate stone; cards and words are
-bone; gold marks whatever wants your eye and whatever is money; blood red says
-no. Behind everything, still: a vignette at the edges and a two-pixel grain,
+bone; gold marks whatever wants your eye; the campaign's souls are a drowned
+grey-teal; blood red says no. Behind everything, still: a vignette at the edges and a two-pixel grain,
 faint enough to read as stone rather than pattern. No glowing titles or mist.
 
 | Token                   | Value                 | Use                                                                                                                 |
@@ -50,12 +50,15 @@ faint enough to read as stone rather than pattern. No glowing titles or mist.
 | `--bone-dim`            | `#bdb4a0`             | Secondary text.                                                                                                     |
 | `--dim`                 | `#8fa29c`             | Tertiary text, flat control text, disabled flat controls.                                                           |
 | `--edge`                | `#4f8177`             | The outline of an editable field — 3:1 against the table.                                                           |
-| `--gold`                | `#d9a441`             | **Your move**, the primary action, the standing combo, selection, focus — and gold itself: pots, prizes, placings.  |
+| `--gold`                | `#d9a441`             | **Your move**, the primary action, the standing combo, selection, focus, first place.                               |
 | `--gold-hi`             | `#e6b457`             | Primary button hover.                                                                                               |
 | `--on-gold`             | `#241905`             | Text on a gold surface.                                                                                             |
 | `--alert`               | `#e0584e`             | Every "no": a selection that cannot play, a refused play, a seat that has **passed** (yours included), urgent time. |
 | `--pass` / `--pass-hi`  | `#7c2621` / `#8a2c26` | The Pass button — the passed colour, deep enough for bone text.                                                     |
 | `--silver` / `--bronze` | `#b9c2c6` / `#cc9660` | Second and third place.                                                                                             |
+| `--soul`                | `#86b0a3`             | **Souls**, the campaign's currency and your life: every amount of them, the soul coin's face. 6.9:1 on the table.   |
+| `--soul-hi` / `--soul-lo` | `#b7d3c8` / `#4a7369` | A gain rising off an amount; the coin's light and shade, the soul bar, the stat glyphs.                           |
+| `--soul-rim`            | `#1b302c`             | The soul coin's rim; the part of the soul bar a seat takes.                                                         |
 
 **Contrast is a rule, not a check at the end.** Every text colour meets WCAG AA
 — 4.5:1 — on `--table`, `--table-lo` and `--field`; the outline of anything
@@ -646,9 +649,17 @@ scale (section 4):
   `--on-gold`). Guests get "Ready up" (primary), then "Cancel ready" (default
   raised); the host gets "Start game", disabled until everyone else is ready. A
   status line in `--bone-dim` sits just above the button saying who is waited on.
+- **A host with nobody else there plays alone.** Classic has one way in, so a
+  new game always opens a shared table; while no one else is connected, the
+  host's button is **Start solo game** and the status line says "Nobody else
+  is here. Share the code and wait, or play on your own against computers."
+  Starting it closes the shared table and deals a match alone with the lobby's
+  seats, difficulties, your chair and name, and the match length (a fresh
+  seed) — saved, and continued, as any match alone. Once someone joins, it is
+  Start game again; if they leave, Start solo game comes back.
 - **The main menu**: title and description; one row of ways in — Continue game
-  (while a solo save exists), Play on your own (primary) and Play with friends
-  (default raised); How to play (quiet) on a line of its own beneath them, so
+  (while a solo save exists) and New game (primary when there is nothing to
+  continue); How to play (quiet) on a line of its own beneath them, so
   reference never reads as a third way to start; then a ruled-off row with your
   name, a table code and Join. A button whose label changes while it works ("Opening…") keeps
   the width of its longer label.
@@ -816,8 +827,11 @@ seed first.
 Two games under one roof, each a group headed by its name alone, in bone:
 **Mythic** — Continue run (its class, depth and gold on a dim line under it)
 and Start a new run, which asks first; or Start a run — and **Classic** —
-Continue game when there is a saved match, Play on your own, Play with
-friends, and the name and code to join a table. The name and code fields are
+Continue game when there is a saved match, **New game** ("On your own, or
+share the code with friends" under it), and the name and code to join a
+table. New game opens a shared table and waits in its lobby, where a host
+nobody has joined starts a solo game instead; if no table can be opened
+(offline), it opens the lobby for playing alone, saying why. The name and code fields are
 edged in weathered stone (`--field-edge`), lit toward gold on hover and gold
 on focus, as the buttons beside them answer the pointer. How to play stands apart at the end. Every option is the same
 width — sized for its longest label, not the column — with its label at the
@@ -846,8 +860,10 @@ with friends are untouched by it.
   corner Menu top right, as at the table, and the content across the width,
   centred when it is short.
 - **The run bar** holds what a run is, on every screen between tables: your
-  class (emblem and name, in its colour), your gold — its largest figure,
-  because it is your life and your stake at once — your depth (room and
+  class (emblem and name, in its colour), your **souls** — its largest
+  figure, because they are your life and your stake at once, and its label
+  says so on point: every payment is made in them, and one you cannot make
+  kills you — your depth (room and
   "2/5"), your Medallions — a row of their emblems, each on a small plate,
   its name and what it does on point or tap of that one — and the Menu. It floats along the foot of the screen, clear of its
   edges: an ink edge with a thin gold rule inside it, cells split by
@@ -863,25 +879,32 @@ with friends are untouched by it.
   the throne itself (a doubled frame). Paths join each node to the one or
   two below it. The way you came is bone, with a caret over where you stand;
   the ways open now are gold and dashed, their nodes on gold dashed frames;
-  a node you cannot afford has a red dashed frame; everything else is the
+  a table **beyond your souls** — its buy-in and first ante more than you
+  have — is red on its red dashed frame, and cannot be taken; everything else is the
   colour of the stone, and the ways you did not take fade. A node no way down
   from where you stand can reach any more is **out of reach**: grey and faint,
   it and the paths to it, so what is left of the map reads at a glance.
 - **Point to preview, click to select, then confirm.** Every table you could
   go to next is already dealt when you arrive on the map, so pointing at its
   node previews all of it in the panel beside the map (under it on a phone):
-  its depth and kind, its buy-in, ante, tribute and hands — Buy-in and Ante
-  each saying on point how their gold is paid out (70 / 25 / 5%, nothing to
-  last), and one line under them for what else winning brings, no more than
-  it truly gives ("Win it for a chance at a Medallion"; "…for a choice of
-  two Medallions" at an elite table) — and who sits there
-  — each with class, temperament, gold and any Medallions they carry.
-  Clicking a node selects it (a bone outline); only the panel's button —
-  **Pay 80 and sit down**, **Go down to the merchant** — commits. A seat you
-  cannot fully pay for is marked, in a note edged in red, as a **short
-  seat**: what you put in, the three antes you keep, and the most the prize
-  can pay you. With nothing selected, the panel holds the three steps of how
-  a table works.
+  its depth and kind; its four figures as tiles, two by two, each led by a
+  pixel glyph in the souls' grey-teal — a stack of soul coins for the
+  **buy-in**, a soul falling into a bowl for the **ante**, a chalice for the
+  **tribute**, two cards for the **hands** — with every amount of souls
+  beside a soul coin, and Buy-in and Ante each saying on point how their
+  souls are paid out (70 / 25 / 5%, nothing to last) and that a player who
+  cannot pay dies; one line under them for what else winning brings, no more
+  than it truly gives ("Win it for a chance at a Medallion"; "…for a choice
+  of two Medallions" at an elite table); **your souls** as a bar, the buy-in
+  hatched off its start and the first ante after it, with what is left to
+  live on — or, beyond your souls, the bar running out into red and how far
+  short you are; and who sits there — each with class, temperament, souls and
+  any Medallions they carry. Clicking a node selects it (a bone outline);
+  only the panel's button — **Pay 80 souls and sit down**, **Go down to the
+  merchant** — commits; a table beyond your souls has no button, only a
+  line edged in red saying the first ante would be your death. The button's
+  words may take two lines in a narrow panel. With nothing selected, the
+  panel holds the three steps of how a table works.
 - **The map runs as tall as its rows need** — taller than the window — so the
   page scrolls and the deep's ruins rise behind it — only their tallest tops
   show at first, and they rise never faster than 30% of the page, so they
@@ -906,13 +929,16 @@ with friends are untouched by it.
   Medallions found"). Saved apart from the run (`bigtwo:compendium`, which
   keeps the highest level seen of each), so it outlasts every run.
 - **A run is welcomed** before its map: a dark screen, the world's name dim,
-  "Welcome, Pale Bell." large, a line of who you are — and no button to aim
-  for. Last, at the foot, a quiet "Click to descend" ("Tap" on a touch
+  "Welcome, Pale Bell." large, a line of who you are and what your souls
+  are — your life: the deep takes its toll in them, and the moment you cannot
+  pay it, you die — and no button to aim for. Last, at the foot, a quiet "Click to descend" ("Tap" on a touch
   screen) over a pixel chevron drifting downward; the whole screen is the
   way down, and so are Enter, Space and Escape. The fall follows: dark bands
-  rushing up, the welcome torn upward, the map rising to meet you.
+  rushing up, the welcome torn upward — its lines and "Click to descend"
+  together, one layer with one fall, so the way down never lags or leaves
+  early — and the map rising to meet you.
 - **The version** sits in the bottom-left corner of every screen, 10px and
-  dim ("v0.4.0"), with the commit it was built from on point — there for
+  dim ("v0.5.0"), with the commit it was built from on point — there for
   telling builds apart when something is reported. It is the app's
   package.json version: bump it with each release.
 - **The page scrolls smoothly.** A wheel notch sets where the page is headed
@@ -956,7 +982,8 @@ with friends are untouched by it.
   groups sit two by two, told apart by space alone — no rules between them —
   so the whole class fits in view: its name and cards;
   its **class play** — rule, and its price at the first table — beside its
-  figures (starting gold, and its **ante share** with a line on what it means:
+  figures (starting souls — with a soul coin, and on point what souls are:
+  your life and your stake, and death at any payment you cannot make — and its **ante share** with a line on what it means:
   cheap hands and small wins, or dear hands and big wins), which carry their
   own labels and have no heading over them. The ante share's note works one
   through, and says the ante on a map node is already the player's own — the
@@ -1002,7 +1029,8 @@ with friends are untouched by it.
   them). Each is new, a level up, or one a beaten player carried that you can,
   tagged "Spoils" and saying whose it was.
 - **Numbers are stats**: a small dim label over its value, larger, in bone —
-  or in gold, larger still, for a number that changes every hand. A node on
+  or, for souls, in their grey-teal with a soul coin, larger still for a
+  number that changes every hand. A node on
   the map shows its buy-in, ante, tribute and hands.
 - **Game words explain themselves.** In rules and Medallion texts, and on
   the stats' labels, every word the game uses in a sense of its own —
@@ -1029,34 +1057,37 @@ with friends are untouched by it.
     / 5%. "Pot" says what the two are, and what first place would take of each at
     the amounts in them now — "Finish this hand first: 112 from the pot",
     "Win the table: 224 from the table";
-    each amount says where its own gold came from — who put what into this
+    each amount says where its own souls came from — who put what into this
     pot (ante, class play), and who bought in to the table.
   - **Tribute** — "30 of 70": what you have won here, of what the table asks;
     "Tribute paid" in gold, blinking with the turn marker, once it is held.
-    Every value is the same size, with no shadow: counts in bone, gold in gold
+    Every value is the same size, with no shadow: counts in bone, souls in their grey-teal
     with a coin, units small and dim. The top seat's name sits 48px under the
     read-out.
-- **Gold is seen moving.** Every amount of gold — your gold in the run bar,
-  the pot and the table in the read-out, each seat's gold — carries a pixel
-  coin, counts to its new value when it changes, and the change itself rises
-  off it (+59 in gold, −30 in red): the buy-in leaving your gold as you sit
-  down, each ante as the cards are dealt, the pot filling and paying out.
-  Amounts that live across screens remember what was last shown, so your gold
-  counts on from the map to the table rather than starting over.
+- **Souls are seen moving.** Every amount of souls — yours in the run bar,
+  the pot and the table in the read-out, each seat's — carries a **soul
+  coin**: eight art pixels of drowned grey-teal with a dark rim, lit at its
+  upper left and struck with a face, two hollow eyes and a wailing mouth,
+  under a breath of cold light (never a glow). It counts to its new value
+  when it changes, and the change itself rises off it (+59 in pale teal, −30
+  in red): the buy-in leaving you as you sit down, each ante as the cards are
+  dealt, the pot filling and paying out. Amounts that live across screens
+  remember what was last shown, so your souls count on from the map to the
+  table rather than starting over.
 - **The foot mirrors the top**: the run bar centred, 48px above the foot of
   the screen — as far as the top seat's name is below the read-out — with Sort
   and Clear hanging off either side of it on its centre line. The bar is in the
   same place on the map, at pile select and at the table. At a table it
-  carries your class (emblem and name), your gold, your class play — its name
-  and what it costs you now ("Uprising · 15 gold", or "free"), its rule on
-  point or tap — your depth and your Medallions. At pile select your gold is
+  carries your class (emblem and name), your souls, your class play — its name
+  and what it costs you now ("Uprising · 15 souls", or "free"), its rule on
+  point or tap — your depth and your Medallions. At pile select your souls are
   shown before this hand's ante, which leaves it as the cards are dealt. On a
   phone the foot gives way to Sort and Clear by the hand, with the class's
   emblem and name between them.
 - **At pile select you are your run's name** ("Sunk Wake" took a pile), not
   "(you)": two words drawn from the run's seed, which a run that takes the
   throne keeps as its Vestige.
-- Each seat shows its gold where points
+- Each seat shows its souls where points
   would be — what it has not put into this pot, as yours is shown — and its
   class, in its colour, where a practice table says "(CPU)"; a long name ends
   in an ellipsis inside its seat. Every seat's name sits 16px over its cards.
@@ -1088,18 +1119,28 @@ with friends are untouched by it.
   Your own hand is never dimmed: you still arrange it while you wait.
 - **The end of a hand** replaces the round-end standings with the reckoning,
   read in columns rather than sentences: each seat in finishing order — place
-  and name on the left edge, what it gained or lost and its gold on the right
-  edge. Under it, anything that moved gold, each a line with a tag
-  (a Medallion's name, Fallen, Bounty) and its amount at the right. Then
+  and name on the left edge, what it gained or lost and its souls on the
+  right edge. Under it, anything that moved souls, each a line with a tag
+  (a Medallion's name, Fallen, Bounty) and its amount at the right — a player
+  who fell says how: "could not pay 60", or "no souls left". Then
   three figures side by side: the **Tribute** won of what the table asks,
   with its bar; the **Hands left**, as pips; and what is **Next** (a hand, or
   the Requiem). What is on offer is a row of short chips — "Everyone ×3",
   "First wins the table" for the Requiem; "They ×3", "You ×1", "Whole pot",
-  the bounty and "Once" for a Reckoning — over its buttons.
+  the bounty and "Once" for a Reckoning, and in red, whoever it would kill
+  ("Kills Crowe"; "Crowe cannot pay" at the Requiem) — over its buttons.
+- **Death is announced before it is paid.** When your souls cannot cover the
+  next ante, the hand's end says so in a box edged in red — your souls
+  held and the ante owed ("10 held · 30 owed"), and "You cannot pay the next
+  ante. Deal it, and you die paying." — and its only way on is a blood-red
+  **Pay the ante, and die**. Pressing it deals no hand: the box becomes the
+  table's end, headed "You have fallen", with what the ante asked and what
+  you had, and "Died with" in its ledger.
 - **The end of a table** is its ledger: the buy-in, what the hands brought,
   what the table paid you ("Table, first" or "Table, by standing"), any
-  bounty, and the net under a rule — then your gold before and after, the
-  after large, gold for a gain and red for a loss, and the spoils. A table
+  bounty, what died with you, and the net under a rule — then your souls
+  before and after, the after large, grey-teal for a gain and red for a loss,
+  and the spoils. A table
   lost, or won with nothing to choose, has sent the run back to the map
   already; its end is told from the table as it closed, which the run keeps
   until the next seat is taken.

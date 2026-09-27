@@ -68,7 +68,7 @@ describe('a campaign table played through the stores', () => {
       game.getState().setPaced(false);
       const pick = createRng(`flow-${classId}`);
       let hands = 0;
-      const seen = { reckonings: 0, fallen: 0, handsShort: 0, eventSteps: 0 };
+      const seen = { reckonings: 0, fallen: 0, handsShort: 0, eventSteps: 0, diedAtAnte: 0 };
       for (
         let runs = 0;
         runs < Number(process.env.FLOW_RUNS ?? 12) && hands < Number(process.env.FLOW_HANDS ?? 60);
@@ -129,6 +129,15 @@ describe('a campaign table played through the stores', () => {
             continue;
           }
           campaign.getState().deal(canCallReckoning(after.table!) && pick() < 0.5);
+          // A deal can end the table before a card is dealt: you, or everyone
+          // else, dead at the ante. The hand's end on screen is the table's now.
+          const dealt = campaign.getState().run!;
+          if (!dealt.table?.hand) {
+            seen.diedAtAnte += 1;
+            expect(dealt.lastHand!.end).not.toBeNull();
+            campaign.getState().leaveTable();
+            continue;
+          }
           await until(() => !roundOver(), 'next hand dealt');
         }
         campaign.getState().abandon();

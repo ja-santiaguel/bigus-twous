@@ -150,7 +150,7 @@ export const ARCHETYPES: Record<Archetype, ArchetypeDef> = {
   modest: {
     id: 'modest',
     name: "Paupers' Table",
-    blurb: 'Everyone as poor as you, and a cheap seat.',
+    blurb: 'Thin souls all round, and a cheap seat.',
     anteMultiplier: 1,
     buyInAntes: 2,
     markMultiplier: 0.95,
@@ -160,7 +160,7 @@ export const ARCHETYPES: Record<Archetype, ArchetypeDef> = {
   'high-stakes': {
     id: 'high-stakes',
     name: 'Gilded Table',
-    blurb: 'Rich players, a heavy ante and a steep buy-in.',
+    blurb: 'Players heavy with souls, a heavy ante and a steep buy-in.',
     anteMultiplier: 1.5,
     buyInAntes: 4.5,
     markMultiplier: 1.1,
@@ -180,7 +180,7 @@ export const ARCHETYPES: Record<Archetype, ArchetypeDef> = {
   predator: {
     id: 'predator',
     name: 'Carrion Table',
-    blurb: 'One player far richer than the rest, feeding on the weak.',
+    blurb: 'One player swollen with souls, feeding on the weak.',
     anteMultiplier: 1.2,
     buyInAntes: 3.5,
     markMultiplier: 1.05,

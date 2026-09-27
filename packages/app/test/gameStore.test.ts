@@ -210,3 +210,57 @@ describe('playing a round out once you are out', () => {
     expect(playsOutWithoutYou({ online: false, view: null })).toBe(false);
   });
 });
+
+describe('a new game, alone or together', () => {
+  beforeEach(freshTable);
+
+  it('plays the table you host on your own when nobody has joined, as it was set up', async () => {
+    // The lobby of a table you are hosting, as its snapshots leave the store:
+    // you in the third chair, computers set to play as the host chose.
+    store.setState({
+      screen: 'table',
+      online: true,
+      hosting: 'browser',
+      you: SEAT_IDS[2]!,
+      match: { rule: { kind: 'rounds', count: 3 }, winner: null },
+      seatsAtTable: SEAT_IDS.map((id, seat) => ({
+        id,
+        seat,
+        name: seat === 2 ? 'Jas' : `Seat ${seat + 1}`,
+        occupant: seat === 2 ? ('human' as const) : ('cpu' as const),
+        connected: seat === 2,
+        difficulty: seat === 0 ? ('hard' as const) : seat === 3 ? ('easy' as const) : ('medium' as const),
+        ready: false,
+        host: seat === 2,
+        standIn: false,
+      })),
+    });
+    store.getState().startSolo();
+
+    const state = store.getState();
+    expect(state.online).toBe(false);
+    expect(state.humanSeat).toBe(2);
+    expect(state.matchRule).toEqual({ kind: 'rounds', count: 3 });
+    expect(state.seats.find((s) => s.seat === 2)!.occupant).toBe('human');
+    expect(state.seats.find((s) => s.seat === 0)!.difficulty).toBe('hard');
+    expect(state.seats.find((s) => s.seat === 3)!.difficulty).toBe('easy');
+    await waitForDeal();
+    expect(store.getState().view!.selfId).toBe(SEAT_IDS[2]);
+    // A match alone, so it is saved to be continued.
+    expect(store.getState().savedGame).toBe(true);
+  });
+
+  it('falls back to playing alone, saying why, when no table can be opened', async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = () => Promise.reject(new Error('Offline.'));
+    try {
+      store.setState({ screen: 'menu', hosting: 'server', error: null });
+      await store.getState().newGame();
+      expect(store.getState().screen).toBe('lobby');
+      expect(store.getState().error).toMatch(/^Could not open a table\..* You can still play on your own\.$/);
+    } finally {
+      globalThis.fetch = realFetch;
+      store.setState({ error: null });
+    }
+  });
+});

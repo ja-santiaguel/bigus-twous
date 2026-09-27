@@ -21,7 +21,10 @@ import { DIFFICULTY_LABELS, DIFFICULTY_SPOKEN } from './Lobby.js';
  * the link that brings them here.
  *
  * Starting is agreed rather than raced: each player readies up, their seat says
- * so, and the host starts the game once everyone is ready. The host sets
+ * so, and the host starts the game once everyone is ready. A host nobody has
+ * joined starts a game on their own instead — the table closes, and the match
+ * is played and saved as any match alone is (the one lobby for both, since
+ * Classic has one way in). The host sets
  * computer difficulty and the match length and may remove people; everyone
  * else sees those settings exactly as the host does, read-only.
  */
@@ -34,6 +37,7 @@ export function WaitingRoom() {
   const ready = useGameStore((s) => s.ready);
   const unready = useGameStore((s) => s.unready);
   const startGame = useGameStore((s) => s.startGame);
+  const startSolo = useGameStore((s) => s.startSolo);
   const takeSeat = useGameStore((s) => s.takeSeat);
   const kick = useGameStore((s) => s.kick);
   const match = useGameStore((s) => s.match);
@@ -60,6 +64,8 @@ export function WaitingRoom() {
   const canSet = iAmHost && connected;
   const guests = seats.filter((s) => s.connected && !s.host);
   const waitingOn = guests.filter((s) => !s.ready).length;
+  // Nobody else has come: the host may play the table on their own.
+  const alone = iAmHost && guests.length === 0;
 
   const hint = connected
     ? `${here} ${here === 1 ? 'person' : 'people'} here. Computers play any empty seat.`
@@ -76,8 +82,8 @@ export function WaitingRoom() {
   const status = !connected
     ? null
     : iAmHost
-      ? guests.length === 0
-        ? 'Start whenever you like. Computers play the empty seats.'
+      ? alone
+        ? 'Nobody else is here. Share the code and wait, or play on your own against computers.'
         : waitingOn === 0
           ? 'Everyone is ready.'
           : `Waiting for ${waitingOn === 1 ? 'one player' : `${waitingOn} players`} to ready up.`
@@ -85,7 +91,16 @@ export function WaitingRoom() {
         ? 'You are ready. Waiting for the host to start the game.'
         : 'Ready up so the host can start the game.';
 
-  const primary = iAmHost ? (
+  const primary = alone ? (
+    <button
+      className="btn btn--primary btn--wide"
+      onClick={startSolo}
+      disabled={!connected}
+      data-hint="Not connected to the table"
+    >
+      Start solo game
+    </button>
+  ) : iAmHost ? (
     <button
       className="btn btn--primary btn--wide"
       onClick={startGame}

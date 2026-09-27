@@ -26,6 +26,7 @@ import { MedallionCard } from '../components/campaign/MedallionCard.js';
 import { CompendiumSheet } from '../components/campaign/CompendiumSheet.js';
 import { Terms } from '../components/Terms.js';
 import { InfoTip } from '../components/InfoTip.js';
+import { GoldCoin } from '../components/GoldAmount.js';
 
 /**
  * The campaign between tables: choosing a class, the descent's map, the spoils
@@ -103,7 +104,7 @@ function CampaignFrame({
             aria-labelledby="end-title"
           >
             <h2 id="end-title">End this run?</h2>
-            <p className="overlay__note">Its gold and Medallions are lost, and you choose a class for a new one.</p>
+            <p className="overlay__note">Its souls and Medallions are lost, and you choose a class for a new one.</p>
             <div className="overlay__actions">
               <button className="btn btn--quiet" onClick={() => setEnding(false)} autoFocus>
                 Keep playing
@@ -163,38 +164,45 @@ function Welcome({ run }: { run: RunState }) {
   return (
     <div className={`screen welcome ${falling ? 'is-falling' : ''}`} onClick={descend}>
       <span className="welcome__streaks" aria-hidden="true" />
-      <div className="welcome__body">
-        <p className="welcome__world">{WORLD_NAME}</p>
-        <h1 className="welcome__name">
-          Welcome, <span className={`classtag--${run.classId} welcome__who`}>{run.name}</span>.
-        </h1>
-        <p className="welcome__line">
-          A {c.name.toLowerCase()} with {gold(run.worth)} gold and nothing else. The deep takes its toll in gold; go
-          down, and do not fall.
-        </p>
-      </div>
-      {/* No button to aim for: the whole screen is the way down. The prompt
+      {/* One layer for everything said, so the fall takes the lines and the
+          way down together. */}
+      <div className="welcome__fall">
+        <div className="welcome__body">
+          <p className="welcome__world">{WORLD_NAME}</p>
+          <h1 className="welcome__name">
+            Welcome, <span className={`classtag--${run.classId} welcome__who`}>{run.name}</span>.
+          </h1>
+          <p className="welcome__line">
+            A {c.name.toLowerCase()} with {gold(run.worth)} souls and nothing else. They are your life: the deep takes
+            its toll in them, and the moment you cannot pay it, you die. Go down, and do not fall.
+          </p>
+        </div>
+        {/* No button to aim for: the whole screen is the way down. The prompt
           says so, quietly, once the rest has been read — a line and a chevron
           drifting downward — and is itself a control for keys and readers. */}
-      <button
-        type="button"
-        className="welcome__prompt"
-        onClick={(e) => {
-          e.stopPropagation();
-          descend();
-        }}
-        autoFocus
-      >
-        <span>{touch ? 'Tap' : 'Click'} to descend</span>
-        <svg className="welcome__chevron" viewBox="0 0 7 7" shapeRendering="crispEdges" aria-hidden="true">
-          <path fill="currentColor" d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h1v1H2zM4 2h1v1H4zM3 3h1v1H3z" />
-          <path
-            fill="currentColor"
-            opacity="0.5"
-            d="M0 3h1v1H0zM6 3h1v1H6zM1 4h1v1H1zM5 4h1v1H5zM2 5h1v1H2zM4 5h1v1H4zM3 6h1v1H3z"
-          />
-        </svg>
-      </button>
+        <button
+          type="button"
+          className="welcome__prompt"
+          onClick={(e) => {
+            e.stopPropagation();
+            descend();
+          }}
+          autoFocus
+        >
+          <span>{touch ? 'Tap' : 'Click'} to descend</span>
+          <svg className="welcome__chevron" viewBox="0 0 7 7" shapeRendering="crispEdges" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h1v1H2zM4 2h1v1H4zM3 3h1v1H3z"
+            />
+            <path
+              fill="currentColor"
+              opacity="0.5"
+              d="M0 3h1v1H0zM6 3h1v1H6zM1 4h1v1H1zM5 4h1v1H5zM2 5h1v1H2zM4 5h1v1H4zM3 6h1v1H3z"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
@@ -242,8 +250,9 @@ function ClassPick() {
         <header className="classpick__head">
           <h2>Choose who you are</h2>
           <p className="field__hint field__hint--lead">
-            Descend through the Hollow Deep to the Hollow Throne, each depth crueller than the last. Your gold is your
-            life: every hand costs an ante, the pot pays by where you finish, and the run ends when your gold does.
+            Descend through the Hollow Deep to the Hollow Throne, each depth crueller than the last. You carry souls,
+            and they are your life: every hand costs an ante of them, the pot pays by where you finish, and the moment
+            you cannot pay, you die.
           </p>
         </header>
 
@@ -299,8 +308,21 @@ function ClassPick() {
         <div className="classdetail__group">
           <div className="classdetail__stats">
             <span className="stat">
-              <span className="stat__label">Starting gold</span>
-              <span className="stat__value">{gold(c.startingWorth)}</span>
+              <span className="stat__label">
+                <InfoTip label="What your souls are" word="Starting souls">
+                  <p>
+                    Souls are your life and your stake at once. Every buy-in, ante and class play is paid in them, and
+                    every pot you win is paid back in them.
+                  </p>
+                  <p>
+                    Short of what a payment asks, you die trying to make it, and the run ends. You cannot sit at a table
+                    whose buy-in and first ante you could not pay.
+                  </p>
+                </InfoTip>
+              </span>
+              <span className="stat__value stat__value--souls">
+                <GoldCoin /> {gold(c.startingWorth)}
+              </span>
             </span>
             <span className="stat">
               <span className="stat__label">
@@ -454,8 +476,8 @@ function Shop({ run }: { run: RunState }) {
         <h2>The Bone Merchant</h2>
       </div>
       <p className="field__hint field__hint--lead">
-        Medallions for a {CLASSES[run.classId].name}, and now and then one any class can carry. Gold spent here is gold
-        you cannot lose at a table — or win with.
+        Medallions for a {CLASSES[run.classId].name}, and now and then one any class can carry. Souls spent here are
+        life you will not have at a table — to lose, or to win with.
       </p>
       <div className="medcards">
         {run.shopOffers.map((id) => {
@@ -471,7 +493,7 @@ function Shop({ run }: { run: RunState }) {
                 label: `Buy for ${gold(price)}`,
                 onClick: () => buy(id),
                 disabled: run.worth <= price,
-                hint: 'Not enough gold',
+                hint: 'Not enough souls',
               }}
             />
           );
@@ -534,6 +556,20 @@ function Reward({ run }: { run: RunState }) {
   );
 }
 
+/** How a run ended, when it ended in death: where, and of what. */
+function deathLine(run: RunState): string {
+  const where = `at depth ${depthNumber(run)} of ${DEPTHS}`;
+  const end = run.lastHand?.end;
+  const you = run.lastHand?.left.find((l) => l.persona === null);
+  // Died at the ante, trying to pay what you did not have.
+  if (end?.kind === 'broke' && you?.owed !== undefined) {
+    return `You died ${where}, owing an ante of ${gold(you.owed)} souls with ${gold(you.had ?? 0)} to your name.`;
+  }
+  if (end?.kind === 'broke') return `Your souls ran out ${where}, and you with them.`;
+  // Nowhere below you could pay your way into.
+  return `You died on the map ${where}: no way down was one your souls could pay for.`;
+}
+
 function RunOver({ run }: { run: RunState }) {
   const abandon = useCampaignStore((s) => s.abandon);
   const won = run.phase === 'won';
@@ -545,10 +581,10 @@ function RunOver({ run }: { run: RunState }) {
       <p className="field__hint field__hint--lead">
         {won
           ? 'You won the Hollow Throne. This run now waits there, a Vestige, for the runs that come after it.'
-          : `Your gold ran out at depth ${depthNumber(run)} of ${DEPTHS}.`}
+          : deathLine(run)}
       </p>
       <p className="campaign__facts">
-        Tables won {run.stats.tablesWon} · hands played {run.stats.handsPlayed} · most gold {gold(run.stats.bestWorth)}
+        Tables won {run.stats.tablesWon} · hands played {run.stats.handsPlayed} · most souls {gold(run.stats.bestWorth)}
       </p>
       <div className="panel__start">
         <button className="btn btn--primary btn--wide" onClick={abandon}>

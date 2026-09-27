@@ -58,6 +58,15 @@
   --gold-wash: rgba(217, 164, 65, 0.08);
   --gold-wash-strong: rgba(217, 164, 65, 0.12);
   --alert-wash: rgba(224, 88, 78, 0.08);
+  /* Souls: the campaign's currency, and your life. A drowned grey-teal —
+     the colour of a face under still water, never a glow — so an amount of
+     them is told from the gold that means "yours to press" at a glance, and
+     from the red of a loss. --soul holds 6.9:1 on the table. */
+  --soul: #86b0a3;
+  --soul-hi: #b7d3c8;
+  --soul-lo: #4a7369;
+  --soul-rim: #1b302c;
+  --soul-wash: rgba(134, 176, 163, 0.08);
 
   /* Type scale. Four sizes, used by role rather than by feel: xs for incidental
      meta, sm for labels and controls, md for the sentence that matters on a
@@ -2895,7 +2904,7 @@ textarea {
   color: var(--alert);
 }
 
-/* A button whose label changes — Play with friends, then Opening… — keeps the
+/* A button whose label changes — New game, then Opening… — keeps the
    width of its longer label. Both share one grid cell; the one not showing is
    hidden, not removed, so it still holds the space. */
 .btn__labels {
@@ -4819,6 +4828,17 @@ button.classcard.is-picked:hover {
 .descent__group--action {
   padding-bottom: 0;
 }
+/* The panel's one action says what it costs, and may take two lines in a
+   narrow panel rather than run out of it. */
+.descent__group--action .btn {
+  height: auto;
+  min-height: var(--control-lg);
+  padding-block: var(--space-xs);
+  white-space: normal;
+  line-height: 1.4;
+  text-align: center;
+  align-items: center;
+}
 .descent__group p {
   margin: 0;
 }
@@ -5231,7 +5251,17 @@ button.classcard.is-picked:hover {
     fall-streaks-in 1600ms ease-in both,
     fall-streaks-rush 420ms linear infinite;
 }
-.welcome.is-falling .welcome__body {
+/* Everything the welcome says — its lines and the way down under them — is
+   one layer, torn away as one: the same fall, at the same moment. */
+.welcome__fall {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  padding: var(--gutter);
+}
+.welcome.is-falling .welcome__fall {
   animation: fall-away 1600ms cubic-bezier(0.5, 0, 0.9, 0.3) both;
 }
 .welcome.is-falling::after {
@@ -5371,18 +5401,6 @@ button.classcard.is-picked:hover {
   border: 0;
   cursor: pointer;
   animation: welcome-in 900ms ease-out 2300ms both;
-}
-.welcome.is-falling .welcome__prompt {
-  animation: prompt-away 400ms ease-in both;
-}
-@keyframes prompt-away {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-    transform: translateY(calc(-4 * var(--u)));
-  }
 }
 .welcome__prompt:hover,
 .welcome__prompt:focus-visible {
@@ -6088,4 +6106,172 @@ button.classcard.is-picked:hover {
 .runbar__medal .medsprite {
   width: 24px;
   height: 24px;
+}
+
+/* ── Souls ───────────────────────────────────────────────────────────────
+   Every amount of souls is in their grey-teal, beside a soul coin; a gain
+   rises off it lighter, a loss in red. The gold stays what it was: whatever
+   is yours to press. */
+.goldcoin {
+  /* A breath of cold light around the coin, no more. */
+  filter: drop-shadow(0 0 1px rgba(134, 176, 163, 0.35));
+}
+.goldamount__change.is-gain {
+  color: var(--soul-hi);
+}
+.runbar__amount,
+.hud .stat__value.hud__gold,
+.hud__prize,
+.classbadge__cost,
+.eventscene__gain,
+.eventscene__holds,
+.handend__amount,
+.handend__ledger .is-gain,
+.handend__journey strong.is-gain,
+.stat__value--souls {
+  color: var(--soul);
+}
+.campaign__handend .overlay__gain:not(.is-loss),
+.campaign__handend .handend__scores strong {
+  color: var(--soul);
+}
+.handend__chips > span.is-gold {
+  color: var(--soul);
+  border-color: color-mix(in srgb, var(--soul) 45%, transparent);
+}
+.stat__value--souls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+/* A figure's glyph beside its label: seven art pixels, twice over. */
+.statglyph {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+/* A table's four figures as tiles, two by two: each glyph large beside its
+   label and, under the label, its value. */
+.descent__stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  row-gap: var(--space-sm);
+}
+.descent__stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: var(--space-sm);
+  align-items: center;
+}
+.descent__stat > .statglyph {
+  grid-row: 1 / span 2;
+  width: 21px;
+  height: 21px;
+}
+
+/* What sitting takes of you: your souls as a bar, the buy-in and the first
+   ante marked off it, and what is left. Beyond your souls, the bar runs out
+   into red. */
+.descent__toll {
+  display: grid;
+  gap: var(--space-xs);
+}
+.descent__tollhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.descent__tollfigure {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-size: var(--text-sm);
+  color: var(--soul);
+}
+.soulbar {
+  position: relative;
+  display: block;
+  height: calc(6 * var(--px));
+  background: var(--alert-wash);
+  border: var(--px) solid var(--ink);
+  box-shadow: inset 0 0 0 var(--px) var(--table-hi);
+}
+.soulbar > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+.soulbar__have {
+  background: var(--soul-lo);
+}
+/* The buy-in, then the first ante after it: what the seat takes. */
+.soulbar__stake {
+  background: repeating-linear-gradient(90deg, var(--soul-rim) 0 2px, transparent 2px 4px);
+}
+.soulbar__ante {
+  background: var(--soul-rim);
+}
+.descent__toll.is-beyond .soulbar__stake,
+.descent__toll.is-beyond .soulbar__ante {
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--alert) 55%, transparent) 0 2px,
+    transparent 2px 4px
+  );
+}
+.descent__toll.is-beyond .descent__note {
+  color: var(--alert);
+}
+/* A table your souls cannot pay for: open, and death to take. */
+.descent__beyond {
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--bone-dim);
+  border-left: var(--px) solid var(--alert);
+  background: var(--alert-wash);
+}
+.descent__node.is-open.is-beyond {
+  color: var(--alert);
+  border-color: var(--alert);
+}
+
+/* Death, at a hand's end: yours, said plainly under the headline; one that
+   is coming, as a warning over the only way on. */
+.handend__death {
+  margin: 0 0 var(--space-md);
+  font-size: var(--text-sm);
+  text-align: center;
+  color: var(--alert);
+}
+.handend__doom {
+  display: grid;
+  gap: var(--space-xs);
+  margin: 0 0 var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: var(--px) solid var(--alert);
+  background: var(--alert-wash);
+}
+.handend__doomline {
+  font-size: var(--text-md);
+  color: var(--bone);
+}
+.handend__doomnote {
+  font-size: var(--text-xs);
+  color: var(--alert);
+}
+.handend__chips > span.is-death {
+  color: var(--alert);
+  border-color: color-mix(in srgb, var(--alert) 50%, transparent);
+}
+/* The one button that ends you: raised like any, in blood. */
+.btn--danger {
+  background: var(--suit-red);
+  color: var(--bone);
+}
+.btn--danger:hover:not(:disabled) {
+  background: var(--alert);
+  color: var(--ink);
 }

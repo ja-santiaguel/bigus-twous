@@ -177,7 +177,7 @@ export const MEDALLIONS: Record<MedallionId, MedallionDef> = {
     classId: null,
     name: 'Last Rites',
     rarity: 'rare',
-    levels: ['Once a run, a hand that would leave you with nothing leaves you three antes.'],
+    levels: ['Once a run, when you would die, you live on with three antes.'],
   },
   hoard: {
     id: 'hoard',

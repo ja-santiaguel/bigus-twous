@@ -133,7 +133,8 @@ describe('a ? node on the map', () => {
     const start: RunState = startRun('events', 'tyrant');
     const event = start.map.rows.flat().find((n) => n.kind === 'event')!;
     const parent = start.map.rows.flat().find((n) => n.links.includes(event.id))!;
-    const run: RunState = { ...start, path: [parent.id] };
+    // Souls enough for any table below it: a run that cannot pay its way down dies on the map.
+    const run: RunState = { ...start, path: [parent.id], worth: 100_000 };
     const node = choices(run).find((n) => n.kind === 'event');
     expect(node).toBeDefined();
     const at = enterNode(run, node!.id);

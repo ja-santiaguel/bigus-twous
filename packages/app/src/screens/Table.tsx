@@ -68,7 +68,7 @@ export function Table() {
   const online = useGameStore((s) => s.online);
   /** When each ready card's nudge was put on the shared clock (see PassiveReady). */
   const nudgePhases = useRef(new Map<string, number>());
-  /** A campaign table: the same table, with the campaign's gold around it. */
+  /** A campaign table: the same table, with the campaign's souls around it. */
   const campaign = useGameStore((s) => s.campaign);
   const campaignSeats = useCampaignStore((s) => (campaign ? (shownTable(s)?.seats ?? null) : null));
   const passiveCards = useCampaignStore((s) => s.passiveCards);
@@ -367,7 +367,7 @@ export function Table() {
     passiveBeats(myClass, self.pile, picked, mySeat.medallions)
       ? (() => {
           const cost = playCost(campaignTable, yourSeat(campaignTable));
-          return `Play · ${CLASSES[myClass].passiveName}${cost > 0 ? ` · ${cost.toLocaleString('en-GB')} gold` : ''}`;
+          return `Play · ${CLASSES[myClass].passiveName}${cost > 0 ? ` · ${cost.toLocaleString('en-GB')} souls` : ''}`;
         })()
       : null;
 
@@ -857,7 +857,7 @@ export function Table() {
               aria-labelledby="end-title"
             >
               <h2 id="end-title">End this run?</h2>
-              <p className="overlay__note">Its gold and Medallions are lost, and you choose a class for a new one.</p>
+              <p className="overlay__note">Its souls and Medallions are lost, and you choose a class for a new one.</p>
               <div className="overlay__actions">
                 <button className="btn btn--quiet" onClick={() => setConfirmEnd(false)} autoFocus>
                   Keep playing

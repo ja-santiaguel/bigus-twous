@@ -246,6 +246,18 @@ interface GameStore {
   joinOnline(options: { url: string; table: string; name?: string; openSocket?: () => SocketLike }): void;
   /** Open a new shared table and sit down at it. */
   hostOnline(): Promise<void>;
+  /**
+   * Classic's one way in: open a table others can join, and wait in its
+   * lobby — alone, it starts as a game on your own. Where no table can be
+   * opened (offline, say), the lobby for playing alone, saying why.
+   */
+  newGame(): Promise<void>;
+  /**
+   * Play the table you are hosting on your own, nobody else having come: the
+   * shared table closes, and a match alone starts with its seats, difficulties,
+   * your chair and name, and the match length — saved, as a match alone is.
+   */
+  startSolo(): void;
   /** Reopen the lobby this tab was hosting before a reload, if it went away moments ago. True if there was one. */
   reopenHostedTable(): boolean;
   /** Sit down at a table whose code somebody gave you. */
@@ -788,6 +800,33 @@ export const useGameStore = create<GameStore>((set, get) => {
           error: err instanceof Error ? `Could not open a table. ${err.message}` : 'Could not open a table.',
         });
       }
+    },
+
+    newGame: async () => {
+      await get().hostOnline();
+      const failed = get().error;
+      if (get().screen === 'menu' && failed) {
+        get().goToLobby();
+        set({ error: `${failed} You can still play on your own.` });
+      }
+    },
+
+    startSolo: () => {
+      const { seatsAtTable, you, match, hosting } = get();
+      const mine = seatsAtTable.find((s) => s.id === you);
+      const humanSeat = mine?.seat ?? DEFAULT_HUMAN_SEAT;
+      // Every chair but yours to a computer, playing as the host set it to.
+      const seats = defaultSeats(humanSeat).map((seat) => ({
+        ...seat,
+        difficulty: seatsAtTable.find((s) => s.seat === seat.seat)?.difficulty ?? seat.difficulty,
+      }));
+      // A browser-hosted table has no one seed (every device adds to the
+      // shuffle), so the match alone deals a fresh one; a server table's seed
+      // was the host's to set, and carries over.
+      const seed = hosting === 'server' && get().seed ? get().seed : makeSeed();
+      detach();
+      set({ seats, humanSeat, matchRule: match.rule, seed, tableCode: '', online: false });
+      get().startMatch();
     },
 
     reopenHostedTable: () => {

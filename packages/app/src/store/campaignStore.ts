@@ -282,9 +282,10 @@ export const useCampaignStore =
           save(next);
           return;
         }
-        const seated = startHand(next, false);
+        const seated = startHand(next, false, get().vestiges);
         save(seated);
-        openTableScreen(seated);
+        // Everyone else dead at the first ante: the table is over before it began.
+        if (seated.table?.hand) openTableScreen(seated);
       },
       rejoin: () => {
         let run = get().run;
@@ -298,9 +299,9 @@ export const useCampaignStore =
           save(run);
           if (run.phase !== 'table') return;
         }
-        const next = startHand(run, false);
+        const next = startHand(run, false, get().vestiges);
         save(next);
-        openTableScreen(next);
+        if (next.table?.hand) openTableScreen(next);
       },
       settleFinished: (finishOrder) => {
         if (!get().run?.table?.hand) return;
@@ -319,8 +320,12 @@ export const useCampaignStore =
         }
         handLog = { out: [], lastPlay: {}, pile: null };
         set({ passivePlay: null, passiveCards: {} });
-        save(startHand(run, showdown));
-        useGameStore.getState().startNextRound();
+        const next = startHand(run, showdown, get().vestiges);
+        save(next);
+        // A seat that cannot pay the ante dies as the hand opens. If that was
+        // you — or everyone else — no hand is dealt: the hand's end still on
+        // screen turns into the table's.
+        if (next.table?.hand) useGameStore.getState().startNextRound();
       },
       claim: (index) => {
         const run = get().run;

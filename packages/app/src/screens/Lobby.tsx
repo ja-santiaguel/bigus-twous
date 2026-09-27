@@ -25,7 +25,9 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
 };
 
 /**
- * Setting up a game on your own.
+ * Setting up a game on your own, when no shared table could be opened — a new
+ * game otherwise starts in a shared table's lobby, and is played alone from
+ * there if nobody joins. Says why it is here.
  *
  * The same frame, labels and controls as a shared table — Leave, the seats with
  * each computer's difficulty, your name, the match length, the seed, Start game
@@ -47,6 +49,7 @@ export function Lobby() {
   const newSeed = useGameStore((s) => s.newSeed);
   const startMatch = useGameStore((s) => s.startMatch);
   const goToMenu = useGameStore((s) => s.goToMenu);
+  const error = useGameStore((s) => s.error);
 
   return (
     <LobbyLayout
@@ -56,6 +59,7 @@ export function Lobby() {
         </button>
       }
       hint="Computers play the other three seats. Play passes clockwise."
+      error={error}
       seats={seats.map((seat) => {
         const mine = seat.seat === humanSeat;
         return (

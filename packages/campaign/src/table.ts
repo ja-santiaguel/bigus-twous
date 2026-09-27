@@ -17,14 +17,16 @@ import { SHOWDOWN_ANTE, type Archetype } from './tiers.js';
 /**
  * One campaign table, from sitting down to leaving it.
  *
- * The cards are played by a session like any other table; this is the gold
- * around them. A hand opens with the ante (three antes at the Requiem, and for the others at a Reckoning), takes
- * the price of any class play made in it, and is settled from the finishing
- * order when it ends. A seat that goes broke is out: its chair stays empty
- * for the rest of the table, and it is dealt no more hands. The table ends
- * when you win it — by holding the tribute at the last hand, by winning a
- * Reckoning or the Requiem, or when everyone else is broke — when you go broke
- * yourself, or when its last hand is played without winning.
+ * The cards are played by a session like any other table; this is the souls
+ * around them. Souls are life: a hand opens with the ante (three antes at the
+ * Requiem, and for the others at a Reckoning), and a seat that cannot pay it
+ * in full dies trying — what little it had is lost with it, its chair stays
+ * empty, and it is dealt no more hands. So does a seat a hand leaves with
+ * nothing. A hand takes the price of any class play made in it, and is
+ * settled from the finishing order when it ends. The table ends when you win
+ * it — by holding the tribute at the last hand, by winning a Reckoning or the
+ * Requiem, or when everyone else is dead — when you die yourself, or when its
+ * last hand is played without winning.
  *
  * The two showdowns:
  *   Reckoning  called by you, early, once you hold the tribute: the others
@@ -74,8 +76,20 @@ export interface TableSeat {
   classId: ClassId;
   worth: number;
   medallions: Held[];
-  /** Broke: out of the table, its chair empty, dealt no more hands. */
+  /** Dead (called broke in code): out of the table, its chair empty, dealt no more hands. */
   broke?: boolean;
+}
+
+/**
+ * A seat that died at this table: of a hand that left it nothing, or — with
+ * `owed` — trying to pay an ante it could not cover.
+ */
+export interface Fallen {
+  seat: PlayerId;
+  persona: Persona | null;
+  /** The ante it could not pay, and what it had: set when it died paying. */
+  owed?: number;
+  had?: number;
 }
 
 export interface HandState {
@@ -84,6 +98,10 @@ export interface HandState {
   showdown: boolean;
   /** Called early by you: the others ante three times, you once. */
   reckoning?: boolean;
+  /** Who died at this hand's ante, told at its end. */
+  fallen?: Fallen[];
+  /** Last Rites spent at this hand's ante, and what it gave, told at its end. */
+  spared?: { seat: PlayerId; amount: number }[];
 }
 
 export interface TableState {
@@ -134,29 +152,24 @@ const holds = (medallions: readonly Held[], id: MedallionId): boolean => levelOf
 export const buyInFor = (option: TableOption, medallions: readonly Held[] = []): number =>
   Math.max(0, option.buyIn - (holds(medallions, 'hoard') ? option.ante : 0));
 
-/** Antes you always keep back from a buy-in, so you can play the hands you paid to sit at. */
-export const SHORT_SEAT_ANTES = 3;
+type Sitter = { classId: ClassId; worth: number; medallions: readonly Held[] };
+
+/** What you put in to sit: the whole buy-in. There is no sitting short. */
+export const stakeFor = (option: TableOption, you: Sitter): number => buyInFor(option, you.medallions);
+
+/** Your ordinary ante at a table on offer, before you sit. */
+export const firstAnteFor = (option: TableOption, you: Sitter): number =>
+  Math.max(1, Math.round(option.ante * anteShareOf(you.classId, you.medallions)));
 
 /**
- * What you actually put in to sit: the buy-in, or — short of it — all but
- * three of your antes. A short seat plays the whole table, but the table
- * prize pays it only from the part it paid for (the prize is layered like any
- * pot, so a seat can never win more from another than it put in itself).
+ * What sitting here takes before a card is dealt: the buy-in and the first
+ * ante. Short of that, you cannot sit — the ante would be the death of you.
  */
-export function stakeFor(
-  option: TableOption,
-  you: { classId: ClassId; worth: number; medallions: readonly Held[] },
-): number {
-  const ante = Math.max(1, Math.round(option.ante * anteShareOf(you.classId, you.medallions)));
-  return Math.max(0, Math.min(buyInFor(option, you.medallions), you.worth - SHORT_SEAT_ANTES * ante));
-}
+export const costToSit = (option: TableOption, you: Sitter): number =>
+  stakeFor(option, you) + firstAnteFor(option, you);
 
-/** Whether you would sit short here: unable to cover the whole buy-in. */
-export const isShort = (option: TableOption, you: { classId: ClassId; worth: number; medallions: readonly Held[] }) =>
-  stakeFor(option, you) < buyInFor(option, you.medallions);
-
-/** Whether you can sit at all: any gold at all will buy a short seat. */
-export const canAfford = (_option: TableOption, worth: number): boolean => worth > 0;
+/** Whether you can sit here and live to be dealt the first hand. */
+export const canSit = (option: TableOption, you: Sitter): boolean => you.worth >= costToSit(option, you);
 
 /** Sit down: everyone pays the table's buy-in into its prize. */
 export function openTable(
@@ -191,7 +204,8 @@ export function openTable(
 }
 
 function seatPersona(option: TableOption, id: PlayerId, persona: Persona, stakes: Record<string, number>): TableSeat {
-  // Someone who cannot cover the buy-in puts in all but a coin: they sit down desperate.
+  // Players are dealt purses that cover the buy-in with antes to spare; one
+  // that somehow cannot puts in all but a soul, and the ante will find them.
   const stake = Math.min(buyInFor(option, persona.medallions), Math.max(0, persona.worth - 1));
   stakes[persona.key] = stake;
   return {
@@ -284,23 +298,109 @@ export const worthBySeat = (table: TableState): Record<PlayerId, number> =>
 /**
  * Open a hand, for the seats still in the table. `reckoning` is your call; the
  * last hand is the Requiem regardless.
+ *
+ * Every seat pays its ante as the hand opens, and one that cannot pay it in
+ * full dies trying: out before a card is dealt, what little it had lost with
+ * it. Last Rites, once a run, spares its bearer: it is left three antes, and
+ * pays from them. When you die, or everyone else does, there is no hand: the
+ * table is over, and `outcome` says how.
  */
-export function beginHand(table: TableState, reckoning: boolean): TableState {
+export function openHand(table: TableState, reckoning: boolean): { table: TableState; outcome: HandOutcome | null } {
   if (table.hand) throw new Error('A hand is already open');
   const requiem = isLastCall(table);
   if (reckoning && !requiem && !canCallReckoning(table)) throw new Error('Not allowed to call a Reckoning now');
   const called = reckoning && !requiem;
-  const seats = inPlay(table);
   // At a Reckoning the others ante three times and you once; at the Requiem,
   // everyone three times.
-  const antes = Object.fromEntries(
-    seats.map((s) => [s.id, anteFor(table, s, requiem || (called && s.id !== PLAYER_SEAT))]),
-  );
+  const owedBy = (s: TableSeat) => anteFor(table, s, requiem || (called && s.id !== PLAYER_SEAT));
+
+  let next: TableState = table;
+  const fallen: Fallen[] = [];
+  const spared: { seat: PlayerId; amount: number }[] = [];
+  for (const seat of inPlay(table)) {
+    const owed = owedBy(seat);
+    if (seat.worth >= owed) continue;
+    const key = `${keyOf(seat)}:last-rites`;
+    if (holds(seat.medallions, 'last-rites') && !next.spent.includes(key)) {
+      const left = Math.max(seat.worth, LAST_RITES_ANTES * anteFor(table, seat));
+      next = {
+        ...next,
+        spent: [...next.spent, key],
+        seats: next.seats.map((s) => (s.id === seat.id ? { ...s, worth: left } : s)),
+      };
+      spared.push({ seat: seat.id, amount: left - seat.worth });
+      if (left >= owed) continue;
+    }
+    fallen.push({ seat: seat.id, persona: seat.persona, owed, had: seat.worth });
+    next = {
+      ...next,
+      departed: [...next.departed, keyOf(seat)],
+      // Your seat is never marked out: it is where the run ends.
+      seats: next.seats.map((s) =>
+        s.id === seat.id ? { ...s, worth: 0, ...(s.id === PLAYER_SEAT ? {} : { broke: true }) } : s,
+      ),
+    };
+  }
+
+  // No hand to deal: you died paying, or there is no one left to play.
+  const youDied = fallen.some((f) => f.seat === PLAYER_SEAT);
+  if (youDied || inPlay(next).every((s) => s.id === PLAYER_SEAT)) {
+    const settled = settleStakes(next, !youDied);
+    if (!youDied) next = { ...next, seats: settled.seats };
+    return {
+      table: { ...next, hand: null },
+      outcome: {
+        placing: [],
+        ledger: {},
+        showdown: requiem || called,
+        effects: spared.map((s) => ({ seat: s.seat, medallion: 'last-rites' as const, amount: s.amount })),
+        left: fallen,
+        joined: [],
+        end: { kind: youDied ? 'broke' : 'won', stakes: settled.record },
+      },
+    };
+  }
+
+  const seats = inPlay(next);
+  const antes = Object.fromEntries(seats.map((s) => [s.id, owedBy(s)]));
   const worth = Object.fromEntries(seats.map((s) => [s.id, s.worth]));
   return {
-    ...table,
-    hand: { pot: openPot(worth, antes), showdown: requiem || called, ...(called ? { reckoning: true } : {}) },
+    table: {
+      ...next,
+      hand: {
+        pot: openPot(worth, antes),
+        showdown: requiem || called,
+        ...(called ? { reckoning: true } : {}),
+        ...(fallen.length > 0 ? { fallen } : {}),
+        ...(spared.length > 0 ? { spared } : {}),
+      },
+    },
+    outcome: null,
   };
+}
+
+/** Open a hand at a table that goes on (see openHand). */
+export function beginHand(table: TableState, reckoning: boolean): TableState {
+  return openHand(table, reckoning).table;
+}
+
+/** What Last Rites leaves you with, in your own antes. */
+export const LAST_RITES_ANTES = 3;
+
+/**
+ * Who would die at the next hand's ante as things stand: every seat still in
+ * that could not pay it — three antes at the Requiem, or for the others if
+ * you call a Reckoning. For warning before it happens.
+ */
+export function wouldDie(table: TableState, reckoning: boolean): PlayerId[] {
+  const requiem = isLastCall(table);
+  const called = reckoning && !requiem;
+  return inPlay(table).flatMap((s) => {
+    const owed = anteFor(table, s, requiem || (called && s.id !== PLAYER_SEAT));
+    const spared = holds(s.medallions, 'last-rites') && !table.spent.includes(`${keyOf(s)}:last-rites`);
+    const left = spared ? Math.max(s.worth, LAST_RITES_ANTES * anteFor(table, s)) : s.worth;
+    return left < owed ? [s.id] : [];
+  });
 }
 
 /**
@@ -350,10 +450,10 @@ export interface HandOutcome {
   /** What each seat put in, took back, and the difference. */
   ledger: Record<PlayerId, { paid: number; got: number; net: number }>;
   showdown: boolean;
-  /** Any-class Medallions that moved gold this hand, and how much. */
+  /** Any-class Medallions that moved souls this hand, and how much. */
   effects: { seat: PlayerId; medallion: MedallionId; amount: number }[];
-  /** Who went broke and is out. */
-  left: { seat: PlayerId; persona: Persona | null }[];
+  /** Who died and is out: at the hand's ante, or left with nothing by it. */
+  left: Fallen[];
   /** Always empty: no one takes a broke seat's chair. Kept for older saves. */
   joined: { seat: PlayerId; persona: Persona }[];
   /** This hand was a Reckoning you called. */
@@ -390,21 +490,25 @@ export function finishHand(
     placing: result.placing,
     ledger,
     showdown: hand.showdown,
-    effects,
-    left: [],
+    // Last Rites spent at the ante comes first: it happened first.
+    effects: [
+      ...(hand.spared ?? []).map((s) => ({ seat: s.seat, medallion: 'last-rites' as const, amount: s.amount })),
+      ...effects,
+    ],
+    left: [...(hand.fallen ?? [])],
     joined: [],
     end: null,
     ...(hand.reckoning ? { reckoning: true } : {}),
   };
 
-  // Broke seats leave. You going broke ends the table, and the run.
+  // A seat left with nothing dies. You dying ends the table, and the run.
   if (you(next).worth <= 0) {
     outcome.left.push({ seat: PLAYER_SEAT, persona: null });
     next = { ...next, departed: [...next.departed, PLAYER_KEY] };
     outcome.end = { kind: 'broke', stakes: settleStakes(next, false).record };
     return { table: next, outcome };
   }
-  // Broke seats are out: their chairs stay empty for the rest of the table.
+  // The dead are out: their chairs stay empty for the rest of the table.
   for (const seat of next.seats) {
     if (seat.persona === null || seat.broke || seat.worth > 0) continue;
     outcome.left.push({ seat: seat.id, persona: seat.persona });
@@ -493,7 +597,7 @@ function medallionEffects(
   for (const s of inPlay(table)) {
     if ((worth[s.id] ?? 0) > 0 || !holds(s.medallions, 'last-rites')) continue;
     if (spent.includes(`${keyOf(s)}:last-rites`)) continue;
-    const left = 3 * anteFor(table, s);
+    const left = LAST_RITES_ANTES * anteFor(table, s);
     worth[s.id] = left;
     spent.push(`${keyOf(s)}:last-rites`);
     effects.push({ seat: s.id, medallion: 'last-rites', amount: left });

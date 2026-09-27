@@ -4,6 +4,7 @@ import {
   arrive,
   buyMedallion,
   canCallReckoning,
+  canEnter,
   choices,
   enterNode,
   claimReward,
@@ -17,6 +18,7 @@ import {
   SHOWDOWN_ANTE,
   SWIFT_ANTES,
   CPU_NAMES,
+  CLASSES,
   runName,
   isLastCall,
   startHand,
@@ -73,7 +75,7 @@ describe('the descent', () => {
     expect(stake).toBe(run.chosen!.buyIn);
     // Everyone pays the same.
     for (const paid of Object.values(run.table!.stakes)) expect(paid).toBeLessThanOrEqual(run.chosen!.buyIn);
-    expect(you(run.table!).worth).toBe(440 - stake);
+    expect(you(run.table!).worth).toBe(CLASSES.courtier.startingWorth - stake);
     expect(Object.keys(run.table!.stakes)).toHaveLength(4);
   });
 });
@@ -116,7 +118,10 @@ describe('a table', () => {
     for (const id of others) {
       const seat = ready.table!.seats.find((s) => s.id === id)!;
       if (seat.broke) continue;
-      expect(paid[id]).toBe(Math.min(seat.worth, anteFor(ready.table!, seat) * SHOWDOWN_ANTE));
+      const owed = anteFor(ready.table!, seat) * SHOWDOWN_ANTE;
+      // Three antes, or death for a seat that cannot pay them.
+      if (seat.worth >= owed) expect(paid[id]).toBe(owed);
+      else expect(called.table!.hand!.fallen?.map((f) => f.seat)).toContain(id);
     }
     const pot = Object.values(paid).reduce((a, b) => a + b, 0);
     const won = endHand(called, youFirst);
@@ -163,8 +168,18 @@ describe('a table', () => {
     );
   });
 
-  it('closes at the last hand if you never win, and sends you on down, poorer and with no spoils', () => {
-    const start = seated();
+  it('closes at the last hand if you never win, and sends you on down with no spoils', () => {
+    const plain = seated();
+    // A purse deep enough to live through the Requiem's three antes, and a
+    // tribute it does not reach.
+    const start: RunState = {
+      ...plain,
+      table: {
+        ...plain.table!,
+        mark: 100_000,
+        seats: plain.table!.seats.map((s) => (s.id === PLAYER_SEAT ? { ...s, worth: 2000 } : s)),
+      },
+    };
     let run = start;
     for (let i = 0; i < 20 && run.phase === 'table'; i++) run = endHand(startHand(run, false), youThird);
     expect(run.lastHand?.end?.kind).toBe('closed');
@@ -176,7 +191,67 @@ describe('a table', () => {
     expect(run.tier).toBe(run.map.rows[1]![0]!.tier);
     expect(run.medallions).toEqual([]);
     expect(run.worth).toBeGreaterThan(0);
-    expect(run.worth).toBeLessThan(400);
+  });
+
+  it('kills a player who cannot pay the ante as the hand opens, and deals on without them', () => {
+    let run = seated('ante-death');
+    const gone = others[1]!;
+    run = {
+      ...run,
+      table: { ...run.table!, seats: run.table!.seats.map((s) => (s.id === gone ? { ...s, worth: 3 } : s)) },
+    };
+    const dealt = startHand(run, false);
+    expect(dealt.phase).toBe('table');
+    const seat = dealt.table!.seats.find((s) => s.id === gone)!;
+    expect(seat.broke).toBe(true);
+    expect(seat.worth).toBe(0);
+    expect(dealt.table!.hand!.pot.contributions[gone]).toBeUndefined();
+    const owed = anteFor(
+      run.table!,
+      run.table!.seats.find((s) => s.id === gone)!,
+    );
+    expect(dealt.table!.hand!.fallen).toEqual([{ seat: gone, persona: seat.persona, owed, had: 3 }]);
+    // Told at the end of the hand it died at.
+    const after = endHand(dealt, youFirst);
+    expect(after.lastHand!.left.map((l) => l.seat)).toEqual([gone]);
+    expect(after.lastHand!.left[0]!.owed).toBe(owed);
+  });
+
+  it('ends the run when you cannot pay the ante: you die paying, and no hand is dealt', () => {
+    let run = seated('your-death');
+    run = {
+      ...run,
+      table: {
+        ...run.table!,
+        seats: run.table!.seats.map((s) => (s.id === PLAYER_SEAT ? { ...s, worth: 2 } : s)),
+      },
+    };
+    const dead = startHand(run, false);
+    expect(dead.phase).toBe('lost');
+    expect(dead.table!.hand).toBeNull();
+    expect(dead.lastHand!.end?.kind).toBe('broke');
+    expect(dead.lastHand!.left[0]).toMatchObject({ seat: PLAYER_SEAT, had: 2 });
+    expect(dead.worth).toBe(0);
+  });
+
+  it('spares you once with Last Rites: three antes instead of death at the ante', () => {
+    let run = seated('last-rites');
+    run = {
+      ...run,
+      table: {
+        ...run.table!,
+        seats: run.table!.seats.map((s) =>
+          s.id === PLAYER_SEAT ? { ...s, worth: 2, medallions: [{ id: 'last-rites', level: 1 }] } : s,
+        ),
+      },
+    };
+    const spared = startHand(run, false);
+    expect(spared.phase).toBe('table');
+    const ante = anteFor(run.table!, you(run.table!));
+    expect(spared.table!.hand!.pot.contributions[PLAYER_SEAT]).toBe(ante);
+    expect(you(spared.table!).worth).toBe(3 * ante);
+    expect(spared.table!.hand!.spared).toEqual([{ seat: PLAYER_SEAT, amount: 3 * ante - 2 }]);
+    expect(spared.lastRitesUsed || spared.table!.spent.includes('you:last-rites')).toBe(true);
   });
 
   it('ends the run when you go broke', () => {
@@ -316,15 +391,22 @@ describe('buying in', () => {
     for (const node of choices(run)) expect(run.offers[node.id]?.lineup).toHaveLength(3);
   });
 
-  it('sits you short when you cannot cover the buy-in: all but three antes in', () => {
+  it('seats you only if you can pay the buy-in and live through the first ante', () => {
     const run = startRun('afford', 'commoner');
     const node = choices(run)[0]!;
     const offer = run.offers[node.id]!;
     const ante = Math.round(offer.ante * 0.75);
-    const short = enterNode({ ...run, worth: offer.buyIn + ante }, node.id);
-    expect(short.phase).toBe('table');
-    expect(short.table!.stakes.you).toBe(offer.buyIn - 2 * ante);
-    expect(you(short.table!).worth).toBe(3 * ante);
+    expect(canEnter({ ...run, worth: offer.buyIn + ante - 1 }, node)).toBe(false);
+    expect(enterNode({ ...run, worth: offer.buyIn + ante - 1 }, node.id).phase).toBe('map');
+    const seatedAt = enterNode({ ...run, worth: offer.buyIn + ante }, node.id);
+    expect(seatedAt.phase).toBe('table');
+    expect(seatedAt.table!.stakes.you).toBe(offer.buyIn);
+    expect(you(seatedAt.table!).worth).toBe(ante);
+  });
+
+  it('ends the run on the map when no way down can be paid for', () => {
+    const run = startRun('no-way-down', 'commoner');
+    expect(arrive({ ...run, worth: 1 }).phase).toBe('lost');
   });
 
   it('seats nobody with no gold at all', () => {

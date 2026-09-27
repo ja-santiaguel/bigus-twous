@@ -16,6 +16,7 @@ import {
   SHOWDOWN_ANTE,
   keyOf,
   inPlay,
+  wouldDie,
   you,
   type HandOutcome,
   type TableSeat,
@@ -30,11 +31,11 @@ import { GoldAmount } from '../GoldAmount.js';
 import { Terms } from '../Terms.js';
 
 /**
- * The campaign's gold, laid around an ordinary table.
+ * The campaign's souls, laid around an ordinary table.
  *
  * The table itself is the same one you play on your own at; these are the
  * pieces a campaign table adds to it: the read-out of the hand, the pot, your
- * gold and the target; the passive plays called out; and the reckoning at the
+ * souls and the target; the passive plays called out; and the reckoning at the
  * end of each hand.
  */
 
@@ -59,11 +60,11 @@ function potOf(table: TableState) {
  *   At a Reckoning or the Requiem, its name and "Now".
  *   Pot — this hand's pot, and beside it the Table: the two things a seat can
  *   win here, paid the same way (70/25/5/0). "Pot" says what they are and what
- *   first place takes of each now; each amount says where its gold came from.
+ *   first place takes of each now; each amount says where its souls came from.
  *   Tribute — what you have won here, of what the table asks.
  *
- * Gold amounts are gold, with a coin; counts are bone. Your gold is in the run
- * bar.
+ * Amounts of souls are in the souls' grey-teal, with a soul coin; counts are
+ * bone. Your souls are in the run bar.
  */
 export function CampaignInfo() {
   const table = useCampaignStore(shownTable);
@@ -75,7 +76,7 @@ export function CampaignInfo() {
   const reckoning = table.hand?.reckoning ?? false;
   const left = hands - hand;
   const seat = you(table);
-  // The tribute as gold won here: what it asks, and what you have won so far.
+  // The tribute as souls won here: what it asks, and what you have won so far.
   const asks = tributeOf(table.option, seat.classId);
   const start = table.mark - asks;
   const won = Math.max(0, Math.min(asks, seat.worth - start));
@@ -151,7 +152,7 @@ export function CampaignInfo() {
               <GoldAmount value={pot} memory="hud:pot" from={0} className="stat__value hud__gold goldamount--below" />
             }
           >
-            <p>This hand&rsquo;s pot, {gold(pot)} gold:</p>
+            <p>This hand&rsquo;s pot, {gold(pot)} souls:</p>
             {inPlay(table).map((s) => {
               const paid = contributions[s.id] ?? 0;
               const antePaid = Math.min(paid, anteFor(table, s, showdown && !(reckoning && s.id === PLAYER_SEAT)));
@@ -170,7 +171,7 @@ export function CampaignInfo() {
         </span>
         <span className="hud__line hud__prize">
           <InfoTip
-            label="Where the table's gold came from"
+            label="Where the table's souls came from"
             word={
               <GoldAmount
                 value={prize}
@@ -180,7 +181,7 @@ export function CampaignInfo() {
               />
             }
           >
-            <p>The table, {gold(prize)} gold: every buy-in paid to sit here.</p>
+            <p>The table, {gold(prize)} souls: every buy-in paid to sit here.</p>
             {Object.entries(table.stakes).map(([key, staked]) => {
               const sat = table.seats.find((s) => keyOf(s) === key);
               const gone = !sat || sat.broke;
@@ -328,8 +329,17 @@ export function CampaignHandEnd({
     const seat = table.seats.find((s) => s.id === id);
     return seat ? [{ seat, line: outcome.ledger[id], place: placing.indexOf(id) }] : [];
   });
-  const fallen = outcome.left.flatMap((l) => (l.persona ? [l.persona.name] : []));
-  // The tribute as gold won here: what it asks, and what you have won so far.
+  // Who died: the others by name, and — told apart — you.
+  const fallen = outcome.left.flatMap((l) => (l.persona ? [{ name: l.persona.name, owed: l.owed }] : []));
+  const youFell = outcome.left.find((l) => l.persona === null);
+  // Who the next ante would kill, as things stand: you, or the others — at
+  // the Requiem, or if you call a Reckoning and ask three antes of them.
+  const doomed = end ? [] : wouldDie(table, false);
+  const youDoomed = doomed.includes(PLAYER_SEAT);
+  const owedNext = end ? 0 : anteFor(table, you(table), lastCall);
+  const reckoningKills = ready ? wouldDie(table, true).filter((id) => id !== PLAYER_SEAT) : [];
+  const requiemKills = lastCall ? doomed.filter((id) => id !== PLAYER_SEAT) : [];
+  // The tribute as souls won here: what it asks, and what you have won so far.
   const asks = tributeOf(table.option, you(table).classId);
   const won = Math.max(0, Math.min(asks, you(table).worth - (table.mark - asks)));
   const held = you(table).worth >= table.mark;
@@ -344,21 +354,30 @@ export function CampaignHandEnd({
         transition={{ ...SETTLE, delay: 0.12 }}
       >
         <h2>{headline}</h2>
-        <ul className="overlay__scores handend__scores">
-          {rows.map(({ seat, line, place }) => (
-            <li key={seat.id} className={seat.id === PLAYER_SEAT ? 'is-you' : ''}>
-              <span className="overlay__place">{PLACES[place] ?? ''}</span>
-              <span>{seat.id === PLAYER_SEAT ? 'You' : nameOf(seat.id)}</span>
-              <span className={`overlay__gain ${line && line.net < 0 ? 'is-loss' : ''}`}>
-                {line ? `${line.net >= 0 ? '+' : '−'}${gold(Math.abs(line.net))}` : ''}
-              </span>
-              <strong>{gold(seat.worth)}</strong>
-            </li>
-          ))}
-        </ul>
+        {youFell && (
+          <p className="handend__death">
+            {youFell.owed !== undefined
+              ? `The ante asked ${gold(youFell.owed)} souls. You had ${gold(youFell.had ?? 0)}, and paid with your life.`
+              : 'The hand left you no souls, and nothing to live on.'}
+          </p>
+        )}
+        {rows.length > 0 && (
+          <ul className="overlay__scores handend__scores">
+            {rows.map(({ seat, line, place }) => (
+              <li key={seat.id} className={seat.id === PLAYER_SEAT ? 'is-you' : ''}>
+                <span className="overlay__place">{PLACES[place] ?? ''}</span>
+                <span>{seat.id === PLAYER_SEAT ? 'You' : nameOf(seat.id)}</span>
+                <span className={`overlay__gain ${line && line.net < 0 ? 'is-loss' : ''}`}>
+                  {line ? `${line.net >= 0 ? '+' : '−'}${gold(Math.abs(line.net))}` : ''}
+                </span>
+                <strong>{gold(seat.worth)}</strong>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {/* What happened besides the cards, as tagged lines: a Medallion that
-            moved gold, a player who fell, a bounty. */}
+            moved souls, a player who fell, a bounty. */}
         {(outcome.effects.length > 0 || fallen.length > 0 || (outcome.swift ?? 0) > 0) && (
           <ul className="handend__events">
             {outcome.effects.map((e, i) => (
@@ -368,11 +387,13 @@ export function CampaignHandEnd({
                 <span className="handend__amount">+{gold(e.amount)}</span>
               </li>
             ))}
-            {fallen.map((name) => (
+            {fallen.map(({ name, owed }) => (
               <li key={`f${name}`} className="is-fallen">
                 <span className="handend__tag">Fallen</span>
                 <span>{name}</span>
-                <span className="handend__amount">chair empty</span>
+                <span className="handend__amount">
+                  {owed !== undefined ? `could not pay ${gold(owed)}` : 'no souls left'}
+                </span>
               </li>
             ))}
             {(outcome.swift ?? 0) > 0 && (
@@ -390,6 +411,7 @@ export function CampaignHandEnd({
             table={table}
             end={end}
             swift={outcome.swift ?? 0}
+            taken={youFell?.owed !== undefined ? (youFell.had ?? 0) : 0}
             spoils={
               end.kind !== 'won'
                 ? 'None'
@@ -433,12 +455,26 @@ export function CampaignHandEnd({
                 <span className="handend__sub">{lastCall ? 'the last' : `Requiem in ${handsLeft - 1}`}</span>
               </div>
             </div>
+            {youDoomed && (
+              <div className="handend__doom" role="alert">
+                <span className="handend__label">Your souls</span>
+                <span className="handend__doomline">
+                  {gold(you(table).worth)} held · {gold(owedNext)} owed
+                </span>
+                <span className="handend__doomnote">You cannot pay the next ante. Deal it, and you die paying.</span>
+              </div>
+            )}
             {lastCall && (
               <div className="handend__offer is-requiem">
                 <span className="handend__offername">Requiem</span>
                 <span className="handend__chips">
                   <span>Everyone ×{SHOWDOWN_ANTE}</span>
                   <span>First wins the table</span>
+                  {requiemKills.map((id) => (
+                    <span key={id} className="is-death">
+                      {nameOf(id)} cannot pay
+                    </span>
+                  ))}
                 </span>
               </div>
             )}
@@ -451,6 +487,11 @@ export function CampaignHandEnd({
                   <span>Whole pot</span>
                   <span className="is-gold">+{gold(bounty)} bounty</span>
                   <span>Once</span>
+                  {reckoningKills.map((id) => (
+                    <span key={id} className="is-death">
+                      Kills {nameOf(id)}
+                    </span>
+                  ))}
                 </span>
               </div>
             )}
@@ -461,6 +502,10 @@ export function CampaignHandEnd({
           {end ? (
             <button className="btn btn--primary" onClick={leave}>
               {end.kind === 'won' ? 'Leave the table' : run.phase === 'lost' ? 'See how it went' : 'Go on down'}
+            </button>
+          ) : youDoomed ? (
+            <button className="btn btn--danger" onClick={() => deal(lastCall)}>
+              Pay the ante, and die
             </button>
           ) : lastCall ? (
             <button className="btn btn--primary" onClick={() => deal(true)}>
@@ -486,26 +531,29 @@ export function CampaignHandEnd({
 
 /**
  * A table's end, told as a ledger: what you paid to sit, what the hands
- * brought, what the table's gold paid you by standing, any bounty — and the
- * net, with your gold before and after. Then the spoils.
+ * brought, what the table's prize paid you by standing, any bounty, what died
+ * with you — and the net, with your souls before and after. Then the spoils.
  */
 function TableEarnings({
   table,
   end,
   swift,
+  taken,
   spoils,
 }: {
   table: TableState;
   end: NonNullable<HandOutcome['end']>;
   swift: number;
+  /** What you had when you died paying an ante: lost with you. */
+  taken: number;
   spoils: string;
 }) {
   const stake = end.stakes[PLAYER_KEY] ?? { staked: 0, got: 0 };
-  // Gold on sitting down, after the buy-in: where the tribute was counted from.
+  // Souls on sitting down, after the buy-in: where the tribute was counted from.
   const seated = table.mark - tributeOf(table.option, you(table).classId);
   const before = seated + stake.staked;
   const after = you(table).worth;
-  const hands = after - stake.got - swift - seated;
+  const hands = after - stake.got - swift - seated + taken;
   const net = after - before;
   const line = (label: string, amount: number, className = '') => (
     <li className={className}>
@@ -524,6 +572,7 @@ function TableEarnings({
         {line('Hands', hands)}
         {line(end.kind === 'won' ? 'Table, first' : 'Table, by standing', stake.got)}
         {swift > 0 && line('Bounty', swift)}
+        {taken > 0 && line('Died with', -taken)}
         {line('Net', net, 'is-total')}
       </ul>
       <p className="handend__journey">
@@ -532,7 +581,7 @@ function TableEarnings({
           →
         </span>
         <strong className={net < 0 ? 'is-loss' : 'is-gain'}>{gold(after)}</strong>
-        <small>gold</small>
+        <small>souls</small>
       </p>
       <p className="handend__spoils">
         <span className="handend__label">Spoils</span> {spoils}
@@ -553,7 +602,7 @@ export function ClassBadge({ compact = false }: { compact?: boolean }) {
   if (!classId) return null;
   const c = CLASSES[classId];
   const cost = table ? playCost(table, you(table)) : 0;
-  const price = cost > 0 ? `${gold(cost)} gold` : 'free';
+  const price = cost > 0 ? `${gold(cost)} souls` : 'free';
   return (
     <span
       className={`classbadge classbadge--${classId}`}

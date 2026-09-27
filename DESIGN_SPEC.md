@@ -58,6 +58,10 @@ Applies within every individual hand of a table:
 
 ## 3. All-in
 
+*Superseded at the ante (see "Souls, and death at the ante", 2026-09-26): a
+player who cannot cover an ante now dies trying. What follows still holds for
+a matched raise, which is not built.*
+
 A player who cannot cover an ante or a matched raise puts in everything
 they have and is **all-in**. Their winnings are capped: they can win at
 most what they put in, from each other player. Gold above that cap is
@@ -249,6 +253,35 @@ The Showdown is two things now.
 - **Requiem** — the table's last hand: everyone antes three times, first place
   wins the table. Holding the tribute still wins before it is dealt.
 
+### Souls, and death at the ante (2026-09-26)
+Gold is now **souls**, and souls are your life: the player should feel the
+stakes of every payment at once.
+- **Anyone who cannot pay dies trying.** Every seat pays its ante as a hand
+  opens (three antes at the Requiem, and for the others at a Reckoning). A
+  seat that cannot pay it in full dies there: out before a card is dealt, its
+  chair empty for the rest of the table, and what little it had lost with it.
+  A seat a hand leaves with nothing dies too, as before. Paying your last soul
+  is allowed: you play the hand with nothing left, and it had better pay.
+- **If it is you**, the run ends at the deal: no hand is dealt, and the hand's
+  end on screen becomes the table's, saying what the ante asked and what you
+  had. The hand's end warns first — your souls, what the next ante asks, and
+  "Pay the ante, and die" as the only way on — and names any player a
+  Requiem or a Reckoning would kill.
+- **If everyone else dies at the deal**, you win the table there.
+- **No short seats.** A table can be taken only if you can pay its buy-in and
+  your first ante; otherwise it is *beyond your souls*. If no way down can be
+  paid for, you die on the map, and the run ends.
+- **Last Rites** now spares you at the moment you would die: once a run, you
+  live on with three antes — at a hand's end, or at the ante you could not pay.
+- Class plays you cannot pay for are still simply not offered.
+- **Balance**: dying at the ante and losing short seats cost about six points
+  of win rate (playtest, 300 runs a class: 16 / 19 / 17% before, 10 / 15 /
+  10% after), mostly at the first depth's Requiem. Starting purses rose to
+  compensate: **Wanderer 540** (was 360), **Courtier 580** (was 440),
+  **Tyrant 600** (was 420). Now 16 / 16 / 15%. A bigger Tyrant purse did not
+  move it further (640: still 15% over 600 runs). Cheaper buy-ins were tried
+  and made it worse: they shrink the table prizes a run lives on.
+
 ### Pile picks by placing (2026-09-26)
 At a campaign table the piles are picked in the order the last hand finished —
 its winner first, then second place, third, and last — rather than clockwise
@@ -371,6 +404,8 @@ What it found, and what changed:
   of the table prize and the spoils (a Medallion). Losing it costs your
   buy-in, less whatever share of the prize your gold standing earns, and
   gives nothing else. Either way, you go down.
+- *Superseded 2026-09-26 (see "Souls, and death at the ante"): you die at
+  any payment you cannot make, and there are no short seats.*
 - **The run is lost only when you are broke** (or lose the throne). Gold is
   never a gate on the map: any gold buys a seat, if only a short one.
 - **A short seat.** If you cannot cover a table's buy-in, you sit anyway:
@@ -394,7 +429,7 @@ What it found, and what changed:
 ### Numbers
 | | Commoner | Courtier | Tyrant |
 |---|---|---|---|
-| Starting Worth | 360 | 440 | 460 |
+| Starting Worth (souls, since 2026-09-26) | 540 | 580 | 600 |
 | Ante multiplier | ×0.75 | ×1 | ×1.5 |
 | Raise sizes (antes) | 1 | 1, 2 | 1, 2, 3 |
 | Raises per hand | 2 | 2 | 3 |
@@ -509,7 +544,7 @@ Any class — rare, one level, about gold rather than cards, and offered at
 | Ferryman's Coin | your Showdown ante is two antes, not three |
 | Tithe | finish a hand first and every other seat pays you one of its antes |
 | Iron Stomach | the first time at each table you finish last, half of what you put in comes back |
-| Last Rites | once a run, a hand that would leave you with nothing leaves you three antes |
+| Last Rites | once a run, when you would die, you live on with three antes |
 | Hoard | buy-ins cost you one ante less |
 
 - Offer weights: ordinary draws common 10 / rare 3 / legendary 0.5; elite

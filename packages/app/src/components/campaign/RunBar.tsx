@@ -17,8 +17,8 @@ const gold = (n: number) => Math.round(n).toLocaleString('en-GB');
  *
  * A floating bar along the foot of the screen, inset from it by the same
  * distance as the chrome at the top, so the screens between read as framed.
- * Between tables its largest figure is your gold, as it is your life and your
- * stake at once. At a table it carries your class play beside your gold too — its name, its
+ * Between tables its largest figure is your souls, as they are your life and
+ * your stake at once. At a table it carries your class play beside them too — its name, its
  * price now, and its rule on point or tap — and sits between Sort and Clear
  * (`inline`: laid out by the table's foot rather than floating on its own).
  */
@@ -33,7 +33,7 @@ export function RunBar({
   inline?: boolean;
   /**
    * Whether the hand's cards are out. While the piles are being picked your
-   * gold is shown before this hand's ante, which is taken — and seen leaving —
+   * souls are shown before this hand's ante, which is taken — and seen leaving —
    * as the cards are dealt.
    */
   dealt?: boolean;
@@ -61,13 +61,24 @@ export function RunBar({
             <strong>{run.name}</strong>, a {c.name.toLowerCase()} — strength in {c.cards}.
           </p>
           <p>
-            <strong>{c.passiveName}</strong> (class play{price > 0 ? `, ${gold(price)} gold` : ''}): {c.passive}
+            <strong>{c.passiveName}</strong> (class play{price > 0 ? `, ${gold(price)} souls` : ''}): {c.passive}
           </p>
           <p>{IDENTITY[run.classId].style}</p>
         </InfoTip>
       </span>
       <span className="runbar__cell runbar__gold">
-        <span className="runbar__label">Gold</span>
+        <span className="runbar__label">
+          <InfoTip label="Your souls are your life" word="Souls">
+            <p>
+              <strong>Your souls are your life.</strong> Every buy-in, ante and class play is paid in them; every pot
+              you win pays you back in them.
+            </p>
+            <p>
+              Owe more than you hold, and you die paying it: the run ends there. You cannot sit at a table whose buy-in
+              and first ante you could not pay.
+            </p>
+          </InfoTip>
+        </span>
         <GoldAmount value={worth - inPot} memory="run:gold" className="runbar__amount" />
       </span>
       {atTable && (
@@ -80,7 +91,7 @@ export function RunBar({
             word={
               <span>
                 <span className={`classtag classtag--${run.classId}`}>{c.passiveName}</span> ·{' '}
-                {price > 0 ? `${gold(price)} gold` : 'free'}
+                {price > 0 ? `${gold(price)} souls` : 'free'}
               </span>
             }
           >

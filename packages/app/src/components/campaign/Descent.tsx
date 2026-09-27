@@ -3,11 +3,10 @@ import {
   anteShareOf,
   ARCHETYPES,
   buyInFor,
+  canEnter,
   choices,
   CLASSES,
   entryCost,
-  isShort,
-  SHORT_SEAT_ANTES,
   tributeOf,
   nodeCost,
   TIERS,
@@ -18,6 +17,8 @@ import { pathsOf, type Drawing } from './ClassArt.js';
 import { Terms } from '../Terms.js';
 import { InfoTip } from '../InfoTip.js';
 import { PersonaLine } from './PersonaLine.js';
+import { StatGlyph } from './SoulArt.js';
+import { GoldCoin } from '../GoldAmount.js';
 
 /**
  * The descent, drawn: the run's map read from the top down, from the gate you
@@ -26,8 +27,8 @@ import { PersonaLine } from './PersonaLine.js';
  * Every node is a small pixel picture of what waits there — a candle for an
  * ordinary table, a skull for an elite one, a purse for the Bone Merchant, a
  * question for something unknown, the throne itself — joined to the nodes below it by the paths you could
- * take. The way you came is drawn in bone; the ways open to you now in gold;
- * everything else dim. Pointing at a node previews everything it holds
+ * take. The way you came is drawn in bone; the ways open to you now in gold —
+ * a table your souls cannot pay for edged in red; everything else dim. Pointing at a node previews everything it holds
  * beside the map — for a table, who sits there too. Clicking it selects it;
  * the button under what it holds is what commits: pays the buy-in and sits
  * you down, or takes you to the merchant.
@@ -253,19 +254,23 @@ export function Descent({
         {nodes.map((node) => {
           const state = stateOf(run, node, open, reachable);
           const here = node.id === last;
+          // Open, but a seat your souls cannot pay for: sitting would kill you.
+          const beyond = state === 'open' && !canEnter(run, node);
           return (
             <button
               key={node.id}
               type="button"
-              className={`descent__node is-${state} ${node.id === picked ? 'is-picked' : ''} ${here ? 'is-here' : ''} ${
-                node.kind === 'throne' ? 'descent__node--throne' : ''
-              }`}
+              className={`descent__node is-${state} ${beyond ? 'is-beyond' : ''} ${node.id === picked ? 'is-picked' : ''} ${
+                here ? 'is-here' : ''
+              } ${node.kind === 'throne' ? 'descent__node--throne' : ''}`}
               style={at(x(node), y(node.row))}
               aria-label={`${nodeName(node)}, depth ${node.row + 1}${
                 state === 'passed'
                   ? ', passed'
                   : state === 'open'
-                    ? ', open to you'
+                    ? beyond
+                      ? ', beyond your souls'
+                      : ', open to you'
                     : state === 'lost'
                       ? ', out of reach'
                       : ''
@@ -363,15 +368,21 @@ function NodeDetail({
 }) {
   const room = TIERS[node.tier]!;
   const cost = entryCost(run, node);
+  const offer0 = run.offers[node.id];
+  // The buy-in alone: the first ante is paid as the first hand is dealt.
+  const stake = offer0 ? buyInFor(offer0, run.medallions) : Math.max(0, (cost ?? 0) - yourAnteAt(run, node));
+  const beyond = state === 'open' && !canEnter(run, node);
   const action =
-    state === 'open' ? (
+    state === 'open' && beyond ? (
+      <p className="descent__beyond">Beyond your souls. Sit here, and the first ante would be your death.</p>
+    ) : state === 'open' ? (
       picked ? (
         <button className="btn btn--primary btn--wide" onClick={() => onTake(node.id)}>
           {node.kind === 'merchant'
             ? 'Go down to the merchant'
             : node.kind === 'event'
               ? 'Go down into the dark'
-              : `Pay ${gold(cost ?? 0)} and sit down`}
+              : `Pay ${gold(stake)} souls and sit down`}
         </button>
       ) : (
         <p className="campaign__facts">Select it to go here.</p>
@@ -394,7 +405,7 @@ function NodeDetail({
         <p className="descent__where">Depth {node.row + 1}</p>
         <h2>The Bone Merchant</h2>
         <p className="campaign__passive">
-          Medallions, for gold. No table here: you pass by, buy what you can afford, and go on down.
+          Medallions, for souls. No table here: you pass by, buy what you can bear to pay for, and go on down.
         </p>
         {action}
       </div>
@@ -421,10 +432,6 @@ function NodeDetail({
   const yourAnte = Math.max(1, Math.round(ante * share));
   const mark = tributeOf({ markAntes: Math.round(room.markAntes * kind.markMultiplier), ante }, run.classId);
   const offer = run.offers[node.id];
-  const prize = (offer?.buyIn ?? nodeCost(node.tier, archetype).buyIn) * 4;
-  // The most a short seat can take home: first place, of the part it paid into.
-  const short = offer && isShort(offer, run);
-  const best = short && offer ? Math.min(prize, (cost ?? 0) * 4) * 0.7 : prize * 0.7;
   return (
     <div className="descent__detail" key={node.id}>
       <div className="descent__group descent__group--head">
@@ -436,12 +443,13 @@ function NodeDetail({
         <p className="campaign__passive">{kind.blurb}</p>
       </div>
       <div className="descent__group descent__stats">
-        <span className="stat">
+        <span className="stat descent__stat">
+          <StatGlyph kind="buyin" />
           <span className="stat__label">
             <InfoTip label="What the buy-in pays" word="Buy-in">
               <p>
-                What a seat here costs, the same for everyone. The four buy-ins make the table&rsquo;s gold, paid when
-                the table ends, by standing:
+                What a seat here costs, in souls, the same for everyone. The four buy-ins make the table&rsquo;s prize,
+                paid when the table ends, by standing:
               </p>
               <p className="hud__potline">
                 <span>First</span>
@@ -460,14 +468,21 @@ function NodeDetail({
                 <span>nothing</span>
               </p>
               <p>Win the table and you stand first.</p>
+              <p>
+                You cannot sit where you could not pay it and your first ante: short of that, you would die at the first
+                hand.
+              </p>
             </InfoTip>
           </span>
-          <span className="stat__value">{gold(cost ?? 0)}</span>
+          <span className="stat__value stat__value--souls">
+            <GoldCoin /> {gold(stake)}
+          </span>
         </span>
-        <span className="stat">
+        <span className="stat descent__stat">
+          <StatGlyph kind="ante" />
           <span className="stat__label">
             <InfoTip label="How your ante here is set" word="Ante">
-              <p>What you pay into the pot for each hand here:</p>
+              <p>The souls you pay into the pot for each hand here:</p>
               <p className="hud__potline">
                 <span>Depth {node.row + 1}</span>
                 <span>{gold(room.ante)}</span>
@@ -490,22 +505,30 @@ function NodeDetail({
                 Each hand&rsquo;s antes make its pot, paid as the hand ends by where you finish: 70% to first, 25% to
                 second, 5% to third, nothing to last.
               </p>
+              <p>
+                The Requiem asks three antes of everyone. A player who cannot pay an ante in full dies as the hand
+                opens.
+              </p>
             </InfoTip>
           </span>
-          <span className="stat__value">{gold(yourAnte)}</span>
+          <span className="stat__value stat__value--souls">
+            <GoldCoin /> {gold(yourAnte)}
+          </span>
         </span>
-        <span className="stat">
+        <span className="stat descent__stat">
+          <StatGlyph kind="tribute" />
           <span className="stat__label">
             <Terms>Tribute</Terms>
           </span>
-          <span className="stat__value">+{gold(mark)}</span>
+          <span className="stat__value stat__value--souls">+{gold(mark)}</span>
         </span>
-        <span className="stat">
+        <span className="stat descent__stat">
+          <StatGlyph kind="hands" />
           <span className="stat__label">Hands</span>
           <span className="stat__value">{room.hands}</span>
         </span>
-        {/* What winning brings besides the gold, in a line under its numbers —
-            no more than it truly gives. How the gold is split is on Buy-in
+        {/* What winning brings besides the souls, in a line under its numbers
+            — no more than it truly gives. How the souls are split is on Buy-in
             and Ante. */}
         <p className="descent__note descent__pays">
           {node.kind === 'throne'
@@ -515,15 +538,7 @@ function NodeDetail({
               : 'Win it for a chance at a Medallion.'}
         </p>
       </div>
-      {short && offer && (
-        <div className="descent__group">
-          <p className="descent__short">
-            Short seat: you cannot cover the {gold(buyInFor(offer, run.medallions))} buy-in. You put in{' '}
-            {gold(cost ?? 0)} and keep {SHORT_SEAT_ANTES} antes to play with, so the table can pay you at most{' '}
-            {gold(best)}.
-          </p>
-        </div>
-      )}
+      {(state === 'open' || state === 'ahead') && <SoulToll worth={run.worth} cost={cost ?? 0} stake={stake} />}
       {offer && (
         <div className="descent__group">
           <h3 className="descent__label">At the table</h3>
@@ -535,6 +550,44 @@ function NodeDetail({
         </div>
       )}
       <div className="descent__group descent__group--action">{action}</div>
+    </div>
+  );
+}
+
+/** Your ante at a node, as its preview shows it. */
+function yourAnteAt(run: RunState, node: MapNode): number {
+  if (node.kind === 'merchant' || node.kind === 'event') return 0;
+  const { ante } = nodeCost(node.tier, node.kind === 'throne' ? 'vestige' : node.archetype!);
+  return Math.max(1, Math.round(ante * anteShareOf(run.classId, run.medallions)));
+}
+
+/**
+ * What sitting takes of your souls, as a bar: all you have, the buy-in and
+ * the first ante marked off it, and what is left to play with — or, when it
+ * runs past the end, how far beyond your souls the seat is.
+ */
+function SoulToll({ worth, cost, stake }: { worth: number; cost: number; stake: number }) {
+  const beyond = cost > worth;
+  const whole = Math.max(worth, cost, 1);
+  const pct = (n: number) => `${(Math.min(n, whole) / whole) * 100}%`;
+  return (
+    <div className={`descent__group descent__toll ${beyond ? 'is-beyond' : ''}`}>
+      <span className="descent__tollhead">
+        <span className="descent__label">Your souls</span>
+        <span className="descent__tollfigure">
+          <GoldCoin /> {gold(worth)}
+        </span>
+      </span>
+      <span className="soulbar" aria-hidden="true">
+        <span className="soulbar__have" style={{ width: pct(worth) }} />
+        <span className="soulbar__stake" style={{ width: pct(stake) }} />
+        <span className="soulbar__ante" style={{ left: pct(stake), width: pct(cost - stake) }} />
+      </span>
+      <p className="descent__note">
+        {beyond
+          ? `Sitting takes ${gold(cost)}, buy-in and first ante: ${gold(cost - worth)} more than you have.`
+          : `Sitting takes ${gold(cost)}, buy-in and first ante. ${gold(worth - cost)} left to live on.`}
+      </p>
     </div>
   );
 }

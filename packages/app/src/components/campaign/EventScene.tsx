@@ -119,7 +119,7 @@ function Ferryman({ run, event }: { run: RunState; event: FerrymanState }) {
                 className="btn btn--primary"
                 onClick={() => act({ kind: 'stake' })}
                 disabled={run.worth <= event.stake}
-                data-hint="Not enough gold"
+                data-hint="Not enough souls"
               >
                 Stake {gold(event.stake)}
               </button>
@@ -158,7 +158,7 @@ function Reliquary({ event }: { run: RunState; event: ReliquaryState }) {
     <>
       <p className="field__hint field__hint--lead">
         A chapel sunk to its eaves, and on its altar three sealed coffers, dripping. You have hands for one. The lighter
-        rattle like a Medallion might; the heavier sit like gold.
+        rattle like a Medallion might; the heavier moan, full of souls.
       </p>
       <ul className="eventscene__coffers">
         {event.coffers.map((coffer, i) => {
@@ -199,7 +199,7 @@ function Reliquary({ event }: { run: RunState; event: ReliquaryState }) {
       </ul>
       {opened !== null && (
         <p className="field__hint">
-          {event.coffers[opened]!.holds.kind === 'gold' ? 'Gold, and yours.' : 'A Medallion, and yours to carry.'} The
+          {event.coffers[opened]!.holds.kind === 'gold' ? 'Souls, and yours.' : 'A Medallion, and yours to carry.'} The
           others sink back under the water with what they held.
         </p>
       )}
@@ -257,7 +257,7 @@ function TitheTaker({ run, event }: { run: RunState; event: TitheState }) {
       )}
       {!event.over && run.medallions.length === 0 && (
         <p className="field__hint">
-          A <Terms>Medallion</Terms> would pay him instead; you carry none. As a {CLASSES[run.classId].name}, gold it
+          A <Terms>Medallion</Terms> would pay him instead; you carry none. As a {CLASSES[run.classId].name}, souls it
           is.
         </p>
       )}

@@ -23,7 +23,7 @@ const FORMS: [string, string][] = (
     ['pair chain', 'pair chain'],
     ['four of a kind', 'four of a kind'],
     ['table prize', 'table prize'],
-    ['short seat', 'short seat'],
+    ['souls', 'souls'],
     ['medallions', 'medallion'],
     ['medallion', 'medallion'],
     ['elite', 'elite'],

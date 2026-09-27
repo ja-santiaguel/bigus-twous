@@ -276,13 +276,21 @@ async function playRun(classId: ClassId, n: number, tally: Tally) {
       const reckon = process.env.RECKON !== '0' && canCallReckoning(t) && t.option.hands - t.handsPlayed >= 3;
       if (run.nodeId === 'throne') reachedThrone = true;
       run = startHand(run, reckon);
-      try {
-        run = await playHand(run, `playtest-${classId}-${n}-${hand++}`, tally);
-      } catch (error) {
-        tally.audit.errors.push(String(error));
-        break;
+      // A deal can end the table before a card is dealt: you, or everyone
+      // else, dead at the ante.
+      if (run.table?.hand) {
+        try {
+          run = await playHand(run, `playtest-${classId}-${n}-${hand++}`, tally);
+        } catch (error) {
+          tally.audit.errors.push(String(error));
+          break;
+        }
+        tableHands += 1;
+      } else if (run.lastHand?.end) {
+        const k = run.lastHand.end.kind === 'broke' ? 'ante' : 'alone';
+        const into = run.lastHand.end.kind === 'broke' ? tally.audit.lostBy : tally.audit.winBy;
+        into[k] = (into[k] ?? 0) + 1;
       }
-      tableHands += 1;
       const end = run.lastHand?.end;
       const seat = run.table?.seats.find((s) => s.id === 'seat-1');
       if (seat && run.table && seat.worth < 2 * Math.round(run.table.option.ante)) closeCall = true;

@@ -21,7 +21,7 @@ export interface ClassIdentity {
 
 export const PROFILE_LABELS: { key: keyof ClassIdentity['profile']; label: string; hint: string }[] = [
   { key: 'staying', label: 'Fortitude', hint: 'How hard a run is to break' },
-  { key: 'ceiling', label: 'Avarice', hint: 'How fast gold can grow' },
+  { key: 'ceiling', label: 'Avarice', hint: 'How fast your souls can grow' },
   { key: 'finesse', label: 'Guile', hint: 'How much reading the table pays' },
 ];
 

@@ -24,24 +24,24 @@ screen, and the words not to use instead.
 - **Chop** — To beat a 2 with a bomb.
 - **Lead** — The first play onto an empty table, when anything may be played.
 
-### Gold
+### Souls
 
-- **Ante** — What every seat pays into the pot to be dealt a hand.
-- **Pot** — The gold put in this hand. It pays as the table prize does: 70% to first, 25% to second, 5% to third.
-- **Buy-in** — What a seat at a table costs. The four buy-ins make the table prize.
+- **Souls** — Your life, and all you have to stake. Antes, buy-ins and class plays are paid in them; a player who cannot pay dies trying.
+- **Ante** — What every seat pays into the pot to be dealt a hand. A player who cannot pay it dies as the hand opens.
+- **Pot** — The souls put in this hand. It pays as the table prize does: 70% to first, 25% to second, 5% to third.
+- **Buy-in** — What a seat at a table costs. The four buy-ins make the table prize. You cannot sit where you could not pay it and the first ante.
 - **Table prize** — The four buy-ins, paid out when the table ends: 70% to the best placed, 25% to second, 5% to third.
-- **Short seat** — A seat bought with less than the buy-in: all your gold but three antes. It can win back only its share of what it paid.
 
 ### The campaign
 
-- **Tribute** — The gold you must win at a table. Come to its last hand holding it and the table is yours; hold it sooner and you may call a Reckoning.
+- **Tribute** — The souls you must win at a table. Come to its last hand holding it and the table is yours; hold it sooner and you may call a Reckoning.
 - **Reckoning** — Called by you once you hold the tribute, once a table: the others ante three times, you once, and you play for the whole pot. Finish first and the table is yours, with a bounty for the hands left.
 - **Requiem** — The last hand of a table: everyone antes three times, and whoever finishes first wins it.
-- **Fallen** — Out of gold, and out. A player who falls leaves their chair empty for the rest of the table; if you fall, the run ends.
+- **Fallen** — Dead: left with no souls, or unable to pay what was owed. A player who falls leaves their chair empty for the rest of the table; if you fall, the run ends.
 - **Event** — A ? on the map: a wager, a find or a toll, unknown until you go down to it.
-- **Class play** — A play only your class’s rules allow. It costs gold, paid into the pot.
-- **Medallion** — A piece of your build: it bends one of your rules, or your gold. Most go up in level.
-- **Elite** — A harder table — richer players, more of them carrying Medallions — that pays a rarer Medallion.
+- **Class play** — A play only your class’s rules allow. It costs souls, paid into the pot.
+- **Medallion** — A piece of your build: it bends one of your rules, or your souls. Most go up in level.
+- **Elite** — A harder table — players heavier with souls, more of them carrying Medallions — that pays a rarer Medallion.
 
 ## Words we use
 
@@ -50,17 +50,18 @@ as they appear mid-sentence.
 
 | Use                                         | For                                                                                                  | Not                                        |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| gold                                        | what you have, and what everything costs                                                             | Worth, money, chips, coins                 |
-| your gold                                   | your total, off the table or at it                                                                   | balance, purse, bankroll                   |
-| in the pot                                  | gold you have put into the hand being played ("30 in the pot")                                       | in, staked, at risk, bet                   |
+| souls                                       | what you have, and what everything costs: your life, spent                                           | gold, Worth, money, chips, coins, blood    |
+| your souls                                  | your total, off the table or at it                                                                   | balance, purse, bankroll, health, HP       |
+| soul coin                                   | the coin beside every amount of souls: a grey-teal face, mid-wail                                    | gold coin, token                           |
+| die, dying paying                           | what happens to a player who cannot pay what is owed, or is left with no souls                       | go broke, bust, bankrupt                   |
+| in the pot                                  | souls you have put into the hand being played ("30 in the pot")                                      | in, staked, at risk, bet                   |
 | ante                                        | the price of being dealt a hand                                                                      | blind, fee                                 |
 | ante share                                  | a class's part of every table's ante: ×0.75 Wanderer, ×1 Courtier, ×1.5 Tyrant                       | ante multiplier, first ante                |
-| pot                                         | one hand's gold                                                                                      | bank                                       |
+| pot                                         | one hand's souls                                                                                     | bank                                       |
 | buy-in                                      | the price of a seat at a table                                                                       | stake, Table Stake, entry fee              |
-| short seat                                  | a seat bought with less than the buy-in                                                              | credit, loan, partial buy-in               |
 | table prize                                 | the four buy-ins, paid out when the table ends; labelled **Table** in the table's read-out           | stake pot, prize pool, stakes              |
 | win the table, lose the table               | a table's two ends; either way you go on down                                                        | clear, fail, close                         |
-| tribute                                     | the gold you must win at a table: hold it to the Requiem, or call a Reckoning                        | target, Mark, threshold, goal              |
+| tribute                                     | the souls you must win at a table: hold it to the Requiem, or call a Reckoning                       | target, Mark, threshold, goal              |
 | Reckoning                                   | the showdown you call early, once a table (always capitalised)                                       | Showdown, early showdown, duel             |
 | Requiem                                     | a table's last hand, three antes each (always capitalised)                                           | Showdown, Knell, final                     |
 | the last hand                               | a table's final hand, always the Requiem                                                             | last call, final hand                      |
@@ -76,7 +77,7 @@ as they appear mid-sentence.
 | the Bone Merchant                           | the node that sells Medallions                                                                       | shop, store                                |
 | the spoils                                  | what a won table offers you                                                                          | reward, loot screen                        |
 | class                                       | Wanderer, Courtier, Tyrant (Seer to come)                                                            | role, job, hero                            |
-| Fortitude, Avarice, Guile                   | a class's profile: how hard it is to break, how fast its gold grows, how much reading the table pays | staying power, growth, finesse             |
+| Fortitude, Avarice, Guile                   | a class's profile: how hard it is to break, how fast its souls grow, how much reading the table pays | staying power, growth, finesse             |
 | class play                                  | a play only your class's rules allow; its name is the class's rule (Uprising, Allegiance, Decree)    | passive, ability, special                  |
 | Medallion                                   | a build piece (always capitalised)                                                                   | relic, item, charm                         |
 | level                                       | a Medallion's strength, shown as a numeral: Uprising II                                              | rank, tier, upgrade                        |
@@ -87,7 +88,8 @@ as they appear mid-sentence.
 | ? event                                     | a ? node: the Ferryman's Wager, the Drowned Reliquary or the Tithe-Taker                             | random event, mystery                      |
 | bounty                                      | what a won Reckoning pays: an ante for each hand left unplayed                                       | bonus, swift reward                        |
 | welcome                                     | the screen that names you before a run's map                                                         | intro, splash                              |
-| fallen                                      | out of gold, and out: a chair left empty; if you fall, the run ends                                  | broke, dead, bust, bankrupt                |
+| fallen                                      | dead, and out: a chair left empty; if you fall, the run ends                                         | broke, bust, bankrupt                      |
+| beyond your souls                           | a table whose buy-in and first ante you could not pay: you cannot sit there                          | short seat, unaffordable, locked           |
 | sit down                                    | to pay a buy-in and take a seat                                                                      | join, enter                                |
 | Paupers', Starving, Mirror, Carrion, Gilded | the kinds of table                                                                                   | Modest, Desperate, Predator's, High-stakes |
 
@@ -96,5 +98,6 @@ says "round" for what the campaign calls a hand: a match counts them, a
 campaign table counts hands. Neither screen uses the other's word.
 
 Code keeps some older names where renaming them would only churn the code
-(`worth`, `tier`, `markAntes`, the archetype ids `modest`, `desperation`,
-`predator`, `high-stakes`); what a player reads never uses them.
+(`worth` and `gold` for souls, `GoldAmount`, `GoldCoin`, `broke` for fallen,
+`tier`, `markAntes`, the archetype ids `modest`, `desperation`, `predator`,
+`high-stakes`); what a player reads never uses them.

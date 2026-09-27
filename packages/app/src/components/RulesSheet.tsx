@@ -187,7 +187,10 @@ export function RulesSheet({
 
           <section className="rules__section">
             <h3>Playing with friends</h3>
-            <p>In the lobby, everybody readies up and the host starts the game.</p>
+            <p>
+              A new game opens a table with a code to share. In its lobby, everybody readies up and the host starts the
+              game; if nobody has joined, the host can start a solo game against computers instead.
+            </p>
             <p>
               You have 15 seconds to pick a pile. If time runs out, one is picked for you — the piles are face down, so
               nothing is lost.

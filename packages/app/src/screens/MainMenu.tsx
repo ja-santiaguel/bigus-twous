@@ -14,11 +14,10 @@ import { PixelTitle } from '../components/PixelTitle.js';
  * image better than any amount of explanatory copy.
  */
 export function MainMenu() {
-  const goToLobby = useGameStore((s) => s.goToLobby);
   const goToCampaign = useGameStore((s) => s.goToCampaign);
   const savedGame = useGameStore((s) => s.savedGame);
   const resumeMatch = useGameStore((s) => s.resumeMatch);
-  const hostOnline = useGameStore((s) => s.hostOnline);
+  const newGame = useGameStore((s) => s.newGame);
   const joinByCode = useGameStore((s) => s.joinByCode);
   const playerName = useGameStore((s) => s.playerName);
   const setPlayerName = useGameStore((s) => s.setPlayerName);
@@ -38,7 +37,7 @@ export function MainMenu() {
     ? `${CLASSES[liveRun.classId].name} · depth ${depthNumber(liveRun)} · ${(liveRun.table
         ? you(liveRun.table).worth
         : liveRun.worth
-      ).toLocaleString('en-GB')} gold`
+      ).toLocaleString('en-GB')} souls`
     : null;
 
   return (
@@ -53,14 +52,14 @@ export function MainMenu() {
             round.
           </p>
 
-          {/* Grouped by who you play with, most-wanted first: carrying on,
-              then the ways to play alone, then the ways to play together.
+          {/* Grouped by game, most-wanted first: carrying on, then starting
+              anew, then joining a table somebody else opened.
               Every option is the same width and left-aligned — a column to
               read down, not a row of buttons to compare. */}
           <div className="menu__groups">
             {/* Two games under one roof: Mythic, the descent — classes,
-                Medallions, gold as your life — and Classic, Big Two as it is
-                played, alone or with friends. */}
+                Medallions, souls as your life — and Classic, Big Two as it is
+                played — one table, alone or with friends. */}
             <div className="menu__group">
               <h2 className="menu__heading menu__heading--mode">Mythic</h2>
               {liveRun ? (
@@ -81,11 +80,14 @@ export function MainMenu() {
             <div className="menu__group">
               <h2 className="menu__heading menu__heading--mode">Classic</h2>
               {savedGame && <MenuOption label="Continue game" primary={!liveRun} onClick={resumeMatch} />}
-              <MenuOption label="Play on your own" onClick={goToLobby} />
+              {/* One way in, alone or together: a table opens with a code to
+                  share, and starts as a game on your own if no one comes. */}
               <MenuOption
-                label={opening ? 'Opening…' : 'Play with friends'}
+                label={opening ? 'Opening…' : 'New game'}
+                note="On your own, or share the code with friends"
+                primary={!savedGame && !liveRun}
                 disabled={opening}
-                onClick={() => void hostOnline()}
+                onClick={() => void newGame()}
               />
               {/* Opening a table and joining one are the same act from
                   opposite ends, so they share a group. */}
@@ -157,7 +159,7 @@ export function MainMenu() {
           >
             <h2 id="replace-title">Start a new run?</h2>
             <p className="overlay__note">
-              Your run in progress{runLine ? ` (${runLine})` : ''} ends, with its gold and Medallions.
+              Your run in progress{runLine ? ` (${runLine})` : ''} ends, with its souls and Medallions.
             </p>
             <div className="overlay__actions">
               <button className="btn btn--quiet" onClick={() => setReplacing(false)} autoFocus>
@@ -190,7 +192,7 @@ function MenuOption({
   disabled = false,
 }: {
   label: string;
-  /** A line under the option saying what it carries on: a run's class, room and gold. */
+  /** A line under the option: what it carries on (a run's class, room and souls), or what it is. */
   note?: string | null;
   onClick: () => void;
   primary?: boolean;

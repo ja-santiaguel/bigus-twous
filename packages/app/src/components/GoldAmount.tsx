@@ -2,17 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
 /**
- * Gold, as every campaign screen shows it: a pixel coin, the amount, and — when
- * the amount changes — the amount counting to its new value while the change
- * itself rises off it (+59 in gold, −30 in red), so the ante leaving your
- * purse, the pot filling and a hand paying out are each seen happening rather
- * than found already done.
+ * Souls, as every campaign screen shows them: a soul coin, the amount, and —
+ * when the amount changes — the amount counting to its new value while the
+ * change itself rises off it (+59 in the souls' grey-teal, −30 in red), so the
+ * ante leaving you, the pot filling and a hand paying out are each seen
+ * happening rather than found already done. (Souls were gold once; the code
+ * keeps the name.)
  *
- * `memory` names an amount that lives across screens (your gold, the pot, a
- * seat's gold): a display that mounts under a name already shown starts from
+ * `memory` names an amount that lives across screens (your souls, the pot, a
+ * seat's souls): a display that mounts under a name already shown starts from
  * what was last shown there and counts to the new amount. That is how the
- * buy-in is seen leaving your gold between the map and the table, although the
- * two are different screens.
+ * buy-in is seen leaving you between the map and the table, although the two
+ * are different screens.
  */
 
 const lastShown = new Map<string, number>();
@@ -111,25 +112,27 @@ export function GoldAmount({
 }
 
 /**
- * A gold coin in eight art pixels: a dark rim, a lit upper left, a shaded
- * lower right and a struck mark at its heart. Sized to the text beside it.
+ * A soul coin in eight art pixels: a disc of drowned grey-teal with a dark
+ * rim, lit at its upper left, and struck with a face — two hollow eyes and a
+ * mouth open in a wail. What you pay with is someone. Sized to the text
+ * beside it. (Named for the gold it was once; the code keeps the name.)
  */
 export function GoldCoin({ className = '' }: { className?: string }) {
   return (
     <svg className={`goldcoin ${className}`} viewBox="0 0 8 8" shapeRendering="crispEdges" aria-hidden="true">
       {/* rim */}
       <path
-        fill="#6b4416"
+        fill="var(--soul-rim)"
         d="M2 0h4v1H2zM1 1h1v1H1zM6 1h1v1H6zM0 2h1v4H0zM7 2h1v4H7zM1 6h1v1H1zM6 6h1v1H6zM2 7h4v1H2z"
       />
       {/* face */}
-      <path fill="#d9a441" d="M2 1h4v1H2zM1 2h6v4H1zM2 6h4v1H2z" />
+      <path fill="var(--soul)" d="M2 1h4v1H2zM1 2h6v4H1zM2 6h4v1H2z" />
       {/* shade, lower right */}
-      <path fill="#a8742a" d="M6 4h1v2H6zM5 5h1v1H5zM2 6h4v1H2z" />
+      <path fill="var(--soul-lo)" d="M6 4h1v2H6zM5 6h1v1H5zM2 6h3v1H2z" />
       {/* light, upper left */}
-      <path fill="#f3d58a" d="M2 2h2v1H2zM2 3h1v1H2z" />
-      {/* the struck mark */}
-      <path fill="#8a5a1c" d="M4 3h1v2H4z" />
+      <path fill="var(--soul-hi)" d="M2 1h2v1H2zM1 2h2v1H1z" />
+      {/* the face struck into it: hollow eyes, a wailing mouth */}
+      <path fill="var(--ink)" d="M2 3h1v1H2zM5 3h1v1H5zM3 4h2v2H3z" />
     </svg>
   );
 }
