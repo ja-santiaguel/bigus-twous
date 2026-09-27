@@ -46,6 +46,7 @@ import {
   leaveShop,
   medallionPrice,
   passiveBeats,
+  passiveSource,
   payForPlay,
   playCost,
   SEAT_IDS,
@@ -108,6 +109,116 @@ interface Tally {
   };
 }
 
+/**
+ * Experiments on your class play (your seat only). `DECREE=off` never offers
+ * it; `DECREE=free` offers it at no cost; `DECREE_FORK=1` replays each hand
+ * from the first time you make it, once as played and once without it for the
+ * rest of the hand, and tallies the difference (the AI is deterministic, so
+ * the two only part at that play).
+ */
+const DECREE = process.env.DECREE ?? 'on';
+const FORK = process.env.DECREE_FORK === '1';
+
+interface Fork {
+  n: number;
+  /** Your net souls for the hand: as played, and without the play. */
+  netWith: number;
+  netWithout: number;
+  cost: number;
+  firstWith: number;
+  firstWithout: number;
+  /** Hands in which going without it did better. */
+  worse: number;
+  /** By what the Decree beat: straights of each length. */
+  byLength: Record<string, { n: number; delta: number }>;
+}
+export const forks: Fork = {
+  n: 0,
+  netWith: 0,
+  netWithout: 0,
+  cost: 0,
+  firstWith: 0,
+  firstWithout: 0,
+  worse: 0,
+  byLength: {},
+};
+
+/** Plays a hand out from `state` to its end. */
+async function playOut(
+  start: GameState,
+  run: RunState,
+  playing: string[],
+  opts: { tally?: Tally; forbid: boolean; fork: boolean },
+): Promise<{ state: GameState; current: RunState }> {
+  let state = start;
+  let current = run;
+  const table = () => current.table!;
+  let forked = false;
+  const options = campaignTurnOptions((id) => {
+    const seat = table().seats.find((s) => s.id === id);
+    return seat ? { classId: seat.classId, medallions: seat.medallions, canPay: canPayForPlay(table(), seat) } : null;
+  });
+  const isClassPlay = (
+    seat: { classId: RunState['classId']; medallions: RunState['medallions'] },
+    combo: GameState['trick']['pile'],
+  ) =>
+    !!state.trick.pile && !!combo && passiveSource(seat.classId, state.trick.pile, combo, seat.medallions) === 'class';
+  for (let turn = 0; turn < 4000 && state.phase !== 'ROUND_END'; turn++) {
+    const actor = state.players[state.turnIndex]!;
+    const seat = table().seats.find((s) => s.id === actor.id)!;
+    const difficulty = seat.persona ? seat.persona.difficulty : 'hard';
+    const offered = options(state);
+    const canPass = offered.canPass;
+    const legalMoves =
+      opts.forbid && !seat.persona ? offered.legalMoves.filter((m) => !isClassPlay(seat, m)) : offered.legalMoves;
+    const move = await createCpuPlayer(actor.id, difficulty).getMove(
+      toPlayerView(state, actor.id),
+      legalMoves,
+      canPass,
+    );
+    if (move.kind === 'PASS') {
+      state = applyPass(state, actor.id);
+      continue;
+    }
+    const pile = state.trick.pile;
+    // The first time you make your class play: play the hand out both ways.
+    if (opts.fork && !forked && !seat.persona && isClassPlay(seat, move.combo)) {
+      forked = true;
+      const cost = playCost(table(), seat);
+      const withIt = await playOut(state, current, playing, { forbid: false, fork: false });
+      const without = await playOut(state, current, playing, { forbid: true, fork: false });
+      const outcome = (r: { state: GameState; current: RunState }) => {
+        const placing = [...r.state.finishOrder, ...playing.filter((id) => !r.state.finishOrder.includes(id))];
+        const after = endHand(r.current, { placing, wentOutWith: {} });
+        return { net: after.lastHand!.ledger['seat-1']?.net ?? 0, first: placing[0] === 'seat-1' ? 1 : 0 };
+      };
+      const a = outcome(withIt);
+      const b = outcome(without);
+      forks.n += 1;
+      forks.netWith += a.net;
+      forks.netWithout += b.net;
+      forks.cost += cost;
+      forks.firstWith += a.first;
+      forks.firstWithout += b.first;
+      if (b.net > a.net) forks.worse += 1;
+      const length = pile ? String(pile.cards.length) : '?';
+      const l = (forks.byLength[length] ??= { n: 0, delta: 0 });
+      l.n += 1;
+      l.delta += a.net - b.net;
+    }
+    if (pile && passiveBeats(seat.classId, pile, move.combo, seat.medallions)) {
+      const free = DECREE === 'free' && !seat.persona && isClassPlay(seat, move.combo);
+      if (!seat.persona && opts.tally) {
+        opts.tally.classPlays += 1;
+        opts.tally.classPlayGold += free ? 0 : playCost(table(), seat);
+      }
+      if (!free) current = { ...current, table: payForPlay(table(), actor.id) };
+    }
+    state = applyPlay(state, actor.id, move.combo);
+  }
+  return { state, current };
+}
+
 async function playHand(run: RunState, seed: string, tally: Tally): Promise<RunState> {
   let current = run;
   const table = () => current.table!;
@@ -129,34 +240,9 @@ async function playHand(run: RunState, seed: string, tally: Tally): Promise<RunS
       seats: playing.map((id) => SEAT_IDS.indexOf(id)),
     },
   );
-  const options = campaignTurnOptions((id) => {
-    const seat = table().seats.find((s) => s.id === id);
-    return seat ? { classId: seat.classId, medallions: seat.medallions, canPay: canPayForPlay(table(), seat) } : null;
-  });
-  for (let turn = 0; turn < 4000 && state.phase !== 'ROUND_END'; turn++) {
-    const actor = state.players[state.turnIndex]!;
-    const seat = table().seats.find((s) => s.id === actor.id)!;
-    const difficulty = seat.persona ? seat.persona.difficulty : 'hard';
-    const { legalMoves, canPass } = options(state);
-    const move = await createCpuPlayer(actor.id, difficulty).getMove(
-      toPlayerView(state, actor.id),
-      legalMoves,
-      canPass,
-    );
-    if (move.kind === 'PASS') {
-      state = applyPass(state, actor.id);
-      continue;
-    }
-    const pile = state.trick.pile;
-    if (pile && passiveBeats(seat.classId, pile, move.combo, seat.medallions)) {
-      if (!seat.persona) {
-        tally.classPlays += 1;
-        tally.classPlayGold += playCost(table(), seat);
-      }
-      current = { ...current, table: payForPlay(table(), actor.id) };
-    }
-    state = applyPlay(state, actor.id, move.combo);
-  }
+  const played = await playOut(state, current, playing, { tally, forbid: DECREE === 'off', fork: FORK });
+  state = played.state;
+  current = played.current;
   const rest = playing.filter((id) => !state.finishOrder.includes(id));
   const placing = [...state.finishOrder, ...rest];
   if (placing[0] === 'seat-1') tally.firsts += 1;
@@ -471,6 +557,22 @@ async function main() {
         eventsPerRun: +(tally.events / tally.runs).toFixed(2),
         eventGoldPerEvent: tally.events ? Math.round(tally.eventGold / tally.events) : 0,
         brokeSeatsPerRun: +(tally.broke / tally.runs).toFixed(2),
+        ...(FORK
+          ? {
+              forks: {
+                n: forks.n,
+                netWith: Math.round(forks.netWith / Math.max(1, forks.n)),
+                netWithout: Math.round(forks.netWithout / Math.max(1, forks.n)),
+                cost: Math.round(forks.cost / Math.max(1, forks.n)),
+                firstWith: +(forks.firstWith / Math.max(1, forks.n)).toFixed(3),
+                firstWithout: +(forks.firstWithout / Math.max(1, forks.n)).toFixed(3),
+                worseShare: +(forks.worse / Math.max(1, forks.n)).toFixed(3),
+                byLength: Object.fromEntries(
+                  Object.entries(forks.byLength).map(([k, v]) => [k, { n: v.n, delta: Math.round(v.delta / v.n) }]),
+                ),
+              },
+            }
+          : {}),
         audit: {
           ...tally.audit,
           handsPerTable: avg(tally.audit.handsPerTable),
