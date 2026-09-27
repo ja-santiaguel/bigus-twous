@@ -62,7 +62,14 @@ function staked(persona: Persona, tableAnte: number, buyIn: number): Persona {
 
 export function tableOption(
   rng: Rng,
-  context: { tier: number; classId: ClassId; archetype: Archetype; id: string },
+  context: {
+    tier: number;
+    classId: ClassId;
+    archetype: Archetype;
+    id: string;
+    /** A lower buy-in than the table's own: a beggar's seat (see `arrive`). */
+    buyIn?: number;
+  },
 ): TableOption {
   const { tier, classId, archetype, id } = context;
   const def = TIERS[tier]!;
@@ -72,7 +79,8 @@ export function tableOption(
   const used = new Set<string>();
   const persona = (n: number, worthFactor: [number, number], extra: Partial<Persona> = {}): Persona => ({
     ...makePersona(rng, `${id}:${n}`, {
-      difficulty: def.difficulty,
+      // An elite table's players are hard at any depth: elite means harder.
+      difficulty: kind.elite ? 'hard' : def.difficulty,
       worthFactor,
       used,
       ...(archetype === 'mirror' ? { classId } : {}),
@@ -107,7 +115,7 @@ export function tableOption(
   }
   const rail = [3, 4, 5].map((n) => persona(n, [lo, hi]));
   const ante = Math.round(def.ante * kind.anteMultiplier);
-  const buyIn = def.ante * kind.buyInAntes;
+  const buyIn = context.buyIn ?? def.ante * kind.buyInAntes;
   lineup = lineup.map((p) => staked(p, ante, buyIn));
   return {
     id,
@@ -127,7 +135,7 @@ export function tableOption(
 
 export function finaleOption(
   rng: Rng,
-  context: { classId: ClassId; vestiges: VestigeRecord[]; round: number },
+  context: { classId: ClassId; vestiges: VestigeRecord[]; round: number; buyIn?: number },
 ): TableOption {
   const def = TIERS[FINALE_TIER]!;
   const [lo, hi] = def.cpuWorth;
@@ -145,7 +153,7 @@ export function finaleOption(
       medallions: [],
     });
   }
-  const buyIn = def.ante * ARCHETYPES.vestige.buyInAntes;
+  const buyIn = context.buyIn ?? def.ante * ARCHETYPES.vestige.buyInAntes;
   seated.splice(0, seated.length, ...seated.map((p) => staked(p, def.ante, buyIn)));
   const used = new Set(seated.map((p) => p.name));
   const rail = [0, 1, 2].map((n) =>
@@ -181,7 +189,9 @@ export function drawMedallion(
 ): MedallionId | null {
   const pool = MEDALLION_IDS.filter((id) => fitsClass(id, classId) && canGain(loadout, id) && !exclude.includes(id));
   const weight = (id: MedallionId) =>
-    weights[MEDALLIONS[id].rarity] * (MEDALLIONS[id].classId === null ? NEUTRAL_WEIGHT : 1);
+    weights[MEDALLIONS[id].rarity] *
+    (MEDALLIONS[id].classId === null ? NEUTRAL_WEIGHT : 1) *
+    (MEDALLIONS[id].weight ?? 1);
   const total = pool.reduce((sum, id) => sum + weight(id), 0);
   if (total <= 0) return null;
   let roll = rng() * total;

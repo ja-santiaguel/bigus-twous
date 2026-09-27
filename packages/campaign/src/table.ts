@@ -63,6 +63,11 @@ export interface TableOption {
   reward: 'none' | 'standard' | 'elite';
   /** Harder than its room, and paid for accordingly. */
   elite: boolean;
+  /**
+   * A beggar's seat: dealt again at a buy-in you can pay, because no way down
+   * was one you could (see `arrive`). The same table, cheaper for everyone.
+   */
+  mercy?: boolean;
   /** The three computers seated when you arrive. */
   lineup: Persona[];
   /** Kept for saves made when a broke seat was filled: no one sits down now. */
@@ -225,12 +230,18 @@ export function seatById(table: TableState, id: PlayerId): TableSeat {
 
 export const you = (table: TableState): TableSeat => seatById(table, PLAYER_SEAT);
 
-/** A seat's ante for one hand. */
+/**
+ * A seat's ante for one hand. At a showdown — the Requiem, or the others at a
+ * Reckoning — three antes, but never more than three of the table's own: a
+ * class whose ante share is above one pays its dear ante on every ordinary
+ * hand, not half as much again on the one it cannot leave.
+ */
 export function anteFor(table: TableState, seat: TableSeat, showdown = false): number {
   const base = table.option.ante * anteShareOf(seat.classId, seat.medallions);
   // Ferryman's Coin: two antes where three are asked.
   const times = showdown ? SHOWDOWN_ANTE - (holds(seat.medallions, 'ferrymans-coin') ? 1 : 0) : 1;
-  return Math.max(1, Math.round(base * times));
+  const each = showdown ? Math.min(base, table.option.ante) : base;
+  return Math.max(1, Math.round(each * times));
 }
 
 /** The raises a seat may make, in gold, smallest first. Steps are in the seat's own (ordinary) ante. */

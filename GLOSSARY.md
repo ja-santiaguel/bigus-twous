@@ -36,9 +36,9 @@ screen, and the words not to use instead.
 
 - **Tribute** — The souls you must win at a table. Come to its last hand holding it and the table is yours; hold it sooner and you may call a Reckoning.
 - **Reckoning** — Called by you once you hold the tribute, once a table: the others ante three times, you once, and you play for the whole pot. Finish first and the table is yours, with a bounty for the hands left.
-- **Requiem** — The last hand of a table: everyone antes three times, and whoever finishes first wins it.
+- **Requiem** — The last hand of a table: everyone antes three times, never more than three of the table’s antes, and whoever finishes first wins it.
 - **Fallen** — Dead: left with no souls, or unable to pay what was owed. A player who falls leaves their chair empty for the rest of the table; if you fall, the run ends.
-- **Event** — A ? on the map: a wager, a find or a toll, unknown until you go down to it.
+- **Omen** — A ? on the map: something waiting below — a wager, a find or a toll — unknown until you go down to it.
 - **Class play** — A play only your class’s rules allow. It costs souls, paid into the pot.
 - **Medallion** — A piece of your build: it bends one of your rules, or your souls. Most go up in level.
 - **Elite** — A harder table — players heavier with souls, more of them carrying Medallions — that pays a rarer Medallion.
@@ -85,11 +85,12 @@ as they appear mid-sentence.
 | Vestige                                     | one of your past winning runs, seated on the Hollow Throne                                           | ghost, phantom (in the interface)          |
 | run name                                    | two words drawn for each run: your name at its tables, and its Vestige's                             | "(you)" at pile select                     |
 | compendium                                  | every Medallion you have come across, each level its own card; the rest sealed                       | codex, collection, bestiary                |
-| ? event                                     | a ? node: the Ferryman's Wager, the Drowned Reliquary or the Tithe-Taker                             | random event, mystery                      |
+| omen                                        | a ? node: the Ferryman's Wager, the Drowned Reliquary or the Tithe-Taker                             | event, random event, mystery               |
 | bounty                                      | what a won Reckoning pays: an ante for each hand left unplayed                                       | bonus, swift reward                        |
 | welcome                                     | the screen that names you before a run's map                                                         | intro, splash                              |
 | fallen                                      | dead, and out: a chair left empty; if you fall, the run ends                                         | broke, bust, bankrupt                      |
 | beyond your souls                           | a table whose buy-in and first ante you could not pay: you cannot sit there                          | short seat, unaffordable, locked           |
+| beggar's seat                               | a table dealt again at a buy-in you can pay, when no way down was one you could; a last stand        | mercy seat, bailout, second chance         |
 | sit down                                    | to pay a buy-in and take a seat                                                                      | join, enter                                |
 | Paupers', Starving, Mirror, Carrion, Gilded | the kinds of table                                                                                   | Modest, Desperate, Predator's, High-stakes |
 

@@ -8,6 +8,7 @@ import { gain, levelOf, medallionPrice, type Held, type MedallionId } from './me
 import {
   canSit,
   costToSit,
+  firstAnteFor,
   finishHand,
   openHand,
   openTable,
@@ -257,8 +258,38 @@ export function arrive(run: RunState, vestiges: VestigeRecord[] = []): RunState 
     }
   }
   const base: RunState = { ...drawn, offers, round: run.round + 1 };
-  return choices(base).some((n) => canEnter(base, n)) ? base : { ...base, phase: 'lost' };
+  if (choices(base).some((n) => canEnter(base, n))) return base;
+  // No way down you can pay for. The deep leaves one open — the cheapest table
+  // below, the throne included, dealt again as a beggar's seat: its buy-in
+  // whatever you can spare, keeping your first ante and one more. A last
+  // stand, for anyone with souls enough for two antes. Short of that, you die
+  // on the map.
+  const cheapest = choices(base)
+    .filter((n) => base.offers[n.id])
+    .sort((a, b) => (entryCost(base, a) ?? 0) - (entryCost(base, b) ?? 0))[0];
+  const offer = cheapest ? base.offers[cheapest.id] : undefined;
+  if (cheapest && offer) {
+    const yourAnte = firstAnteFor(offer, base);
+    const buyIn = Math.min(offer.buyIn, base.worth - (1 + MERCY_ANTES) * yourAnte);
+    if (buyIn >= 1) {
+      const spared =
+        cheapest.kind === 'throne'
+          ? finaleOption(rng, { classId: run.classId, vestiges, round: run.round, buyIn })
+          : tableOption(rng, {
+              tier: cheapest.tier,
+              classId: run.classId,
+              archetype: cheapest.archetype!,
+              id: `${cheapest.id}-r${run.round}`,
+              buyIn,
+            });
+      return { ...base, offers: { ...base.offers, [cheapest.id]: { ...spared, mercy: true } } };
+    }
+  }
+  return { ...base, phase: 'lost' };
 }
+
+/** What a beggar's seat leaves you, in your own antes, after its buy-in and first ante. */
+export const MERCY_ANTES = 1;
 
 /** Take a node: sit down at its table, paying the buy-in, or go to the merchant. */
 export function enterNode(run: RunState, nodeId: string): RunState {

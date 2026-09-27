@@ -25,10 +25,11 @@ export const GLOSSARY: Record<string, string> = {
     'The souls you must win at a table. Come to its last hand holding it and the table is yours; hold it sooner and you may call a Reckoning.',
   reckoning:
     'Called by you once you hold the tribute, once a table: the others ante three times, you once, and you play for the whole pot. Finish first and the table is yours, with a bounty for the hands left.',
-  requiem: 'The last hand of a table: everyone antes three times, and whoever finishes first wins it.',
+  requiem:
+    'The last hand of a table: everyone antes three times, never more than three of the table’s antes, and whoever finishes first wins it.',
   fallen:
     'Dead: left with no souls, or unable to pay what was owed. A player who falls leaves their chair empty for the rest of the table; if you fall, the run ends.',
-  event: 'A ? on the map: a wager, a find or a toll, unknown until you go down to it.',
+  omen: 'A ? on the map: something waiting below — a wager, a find or a toll — unknown until you go down to it.',
   'class play': 'A play only your class’s rules allow. It costs souls, paid into the pot.',
   medallion: 'A piece of your build: it bends one of your rules, or your souls. Most go up in level.',
   elite: 'A harder table — players heavier with souls, more of them carrying Medallions — that pays a rarer Medallion.',

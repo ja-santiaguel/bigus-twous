@@ -31,7 +31,10 @@ import {
   campaignTurnOptions,
   actInEvent,
   canCallReckoning,
+  canEnter,
   inPlay,
+  isLastCall,
+  wouldDie,
   leaveEvent,
   canPayForPlay,
   choices,
@@ -87,6 +90,21 @@ interface Tally {
     bought: number;
     throneReached: number;
     reckoningGold: number[];
+    /** How each run ended. */
+    runEnd: Record<string, number>;
+    /** By kind of table: tables played, won, and the souls they made or cost (from before the buy-in). */
+    byArchetype: Record<string, { n: number; won: number; net: number }>;
+    /** By depth tier: tables played and won. */
+    byTier: Record<string, { n: number; won: number }>;
+    /** Runs that ended holding each Medallion, and how many of them won. */
+    byMedallion: Record<string, { runs: number; won: number }>;
+    /** Requiems come to unable to pay: certain death. */
+    doomedRequiems: number;
+    requiems: number;
+    /** Reckonings that killed at least one other player at the deal. */
+    reckoningKills: number;
+    /** Shop visits that bought nothing. */
+    emptyShops: number;
   };
 }
 
@@ -185,7 +203,8 @@ async function playHand(run: RunState, seed: string, tally: Tally): Promise<RunS
 
 /** The node a sensible player takes. */
 function chooseNode(run: RunState): string {
-  const open = choices(run);
+  // Only where you can go: a table beyond your souls cannot be taken.
+  const open = choices(run).filter((n) => canEnter(run, n));
   const cost = (id: string) =>
     entryCost(
       run,
@@ -211,6 +230,9 @@ async function playRun(classId: ClassId, n: number, tally: Tally) {
   let tableHands = 0;
   let reachedThrone = false;
   let lastDepthLogged = -1;
+  let seatedWith = 0;
+  let seatedAt: { archetype: string; tier: number } | null = null;
+  let endCause: string | null = null;
   for (let step = 0; step < 2000; step++) {
     if (run.phase === 'map') {
       if (run.tier !== lastDepthLogged) {
@@ -219,11 +241,17 @@ async function playRun(classId: ClassId, n: number, tally: Tally) {
       }
       const node = chooseNode(run);
       const wasElite = run.offers[node]?.elite ?? false;
+      const offer = run.offers[node];
+      seatedWith = run.worth;
+      seatedAt = offer
+        ? { archetype: offer.mercy ? `mercy (${offer.archetype})` : offer.archetype, tier: offer.tier }
+        : null;
       run = enterNode(run, node);
       if (run.phase === 'table') (run as RunState & { _elite?: boolean })._elite = wasElite;
     } else if (run.phase === 'shop') {
       tally.audit.merchants += 1;
       const had = run.medallions.reduce((sum, m) => sum + m.level, 0);
+      const worthBefore = run.worth;
       for (const id of [...run.shopOffers]) {
         const price = medallionPrice(id, run.tier);
         if (run.worth - price > 250 + run.tier * 150) {
@@ -231,6 +259,7 @@ async function playRun(classId: ClassId, n: number, tally: Tally) {
         }
       }
       tally.audit.bought += run.medallions.reduce((sum, m) => sum + m.level, 0) - had;
+      if (run.worth === worthBefore) tally.audit.emptyShops += 1;
       run = leaveShop(run);
     } else if (run.phase === 'reward') {
       run = claimReward(run, 0);
@@ -275,6 +304,13 @@ async function playRun(classId: ClassId, n: number, tally: Tally) {
       const t = run.table!;
       const reckon = process.env.RECKON !== '0' && canCallReckoning(t) && t.option.hands - t.handsPlayed >= 3;
       if (run.nodeId === 'throne') reachedThrone = true;
+      const requiemNext = isLastCall(t);
+      const doomed = wouldDie(t, reckon);
+      if (requiemNext) {
+        tally.audit.requiems += 1;
+        if (doomed.includes('seat-1')) tally.audit.doomedRequiems += 1;
+      }
+      if (reckon && doomed.some((id) => id !== 'seat-1')) tally.audit.reckoningKills += 1;
       run = startHand(run, reckon);
       // A deal can end the table before a card is dealt: you, or everyone
       // else, dead at the ante.
@@ -287,6 +323,7 @@ async function playRun(classId: ClassId, n: number, tally: Tally) {
         }
         tableHands += 1;
       } else if (run.lastHand?.end) {
+        if (run.lastHand.end.kind === 'broke') endCause = requiemNext ? 'died at the Requiem ante' : 'died at an ante';
         const k = run.lastHand.end.kind === 'broke' ? 'ante' : 'alone';
         const into = run.lastHand.end.kind === 'broke' ? tally.audit.lostBy : tally.audit.winBy;
         into[k] = (into[k] ?? 0) + 1;
@@ -298,6 +335,17 @@ async function playRun(classId: ClassId, n: number, tally: Tally) {
         tally.audit.handsPerTable.push(tableHands);
         tableHands = 0;
         if (end.kind === 'won' && closeCall) comeback = true;
+        if (end.kind === 'broke' && !endCause) endCause = 'died, a hand left nothing';
+        if (seatedAt) {
+          const a = (tally.audit.byArchetype[seatedAt.archetype] ??= { n: 0, won: 0, net: 0 });
+          a.n += 1;
+          if (end.kind === 'won') a.won += 1;
+          a.net += (run.phase === 'table' ? 0 : run.worth) - seatedWith;
+          const t = (tally.audit.byTier[seatedAt.tier] ??= { n: 0, won: 0 });
+          t.n += 1;
+          if (end.kind === 'won') t.won += 1;
+          seatedAt = null;
+        }
       }
       if (end?.kind === 'won') {
         tally.tablesWon += 1;
@@ -308,6 +356,40 @@ async function playRun(classId: ClassId, n: number, tally: Tally) {
     } else break;
   }
   if (!['won', 'lost'].includes(run.phase)) tally.audit.stuck += 1;
+  const cause =
+    run.phase === 'won'
+      ? 'won the throne'
+      : run.phase !== 'lost'
+        ? 'stuck'
+        : (endCause ?? (run.nodeId === 'throne' ? 'lost the throne' : `died on the map, depth ${run.path.length + 1}`));
+  tally.audit.runEnd[cause] = (tally.audit.runEnd[cause] ?? 0) + 1;
+  if (cause.startsWith('died on the map')) {
+    // What the dead held, beside the cheapest way down and its ante.
+    const ways = choices(run).flatMap((node) => {
+      const offer = run.offers[node.id];
+      return offer ? [{ cost: entryCost(run, node) ?? 0, ante: offer.ante }] : [];
+    });
+    const cheapest = ways.sort((x, y) => x.cost - y.cost)[0];
+    if (cheapest) {
+      const bucket = run.worth / cheapest.ante;
+      const key =
+        bucket < 1
+          ? '<1 ante'
+          : bucket < 2
+            ? '1-2 antes'
+            : bucket < 3
+              ? '2-3 antes'
+              : bucket < 4
+                ? '3-4 antes'
+                : '4+ antes';
+      tally.audit.runEnd[`  map death holding ${key}`] = (tally.audit.runEnd[`  map death holding ${key}`] ?? 0) + 1;
+    }
+  }
+  for (const m of run.medallions) {
+    const b = (tally.audit.byMedallion[m.id] ??= { runs: 0, won: 0 });
+    b.runs += 1;
+    if (run.phase === 'won') b.won += 1;
+  }
   if (closeCall) tally.audit.closeCalls += 1;
   if (comeback) tally.audit.comebacks += 1;
   if (reachedThrone) tally.audit.throneReached += 1;
@@ -355,6 +437,14 @@ async function main() {
         bought: 0,
         throneReached: 0,
         reckoningGold: [],
+        runEnd: {},
+        byArchetype: {},
+        byTier: {},
+        byMedallion: {},
+        doomedRequiems: 0,
+        requiems: 0,
+        reckoningKills: 0,
+        emptyShops: 0,
       },
     };
     for (let n = 0; n < perClass; n++) await playRun(classId, n, tally);

@@ -6170,6 +6170,17 @@ button.classcard.is-picked:hover {
   height: 21px;
 }
 
+/* A beggar's seat: the one way down left open to a purse that could pay for
+   none — said in the souls' colour, edged like a note, not an alarm. */
+.descent__mercy {
+  margin: var(--space-xs) 0 0;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--bone-dim);
+  border-left: var(--px) solid var(--soul);
+  background: var(--soul-wash);
+}
 /* A table your souls cannot pay for: open, and death to take. */
 .descent__beyond {
   margin: 0;

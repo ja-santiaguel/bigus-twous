@@ -876,7 +876,8 @@ with friends are untouched by it.
   named: names are kept for acts, when there are some.
   Each node is a small pixel picture of what waits there: a candle for an
   ordinary table, a skull for an elite one, a purse for the Bone Merchant,
-  the throne itself (a doubled frame). Paths join each node to the one or
+  a question mark for an **omen** (a wager, a find or a toll, unseen until
+  you go down to it), the throne itself (a doubled frame). Paths join each node to the one or
   two below it. The way you came is bone, with a caret over where you stand;
   the ways open now are gold and dashed, their nodes on gold dashed frames;
   a table **beyond your souls** — its buy-in and first ante more than you
@@ -898,7 +899,9 @@ with friends are untouched by it.
   of two Medallions" at an elite table); and who sits there — each with class, temperament, souls and
   any Medallions they carry. Clicking a node selects it (a bone outline);
   only the panel's button — **Pay 80 souls and sit down**, **Go down to the
-  merchant** — commits; a table beyond your souls has no button, only a
+  merchant** — commits. A **beggar's seat** says so under its name, in a
+  note edged in the souls' grey-teal: no way down was one you could pay for,
+  so this one is left open, at all you can spare. A table beyond your souls has no button, only a
   line edged in red saying the first ante would be your death. The button's
   words may take two lines in a narrow panel. With nothing selected, the
   panel holds the three steps of how a table works.
@@ -935,7 +938,7 @@ with friends are untouched by it.
   together, one layer with one fall, so the way down never lags or leaves
   early — and the map rising to meet you.
 - **The version** sits in the bottom-left corner of every screen, 10px and
-  dim ("v0.5.0"), with the commit it was built from on point — there for
+  dim ("v0.6.0"), with the commit it was built from on point — there for
   telling builds apart when something is reported. It is the app's
   package.json version: bump it with each release.
 - **The page scrolls smoothly.** A wheel notch sets where the page is headed

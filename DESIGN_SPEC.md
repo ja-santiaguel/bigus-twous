@@ -253,6 +253,39 @@ The Showdown is two things now.
 - **Requiem** — the table's last hand: everyone antes three times, first place
   wins the table. Holding the tribute still wins before it is dealt.
 
+### Balance pass: how runs end (2026-09-26, later)
+An audit of 1,000 runs a class (the hard AI in your seat, a sensible player
+around it — tables it can pay for, merchants when flush, elites when rich,
+Reckonings with hands to spare) found runs ending badly rather than hard:
+35–43% died on the map, a table closed and no way down payable; the Requiem's
+triple ante killed a fifth of Tyrant runs; the throne was the easiest table in
+the game (54–62% won) and the Drowned Chapel the hardest; elite tables were no
+harder than ordinary ones; and runs holding Tithe won 38–67%. Changed:
+- **A beggar's seat.** When no way down can be paid for, the cheapest table
+  below — the throne included — is dealt again with a buy-in of whatever you
+  can spare, keeping your first ante and one more of your own. Everyone at it
+  pays that buy-in. Only a purse short of two of your antes dies on the map.
+  Beggar's seats are won 17–29% of the time: a last stand, not a rescue.
+- **A showdown never asks more than three of the table's antes**, whatever the
+  ante share: the Tyrant's Requiem is 3 table antes, not 4.5.
+- **Smoother antes**: 40 / 60 / **90 / 150 / 260** (were 100 / 180 / 320).
+- **The Drowned Chapel's players are medium**; hard ones wait for the Sunken
+  Crypt.
+- **Elite tables are harder**: their players are hard at any depth, and their
+  tribute is higher (Gilded ×1.4, Carrion ×1.35; were ×1.1 and ×1.05).
+- **Tithe is legendary, and drawn half as often as a legendary**: as strong as
+  ever, and a find.
+- **Starting souls**: Wanderer **580**, Courtier **640**, Tyrant **760** (were
+  540 / 580 / 600).
+
+After (1,000 runs a class): wins **15 / 14 / 15%**. Died on the map 11 / 17 /
+29% (the Tyrant's two antes are dear, so its beggar's seat asks more). Died at
+the Requiem ante 16 / 15 / 7%. Tables won by depth fall from 44–50% at the gate
+to 27–37% in the Sunken Crypt; the throne is won 35–40% by whoever reaches it,
+which now includes the poor runs a beggar's seat carries there. Elite tables
+are won 28–35%, ordinary ones 40–56%. Runs holding Tithe: 4–7% (were 17–30%),
+still winning 51–77%.
+
 ### Souls, and death at the ante (2026-09-26)
 Gold is now **souls**, and souls are your life: the player should feel the
 stakes of every payment at once.
@@ -308,7 +341,7 @@ sets.)
   deep tables no longer ruin them with prices alone. About one falls a run.
 
 ### ? events (2026-09-23)
-One to four ? nodes a map, below the opening rows, never one under another.
+Called **omens** on screen since 2026-09-26. One to four ? nodes a map, below the opening rows, never one under another.
 Each is a short scene with one decision, drawn from those not met yet this run:
 - **The Ferryman's Wager** (risk): stake two of your antes; he turns a card and
   you call the next higher or lower (Big Two order). Each right call doubles
@@ -429,7 +462,7 @@ What it found, and what changed:
 ### Numbers
 | | Commoner | Courtier | Tyrant |
 |---|---|---|---|
-| Starting Worth (souls, since 2026-09-26) | 540 | 580 | 600 |
+| Starting Worth (souls, since the balance pass of 2026-09-26) | 580 | 640 | 760 |
 | Ante multiplier | ×0.75 | ×1 | ×1.5 |
 | Raise sizes (antes) | 1 | 1, 2 | 1, 2, 3 |
 | Raises per hand | 2 | 2 | 3 |
@@ -438,9 +471,9 @@ What it found, and what changed:
 |---|---|---|---|---|---|---|---|
 | The Lychgate | 40 | 2 | 5 | 2 | medium | 0.7–1.1 | none |
 | The Ossuary | 60 | 2 | 6 | 2 | medium | 0.9–1.3 | 30% carry one, level I |
-| The Drowned Chapel | 100 | 3 | 7 | 2 | hard | 1.1–1.6 | 50% carry one, level I |
-| The Sunken Crypt | 180 | 3 | 9 | 3 | hard | 1.3–2.0 | 75% carry up to two, up to level II |
-| The Hollow Throne | 320 | 4 | 11 | 3 | hard | 1.6–2.2 (normalised) | house legends always carry up to two; Vestiges keep their own |
+| The Drowned Chapel | 90 | 3 | 7 | 2 | medium | 1.1–1.6 | 50% carry one, level I |
+| The Sunken Crypt | 150 | 3 | 9 | 3 | hard | 1.3–2.0 | 75% carry up to two, up to level II |
+| The Hollow Throne | 260 | 4 | 11 | 3 | hard | 1.6–2.2 (normalised) | house legends always carry up to two; Vestiges keep their own |
 
 A simulation of a player who finishes in a random place every hand (no
 skill, first table node, Showdown as soon as allowed; 500 runs a class)

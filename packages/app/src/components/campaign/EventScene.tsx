@@ -21,7 +21,7 @@ import { medallionEffect, medallionName } from './medallionText.js';
 import { Terms } from '../Terms.js';
 
 /**
- * A ? node: a short scene in the dark with one decision in it. Each is told
+ * An omen (a ? node): a short scene in the dark with one decision in it. Each is told
  * as the merchant's screen is — a name, a line of who is there and what they
  * want, the thing itself in the middle, and what you can do under it — and
  * says plainly, once it is over, what it cost or paid.

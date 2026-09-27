@@ -47,6 +47,8 @@ export interface MedallionDef {
   rarity: Rarity;
   /** What each level does, as a player reads it: the first line is level 1. Each line is whole on its own. */
   levels: string[];
+  /** How often it is drawn against others of its rarity: 1 unless it should be rarer still. */
+  weight?: number;
 }
 
 export const MEDALLIONS: Record<MedallionId, MedallionDef> = {
@@ -162,7 +164,10 @@ export const MEDALLIONS: Record<MedallionId, MedallionDef> = {
     id: 'tithe',
     classId: null,
     name: 'Tithe',
-    rarity: 'rare',
+    // Legendary, and drawn half as often as one: as strong as it ever was,
+    // and rare enough that finding it is a moment.
+    rarity: 'legendary',
+    weight: 0.5,
     levels: ['Finish a hand first and every other player pays you one of their antes.'],
   },
   'iron-stomach': {

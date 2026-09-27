@@ -26,7 +26,7 @@ import { GoldCoin } from '../GoldAmount.js';
  *
  * Every node is a small pixel picture of what waits there — a candle for an
  * ordinary table, a skull for an elite one, a purse for the Bone Merchant, a
- * question for something unknown, the throne itself — joined to the nodes below it by the paths you could
+ * question for an omen, the throne itself — joined to the nodes below it by the paths you could
  * take. The way you came is drawn in bone; the ways open to you now in gold —
  * a table your souls cannot pay for edged in red; everything else dim. Pointing at a node previews everything it holds
  * beside the map — for a table, who sits there too. Clicking it selects it;
@@ -139,7 +139,7 @@ const iconOf = (node: MapNode): keyof typeof ICONS =>
 /** A node's name, as the map labels it. */
 export function nodeName(node: MapNode): string {
   if (node.kind === 'merchant') return 'The Bone Merchant';
-  if (node.kind === 'event') return 'Something in the dark';
+  if (node.kind === 'event') return 'An Omen';
   if (node.kind === 'throne') return 'The Hollow Throne';
   return ARCHETYPES[node.archetype!].name;
 }
@@ -331,7 +331,7 @@ function Legend() {
           <span className="descent__node is-legend">
             <Icon id="event" />
           </span>
-          Something unknown
+          An omen
         </li>
         <li>
           <span className="descent__node is-legend">
@@ -381,7 +381,7 @@ function NodeDetail({
           {node.kind === 'merchant'
             ? 'Go down to the merchant'
             : node.kind === 'event'
-              ? 'Go down into the dark'
+              ? 'Go down to meet it'
               : `Pay ${gold(stake)} souls and sit down`}
         </button>
       ) : (
@@ -416,9 +416,10 @@ function NodeDetail({
     return (
       <div className="descent__detail" key={node.id}>
         <p className="descent__where">Depth {node.row + 1}</p>
-        <h2>Something in the dark</h2>
+        <h2>An Omen</h2>
         <p className="campaign__passive">
-          A wager, a find, or a toll: you will not know which until you go down. No table here, and no buy-in.
+          Something waits below, unseen: a wager, a find, or a toll. You will not know which until you go down to it. No
+          table here, and no buy-in.
         </p>
         {action}
       </div>
@@ -441,6 +442,12 @@ function NodeDetail({
           {nodeName(node)}
         </h2>
         <p className="campaign__passive">{kind.blurb}</p>
+        {offer?.mercy && (
+          <p className="descent__mercy">
+            A beggar&rsquo;s seat. No way down was one you could pay for, so the deep has left this one open: its buy-in
+            is all you can spare, keeping your first ante and one more. A last stand.
+          </p>
+        )}
       </div>
       <div className="descent__group descent__stats">
         <span className="stat descent__stat">
@@ -506,8 +513,8 @@ function NodeDetail({
                 second, 5% to third, nothing to last.
               </p>
               <p>
-                The Requiem asks three antes of everyone. A player who cannot pay an ante in full dies as the hand
-                opens.
+                The Requiem asks three antes of everyone, but never more than three of the table&rsquo;s own. A player
+                who cannot pay an ante in full dies as the hand opens.
               </p>
             </InfoTip>
           </span>

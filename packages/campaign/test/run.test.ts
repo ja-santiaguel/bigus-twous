@@ -404,9 +404,40 @@ describe('buying in', () => {
     expect(you(seatedAt.table!).worth).toBe(ante);
   });
 
-  it('ends the run on the map when no way down can be paid for', () => {
+  it('ends the run on the map when not even a beggar’s seat can be paid for', () => {
     const run = startRun('no-way-down', 'commoner');
     expect(arrive({ ...run, worth: 1 }).phase).toBe('lost');
+  });
+
+  it('leaves a beggar’s seat open when no way down can be paid for: all you can spare, two antes kept', () => {
+    const run = startRun('beggar', 'commoner');
+    const offers = Object.values(run.offers);
+    const cheapest = Math.min(...offers.map((o) => o.buyIn));
+    const ante = Math.round(offers[0]!.ante * 0.75);
+    // Too poor for any seat at its own price, rich enough for two of your antes and a little.
+    const worth = Math.min(cheapest, 2 * ante + 20);
+    const poor = arrive({ ...run, worth });
+    expect(poor.phase).toBe('map');
+    const spared = Object.entries(poor.offers).find(([, o]) => o.mercy);
+    expect(spared).toBeDefined();
+    const [nodeId, offer] = spared!;
+    expect(offer.buyIn).toBe(worth - 2 * ante);
+    const node = choices(poor).find((n) => n.id === nodeId)!;
+    expect(canEnter(poor, node)).toBe(true);
+    const seatedAt = enterNode(poor, nodeId);
+    expect(seatedAt.phase).toBe('table');
+    expect(you(seatedAt.table!).worth).toBe(2 * ante);
+  });
+
+  it('never asks more than three of the table’s antes at a showdown, whatever the ante share', () => {
+    const run = startRun('requiem-cap', 'tyrant');
+    const seatedAt = enterNode(run, choices(run)[0]!.id);
+    const table = seatedAt.table!;
+    const seat = you(table);
+    // A Tyrant pays half as much again on an ordinary hand…
+    expect(anteFor(table, seat)).toBe(Math.round(table.option.ante * 1.5));
+    // …but three of the table's antes, not four and a half, at the Requiem.
+    expect(anteFor(table, seat, true)).toBe(table.option.ante * SHOWDOWN_ANTE);
   });
 
   it('seats nobody with no gold at all', () => {
